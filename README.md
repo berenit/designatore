@@ -1,58 +1,155 @@
-<p align="center"><a href="https://laravel.com" target="_blank"><img src="https://raw.githubusercontent.com/laravel/art/master/logo-lockup/5%20SVG/2%20CMYK/1%20Full%20Color/laravel-logolockup-cmyk-red.svg" width="400" alt="Laravel Logo"></a></p>
+# 🏉 Designatore
 
-<p align="center">
-<a href="https://github.com/laravel/framework/actions"><img src="https://github.com/laravel/framework/workflows/tests/badge.svg" alt="Build Status"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/dt/laravel/framework" alt="Total Downloads"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/v/laravel/framework" alt="Latest Stable Version"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/l/laravel/framework" alt="License"></a>
-</p>
+Applicazione web per la gestione delle designazioni arbitrali nel rugby. Permette al designatore (o a un suo delegato) di programmare le partite, assegnare gli arbitri e notificarli via email con un link per accettare o rifiutare la designazione.
 
-## About Laravel
+---
 
-Laravel is a web application framework with expressive, elegant syntax. We believe development must be an enjoyable and creative experience to be truly fulfilling. Laravel takes the pain out of development by easing common tasks used in many web projects, such as:
+## Funzionalità principali
 
-- [Simple, fast routing engine](https://laravel.com/docs/routing).
-- [Powerful dependency injection container](https://laravel.com/docs/container).
-- Multiple back-ends for [session](https://laravel.com/docs/session) and [cache](https://laravel.com/docs/cache) storage.
-- Expressive, intuitive [database ORM](https://laravel.com/docs/eloquent).
-- Database agnostic [schema migrations](https://laravel.com/docs/migrations).
-- [Robust background job processing](https://laravel.com/docs/queues).
-- [Real-time event broadcasting](https://laravel.com/docs/broadcasting).
+### Dashboard pubblica
+Accessibile senza autenticazione. Mostra le prossime partite programmate con lo stato della designazione arbitrale. Pensata per essere condivisa con dirigenti e tifosi.
 
-Laravel is accessible, powerful, and provides tools required for large, robust applications.
+### Autenticazione
+L'accesso alle funzioni gestionali è riservato a utenti con ruolo **designatore** o **delegato**. La registrazione pubblica è disabilitata: gli account vengono creati dall'amministratore.
 
-## Learning Laravel
+### Gestione arbitri
+- Anagrafica completa (nome, email, telefono, livello di patente, disponibilità)
+- Livelli supportati: Locale, Regionale, Nazionale, Internazionale
+- Stato disponibilità: Disponibile, Limitata, Non disponibile
 
-Laravel has the most extensive and thorough [documentation](https://laravel.com/docs) and video tutorial library of all modern web application frameworks, making it a breeze to get started with the framework.
+### Gestione squadre
+- Anagrafica squadre con città, campionato/divisione e riferimenti del contatto (opzionali)
+- Ordinamento per nome o campionato tramite icone nelle intestazioni della tabella
+- Filtro per campionato
 
-In addition, [Laracasts](https://laracasts.com) contains thousands of video tutorials on a range of topics including Laravel, modern PHP, unit testing, and JavaScript. Boost your skills by digging into our comprehensive video library.
+### Gestione partite
+- Programmazione con data/ora, campo, squadre e tipo di competizione
+- Default intelligente sulla domenica più prossima (ore 14:30 in ora legale, 15:30 in ora solare)
+- Selezione guidata: prima si sceglie il campionato, poi le squadre di quel campionato
+- Controllo automatico dei conflitti: non è possibile assegnare una squadra a due partite nello stesso giorno
+- Tipi di competizione: Campionato, Coppa, Amichevole, Internazionale, Torneo
+- Stati: Programmata, Rinviata, Annullata, Completata
 
-You can also watch bite-sized lessons with real-world projects on [Laravel Learn](https://laravel.com/learn), where you will be guided through building a Laravel application from scratch while learning PHP fundamentals.
+### Designazioni
+- Vista settimanale (lunedì–domenica) con navigazione prev/next
+- Mostra **tutte** le partite della settimana, comprese quelle senza arbitro assegnato
+- Le partite senza designazione sono evidenziate con un pulsante "Designa" diretto
+- Azioni per designazione esistente: Dettaglio, Modifica, Elimina
 
-## Agentic Development
+### Notifiche email agli arbitri
+Quando una designazione viene creata, l'arbitro riceve automaticamente un'email con:
+- Dettagli della partita (squadre, data, campo, competizione, note)
+- **Link per accettare** la designazione → cambia lo stato in *Confermata*
+- **Link per rifiutare** la designazione → cambia lo stato in *Annullata*
 
-Laravel's predictable structure and conventions make it ideal for AI coding agents like Claude Code, Cursor, and GitHub Copilot. Install [Laravel Boost](https://laravel.com/docs/ai) to supercharge your AI workflow:
+I link sono firmati con URL sicuri (Laravel Signed Routes) e non richiedono che l'arbitro abbia un account nell'applicazione.
+
+### Report designazioni
+Esportazione delle designazioni in tre formati:
+
+| Formato | Utilizzo |
+|---------|----------|
+| **PDF** | Documento A4 formattato con tabella e riepilogo, pronto per la stampa |
+| **Markdown** | Tabella `.md` compatibile con Notion, GitHub, Obsidian |
+| **Testo** | Formato con emoji per Telegram e WhatsApp, copiato negli appunti con un click |
+
+I report supportano filtri per intervallo di date della partita e stato della designazione. Il range predefinito è il prossimo fine settimana (sabato–domenica).
+
+---
+
+## Stack tecnologico
+
+| Layer | Tecnologia |
+|-------|-----------|
+| Backend | PHP 8.3 · Laravel 13 |
+| Frontend | Blade · Tailwind CSS · Alpine.js |
+| Database | SQLite (sviluppo) |
+| PDF | barryvdh/laravel-dompdf |
+| Auth | Laravel Breeze (Blade stack) |
+| Test | Pest |
+| Dev server | Laravel Herd |
+
+---
+
+## Installazione
+
+### Requisiti
+- PHP ≥ 8.3
+- Composer
+- Node.js ≥ 18 + npm
+- Laravel Herd (opzionale, consigliato su macOS/Windows)
+
+### Avvio rapido
 
 ```bash
-composer require laravel/boost --dev
+git clone <repository-url> designatore
+cd designatore
 
-php artisan boost:install
+# Installa dipendenze, configura .env, esegui migrazioni e build assets
+composer run setup
 ```
 
-Boost provides your agent 15+ tools and skills that help agents build Laravel applications while following best practices.
+### Oppure manualmente
 
-## Contributing
+```bash
+composer install
+cp .env.example .env
+php artisan key:generate
+touch database/database.sqlite
+php artisan migrate
+php artisan db:seed          # crea utente admin e dati di esempio
+npm install
+npm run build
+```
 
-Thank you for considering contributing to the Laravel framework! The contribution guide can be found in the [Laravel documentation](https://laravel.com/docs/contributions).
+### Avvio del server di sviluppo
 
-## Code of Conduct
+```bash
+composer run dev
+```
 
-In order to ensure that the Laravel community is welcoming to all, please review and abide by the [Code of Conduct](https://laravel.com/docs/contributions#code-of-conduct).
+Avvia in parallelo: server Laravel, queue worker e Vite dev server.
 
-## Security Vulnerabilities
+---
 
-If you discover a security vulnerability within Laravel, please send an e-mail to Taylor Otwell via [taylor@laravel.com](mailto:taylor@laravel.com). All security vulnerabilities will be promptly addressed.
+## Credenziali di default
 
-## License
+| Campo | Valore |
+|-------|--------|
+| Email | `test@example.com` |
+| Password | `password` |
+| Ruolo | `designatore` |
 
-The Laravel framework is open-sourced software licensed under the [MIT license](https://opensource.org/licenses/MIT).
+> ⚠️ Cambiare le credenziali prima di mettere in produzione.
+
+---
+
+## Configurazione email
+
+In sviluppo le email vengono scritte nel log (`storage/logs/laravel.log`). Per inviare email reali, configurare le variabili `MAIL_*` nel file `.env`:
+
+```env
+MAIL_MAILER=smtp
+MAIL_HOST=smtp.example.com
+MAIL_PORT=587
+MAIL_USERNAME=
+MAIL_PASSWORD=
+MAIL_FROM_ADDRESS=designatore@example.com
+MAIL_FROM_NAME="Designatore Rugby"
+```
+
+---
+
+## Struttura delle route principali
+
+| Route | Accesso | Descrizione |
+|-------|---------|-------------|
+| `GET /` | Pubblico | Dashboard partite in programma |
+| `GET /login` | Guest | Pagina di accesso |
+| `GET /dashboard` | Auth | Dashboard privata con statistiche |
+| `GET /referees` | Auth | Elenco arbitri |
+| `GET /teams` | Auth | Elenco squadre |
+| `GET /rugby-matches` | Auth | Elenco partite |
+| `GET /designations` | Auth | Vista settimanale designazioni |
+| `GET /reports` | Auth | Generazione report |
+| `GET /designations/{id}/respond/{action}` | Pubblico (firmato) | Accetta/rifiuta designazione |

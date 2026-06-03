@@ -1,3 +1,49 @@
+# AGENTS.md
+
+This file provides guidance to agents when working with code in this repository.
+
+## Stack
+- Laravel 13 with PHP 8.5
+- Pest for testing (with Laravel plugin)
+- Vite with TailwindCSS v4 (@tailwindcss/vite)
+- Laravel Herd for local development
+- SQLite database (file-based for dev, memory for testing)
+
+## Key Commands
+- `php artisan test` - Run all tests
+- `php artisan test --filter=test_name` - Run specific test
+- `npm run dev` - Start Vite dev server
+- `composer run dev` - Start Laravel server, queue worker, and Vite concurrently
+- `php artisan boost:update` - Update Laravel Boost MCP server
+- `vendor/bin/pint --dirty --format agent` - Fix PHP formatting
+
+## Project-Specific Patterns
+- Uses Laravel Boost MCP server with "junie" agent
+- Testing configured with SQLite in-memory database
+- Queue and cache drivers set to database (file-based in testing)
+- Mail and broadcast drivers set to log/array for testing
+- Custom Artisan command: `php artisan inspire`
+- Laravel 11+ attribute syntax: #[Fillable], #[Hidden] on models
+- Pint configured with "--format agent" for AI-assisted editing
+- **Rugby Referee Designation Management**: Custom application for managing rugby match referee assignments
+- **Model Naming**: Uses RugbyMatch instead of Match to avoid PHP reserved word conflict
+- **Enum Fields**: Uses enum types in database for license_level, availability_status, competition_type, and status fields
+- **Foreign Key Constraints**: All relationships use foreign keys with cascade/delete restrictions
+- **Validation Rules**: Uses Rule::in() for enum validation and unique rules with ignore for updates
+- **Route Naming**: Uses hyphenated resource names (rugby-matches, designations) for URL consistency
+- **Eager Loading**: Controllers use with() to load relationships and prevent N+1 query problems
+- **Soft Deletes**: Not implemented - hard deletes used for simplicity in this domain
+
+## Code Style
+- PHP 8 constructor property promotion encouraged
+- Curly braces required for all control structures
+- Explicit return type declarations and parameter type hints
+- PHPDoc blocks preferred over inline comments
+- TitleCase for Enum keys
+- Laravel Pint enforces formatting (run before committing)
+
+===
+
 <laravel-boost-guidelines>
 === foundation rules ===
 
@@ -9,16 +55,18 @@ The Laravel Boost guidelines are specifically curated by Laravel maintainers for
 
 This application is a Laravel application and its main Laravel ecosystems package & versions are below. You are an expert with them all. Ensure you abide by these specific packages & versions.
 
-- php - 8.5
+- php - 8.3
 - laravel/framework (LARAVEL) - v13
 - laravel/prompts (PROMPTS) - v0
 - laravel/boost (BOOST) - v2
+- laravel/breeze (BREEZE) - v2
 - laravel/mcp (MCP) - v0
 - laravel/pail (PAIL) - v1
 - laravel/pint (PINT) - v1
 - pestphp/pest (PEST) - v4
 - phpunit/phpunit (PHPUNIT) - v12
-- tailwindcss (TAILWINDCSS) - v4
+- alpinejs (ALPINEJS) - v3
+- tailwindcss (TAILWINDCSS) - v3
 
 ## Skills Activation
 
@@ -112,6 +160,13 @@ This project has domain-specific skills available in `**/skills/**`. You MUST ac
 
 - The application is served by Laravel Herd at `https?://[kebab-case-project-dir].test`. Use the `get-absolute-url` tool to generate valid URLs. Never run commands to serve the site. It is always available.
 - Use the `herd` CLI to manage services, PHP versions, and sites (e.g. `herd sites`, `herd services:start <service>`, `herd php:list`). Run `herd list` to discover all available commands.
+
+=== tests rules ===
+
+# Test Enforcement
+
+- Every change must be programmatically tested. Write a new test or update an existing test, then run the affected tests to make sure they pass.
+- Run the minimum number of tests needed to ensure code quality and speed. Use `php artisan test --compact` with a specific filename or filter.
 
 === laravel/core rules ===
 
