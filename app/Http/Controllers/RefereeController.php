@@ -42,7 +42,7 @@ class RefereeController extends Controller
         Referee::create($validated);
 
         return Redirect::route('referees.index')
-            ->with('status', 'Referee created successfully!');
+            ->with('success', 'Arbitro creato con successo.');
     }
 
     /**
@@ -77,7 +77,7 @@ class RefereeController extends Controller
         $referee->update($validated);
 
         return Redirect::route('referees.index')
-            ->with('status', 'Referee updated successfully!');
+            ->with('success', 'Arbitro aggiornato con successo.');
     }
 
     /**
@@ -88,6 +88,6 @@ class RefereeController extends Controller
         $referee->delete();
 
         return Redirect::route('referees.index')
-            ->with('status', 'Referee deleted successfully!');
+            ->with('success', 'Arbitro eliminato.');
     }
 }

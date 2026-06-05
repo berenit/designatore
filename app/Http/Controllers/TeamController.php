@@ -52,7 +52,7 @@ class TeamController extends Controller
         Team::create($validated);
 
         return Redirect::route('teams.index')
-            ->with('status', 'Team created successfully!');
+            ->with('success', 'Squadra creata con successo.');
     }
 
     /**
@@ -88,7 +88,7 @@ class TeamController extends Controller
         $team->update($validated);
 
         return Redirect::route('teams.index')
-            ->with('status', 'Team updated successfully!');
+            ->with('success', 'Squadra aggiornata con successo.');
     }
 
     /**
@@ -99,6 +99,6 @@ class TeamController extends Controller
         $team->delete();
 
         return Redirect::route('teams.index')
-            ->with('status', 'Team deleted successfully!');
+            ->with('success', 'Squadra eliminata.');
     }
 }
