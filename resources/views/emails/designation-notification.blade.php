@@ -3,12 +3,13 @@
 
 Ciao **{{ $designation->referee->name }}**,
 
-sei stato designato per dirigere la seguente partita di rugby:
+sei stato designato per il seguente incontro di rugby:
 
 <x-mail::table>
 | | |
 |:--|:--|
-| **Incontro** | {{ $designation->match->homeTeam->name }} vs {{ $designation->match->awayTeam->name }} |
+| **Incontro** | {{ $designation->match->label }} |
+| **Ruolo** | {{ $designation->role }} |
 | **Data e ora** | {{ \Carbon\Carbon::parse($designation->match->date_time)->format('d/m/Y \a\l\l\e H:i') }} |
 | **Campo** | {{ $designation->match->venue }} |
 | **Competizione** | {{ $designation->match->competition_type }} |

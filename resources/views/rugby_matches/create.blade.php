@@ -15,29 +15,58 @@
 
     {{-- Dati teams come JSON per Alpine --}}
     @php
-        $teamsJson  = $teams->map(fn($t) => [
+        $teamsJson = $teams->map(fn($t) => [
             'id'     => $t->id,
             'name'   => $t->name,
             'league' => $t->league_division,
         ])->values()->toJson();
-        $oldLeague   = old('_league');
-        $oldHomeId   = old('home_team_id');
-        $oldAwayId   = old('away_team_id');
-        $oldDate     = old('date_time', $defaultDate);
+        $oldState = [
+            'type'    => old('competition_type', ''),
+            'league'  => old('_league', ''),
+            'name'    => old('name', ''),
+            'homeId'  => old('home_team_id', ''),
+            'awayId'  => old('away_team_id', ''),
+            'date'    => old('date_time', $defaultDate),
+            'teamIds' => array_map('strval', old('team_ids', [])),
+            'status'  => old('status', ''),
+        ];
     @endphp
 
     <form action="{{ route('rugby-matches.store') }}" method="POST"
           class="bg-white rounded-xl border border-gray-200 shadow-sm p-6 space-y-5"
-          x-data="matchForm({{ $teamsJson }}, {{ json_encode($bookedDates) }}, {{ json_encode($oldLeague) }}, {{ json_encode($oldHomeId) }}, {{ json_encode($oldAwayId) }}, {{ json_encode($oldDate) }})">
+          x-data="matchForm({{ $teamsJson }}, {{ json_encode($bookedDates) }}, {{ json_encode($multiTeamTypes) }}, {{ json_encode($oldState) }})">
         @csrf
 
         {{-- Campo nascosto per conservare il campionato scelto in caso di errore validazione --}}
         <input type="hidden" name="_league" x-bind:value="league">
 
-        {{-- Step 1: campionato --}}
+        {{-- Tipo competizione: pilota la modalità (partita singola vs evento multi-squadra) --}}
+        <div>
+            <label for="competition_type" class="block text-sm font-medium text-gray-700 mb-1">Tipo competizione</label>
+            <select id="competition_type" name="competition_type" x-model="type" @change="resetTeams()" required
+                    class="w-full rounded-lg border-gray-300 shadow-sm text-sm focus:border-indigo-500 focus:ring-indigo-500 @error('competition_type') border-red-400 @enderror">
+                <option value="">Seleziona...</option>
+                @foreach ($competitionTypes as $ct)
+                    <option value="{{ $ct }}">{{ $ct }}</option>
+                @endforeach
+            </select>
+            <p class="mt-1 text-xs text-gray-400" x-show="isMulti" x-transition>Concentramenti e Tornei coinvolgono 3 o più squadre.</p>
+            @error('competition_type')<p class="mt-1 text-xs text-red-600">{{ $message }}</p>@enderror
+        </div>
+
+        {{-- Nome evento (solo Concentramento / Torneo) --}}
+        <div x-show="isMulti" x-transition>
+            <label for="name" class="block text-sm font-medium text-gray-700 mb-1">Nome evento</label>
+            <input id="name" type="text" name="name" x-model="name" :disabled="!isMulti" :required="isMulti"
+                   placeholder="Es. Concentramento U14 - Roma"
+                   class="w-full rounded-lg border-gray-300 shadow-sm text-sm focus:border-indigo-500 focus:ring-indigo-500 @error('name') border-red-400 @enderror">
+            @error('name')<p class="mt-1 text-xs text-red-600">{{ $message }}</p>@enderror
+        </div>
+
+        {{-- Campionato (filtra le squadre) --}}
         <div>
             <label class="block text-sm font-medium text-gray-700 mb-1">Campionato</label>
-            <select x-model="league" @change="homeId = ''; awayId = ''"
+            <select x-model="league" @change="resetTeams()"
                     class="w-full rounded-lg border-gray-300 shadow-sm text-sm focus:border-indigo-500 focus:ring-indigo-500">
                 <option value="">Seleziona campionato...</option>
                 @foreach ($leagues as $l)
@@ -46,11 +75,11 @@
             </select>
         </div>
 
-        {{-- Step 2: squadre (disabilitate finché non si sceglie il campionato) --}}
-        <div class="grid grid-cols-2 gap-4" x-show="league" x-transition>
+        {{-- Squadre — Partita singola: casa vs ospite --}}
+        <div class="grid grid-cols-2 gap-4" x-show="league && !isMulti" x-transition>
             <div>
                 <label for="home_team_id" class="block text-sm font-medium text-gray-700 mb-1">Squadra di casa</label>
-                <select id="home_team_id" name="home_team_id" x-model="homeId" required
+                <select id="home_team_id" name="home_team_id" x-model="homeId" :disabled="isMulti" :required="!isMulti"
                         class="w-full rounded-lg border-gray-300 shadow-sm text-sm focus:border-indigo-500 focus:ring-indigo-500 @error('home_team_id') border-red-400 @enderror">
                     <option value="">Seleziona...</option>
                     <template x-for="t in filteredTeams" :key="t.id">
@@ -62,7 +91,7 @@
 
             <div>
                 <label for="away_team_id" class="block text-sm font-medium text-gray-700 mb-1">Squadra ospite</label>
-                <select id="away_team_id" name="away_team_id" x-model="awayId" required
+                <select id="away_team_id" name="away_team_id" x-model="awayId" :disabled="isMulti" :required="!isMulti"
                         class="w-full rounded-lg border-gray-300 shadow-sm text-sm focus:border-indigo-500 focus:ring-indigo-500 @error('away_team_id') border-red-400 @enderror">
                     <option value="">Seleziona...</option>
                     <template x-for="t in filteredTeams" :key="t.id">
@@ -73,12 +102,32 @@
             </div>
         </div>
 
-        {{-- Resto del form --}}
+        {{-- Squadre — Concentramento / Torneo: selezione multipla (3+) --}}
+        <div x-show="league && isMulti" x-transition>
+            <label class="block text-sm font-medium text-gray-700 mb-1">
+                Squadre partecipanti
+                <span class="text-gray-400 font-normal">(min. 3 — selezionate: <span x-text="teamIds.length"></span>)</span>
+            </label>
+            <div class="grid grid-cols-2 gap-2 max-h-56 overflow-y-auto rounded-lg border border-gray-200 p-3 @error('team_ids') border-red-400 @enderror">
+                <template x-for="t in filteredTeams" :key="t.id">
+                    <label class="flex items-center gap-2 text-sm text-gray-700">
+                        <input type="checkbox" name="team_ids[]" :value="t.id" x-model="teamIds"
+                               class="rounded border-gray-300 text-indigo-600 focus:ring-indigo-500">
+                        <span x-text="t.name"></span>
+                    </label>
+                </template>
+                <p class="text-xs text-gray-400 col-span-2" x-show="filteredTeams.length === 0">Nessuna squadra disponibile per il campionato/la data selezionati.</p>
+            </div>
+            @error('team_ids')<p class="mt-1 text-xs text-red-600">{{ $message }}</p>@enderror
+            @error('team_ids.*')<p class="mt-1 text-xs text-red-600">{{ $message }}</p>@enderror
+        </div>
+
+        {{-- Data, campo, stato --}}
         <div class="grid grid-cols-2 gap-4">
             <div>
                 <label for="date_time" class="block text-sm font-medium text-gray-700 mb-1">Data e Ora</label>
                 <input id="date_time" type="datetime-local" name="date_time" x-model="dateTime"
-                       @change="homeId = ''; awayId = ''" required
+                       @change="resetTeams()" required
                        class="w-full rounded-lg border-gray-300 shadow-sm text-sm focus:border-indigo-500 focus:ring-indigo-500 @error('date_time') border-red-400 @enderror">
                 @error('date_time')<p class="mt-1 text-xs text-red-600">{{ $message }}</p>@enderror
             </div>
@@ -90,27 +139,15 @@
                 @error('venue')<p class="mt-1 text-xs text-red-600">{{ $message }}</p>@enderror
             </div>
 
-            <div>
-                <label for="competition_type" class="block text-sm font-medium text-gray-700 mb-1">Tipo competizione</label>
-                <select id="competition_type" name="competition_type" required
-                        class="w-full rounded-lg border-gray-300 shadow-sm text-sm focus:border-indigo-500 focus:ring-indigo-500 @error('competition_type') border-red-400 @enderror">
-                    <option value="">Seleziona...</option>
-                    @foreach (['League', 'Cup', 'Friendly', 'International', 'Tournament'] as $type)
-                        <option value="{{ $type }}" {{ old('competition_type') === $type ? 'selected' : '' }}>{{ $type }}</option>
-                    @endforeach
-                </select>
-                @error('competition_type')<p class="mt-1 text-xs text-red-600">{{ $message }}</p>@enderror
-            </div>
-
-            <div>
+            <div class="col-span-2">
                 <label for="status" class="block text-sm font-medium text-gray-700 mb-1">Stato</label>
-                <select id="status" name="status" required
+                <select id="status" name="status" x-model="status" required
                         class="w-full rounded-lg border-gray-300 shadow-sm text-sm focus:border-indigo-500 focus:ring-indigo-500 @error('status') border-red-400 @enderror">
                     <option value="">Seleziona...</option>
-                    <option value="scheduled" {{ old('status') === 'scheduled' ? 'selected' : '' }}>Programmata</option>
-                    <option value="postponed" {{ old('status') === 'postponed' ? 'selected' : '' }}>Rinviata</option>
-                    <option value="cancelled" {{ old('status') === 'cancelled' ? 'selected' : '' }}>Annullata</option>
-                    <option value="completed" {{ old('status') === 'completed' ? 'selected' : '' }}>Completata</option>
+                    <option value="scheduled">Programmata</option>
+                    <option value="postponed">Rinviata</option>
+                    <option value="cancelled">Annullata</option>
+                    <option value="completed">Completata</option>
                 </select>
                 @error('status')<p class="mt-1 text-xs text-red-600">{{ $message }}</p>@enderror
             </div>
@@ -127,14 +164,24 @@
 </div>
 
 <script>
-function matchForm(teams, bookedDates, oldLeague, oldHomeId, oldAwayId, oldDate) {
+function matchForm(teams, bookedDates, multiTeamTypes, old) {
     return {
         teams,
-        bookedDates,   // { team_id: ['2026-06-08', ...] }
-        league:   oldLeague || '',
-        homeId:   oldHomeId ? String(oldHomeId) : '',
-        awayId:   oldAwayId ? String(oldAwayId) : '',
-        dateTime: oldDate || '',
+        bookedDates,    // { team_id: ['2026-06-08', ...] }
+        multiTeamTypes, // ['Concentramento', 'Torneo']
+        type:     old.type || '',
+        league:   old.league || '',
+        name:     old.name || '',
+        homeId:   old.homeId ? String(old.homeId) : '',
+        awayId:   old.awayId ? String(old.awayId) : '',
+        dateTime: old.date || '',
+        teamIds:  old.teamIds || [],
+        status:   old.status || '',
+
+        // Vero per Concentramento / Torneo
+        get isMulti() {
+            return this.multiTeamTypes.includes(this.type);
+        },
 
         // Data nel formato YYYY-MM-DD estratta dal datetime-local
         get selectedDate() {
@@ -151,6 +198,13 @@ function matchForm(teams, bookedDates, oldLeague, oldHomeId, oldAwayId, oldDate)
                 const booked = this.bookedDates[t.id] || [];
                 return !booked.includes(date);
             });
+        },
+
+        // Azzera le selezioni quando cambia tipo, campionato o data
+        resetTeams() {
+            this.homeId = '';
+            this.awayId = '';
+            this.teamIds = [];
         },
     }
 }

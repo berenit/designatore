@@ -15,25 +15,25 @@ class DesignationNotificationMail extends Mailable
     use Queueable, SerializesModels;
 
     public string $acceptUrl;
+
     public string $declineUrl;
 
     public function __construct(public Designation $designation)
     {
-        $this->acceptUrl  = URL::signedRoute('designations.respond', [
+        $this->acceptUrl = URL::signedRoute('designations.respond', [
             'designation' => $designation->id,
-            'action'      => 'confirm',
+            'action' => 'confirm',
         ]);
         $this->declineUrl = URL::signedRoute('designations.respond', [
             'designation' => $designation->id,
-            'action'      => 'decline',
+            'action' => 'decline',
         ]);
     }
 
     public function envelope(): Envelope
     {
-        $match = $this->designation->match;
         return new Envelope(
-            subject: "Designazione arbitrale — {$match->homeTeam->name} vs {$match->awayTeam->name}",
+            subject: "Designazione arbitrale — {$this->designation->match->label}",
         );
     }
 

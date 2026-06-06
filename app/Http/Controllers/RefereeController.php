@@ -15,6 +15,7 @@ class RefereeController extends Controller
     public function index()
     {
         $referees = Referee::orderBy('name')->get();
+
         return view('referees.index', compact('referees'));
     }
 

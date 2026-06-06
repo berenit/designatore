@@ -15,7 +15,7 @@
 @else
     <div class="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
         @foreach ($upcomingMatches as $match)
-            @php $designation = $match->designation; @endphp
+            @php $designations = $match->designations; @endphp
             <div class="bg-white rounded-xl border border-gray-200 shadow-sm p-5 flex flex-col gap-3">
                 <div class="flex items-start justify-between gap-2">
                     <div>
@@ -23,18 +23,12 @@
                             {{ $match->competition_type }}
                         </p>
                         <h3 class="font-bold text-gray-900 text-base leading-tight">
-                            {{ $match->homeTeam->name }}
-                            <span class="text-gray-400 font-normal text-sm">vs</span>
-                            {{ $match->awayTeam->name }}
+                            {{ $match->label }}
                         </h3>
                     </div>
-                    @if ($designation)
-                        <span class="flex-shrink-0 inline-flex items-center px-2 py-0.5 rounded-full text-xs font-semibold
-                            @if ($designation->status === 'confirmed') bg-green-100 text-green-800
-                            @elseif ($designation->status === 'pending') bg-yellow-100 text-yellow-800
-                            @else bg-gray-100 text-gray-600
-                            @endif">
-                            {{ ucfirst($designation->status) }}
+                    @if ($designations->isNotEmpty())
+                        <span class="flex-shrink-0 inline-flex items-center px-2 py-0.5 rounded-full text-xs font-semibold bg-green-100 text-green-800">
+                            {{ $designations->count() }} {{ $designations->count() === 1 ? 'arbitro' : 'arbitri' }}
                         </span>
                     @else
                         <span class="flex-shrink-0 inline-flex items-center px-2 py-0.5 rounded-full text-xs font-semibold bg-red-100 text-red-700">
@@ -56,14 +50,15 @@
                         </svg>
                         {{ $match->venue }}
                     </div>
-                    @if ($designation)
+                    @foreach ($designations as $designation)
                         <div class="flex items-center gap-2 pt-1">
                             <svg class="w-4 h-4 text-indigo-400 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"/>
                             </svg>
                             <span class="text-indigo-700 font-medium">{{ $designation->referee->name }}</span>
+                            <span class="text-xs text-gray-400">· {{ $designation->role }}</span>
                         </div>
-                    @endif
+                    @endforeach
                 </div>
             </div>
         @endforeach

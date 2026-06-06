@@ -20,7 +20,7 @@ class DesignationResponseController extends Controller
         if (in_array($designation->status, ['confirmed', 'cancelled', 'completed'])) {
             return view('designations.respond', [
                 'designation' => $designation,
-                'action'      => $action,
+                'action' => $action,
                 'alreadyProcessed' => true,
             ]);
         }
@@ -30,8 +30,8 @@ class DesignationResponseController extends Controller
         ]);
 
         return view('designations.respond', [
-            'designation'      => $designation->fresh(['match.homeTeam', 'match.awayTeam']),
-            'action'           => $action,
+            'designation' => $designation->fresh(['match.homeTeam', 'match.awayTeam', 'match.teams', 'referee']),
+            'action' => $action,
             'alreadyProcessed' => false,
         ]);
     }

@@ -15,7 +15,7 @@
         <div class="px-6 py-5 border-b border-gray-100 flex items-start justify-between">
             <div>
                 <h1 class="text-xl font-bold text-gray-900">
-                    {{ $designation->match->homeTeam->name }} vs {{ $designation->match->awayTeam->name }}
+                    {{ $designation->match->label }}
                 </h1>
                 <p class="text-sm text-gray-500 mt-1">
                     {{ \Carbon\Carbon::parse($designation->match->date_time)->format('d/m/Y H:i') }} — {{ $designation->match->venue }}
@@ -40,6 +40,10 @@
                         {{ $designation->referee->license_level }}
                     </span>
                 </dd>
+            </div>
+            <div class="px-6 py-4 grid grid-cols-3 gap-4">
+                <dt class="text-sm font-medium text-gray-500">Ruolo</dt>
+                <dd class="text-sm text-gray-900 col-span-2">{{ $designation->role }}</dd>
             </div>
             <div class="px-6 py-4 grid grid-cols-3 gap-4">
                 <dt class="text-sm font-medium text-gray-500">Stato partita</dt>

@@ -2,19 +2,25 @@
 
 namespace App\Models;
 
-use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
+use Illuminate\Database\Eloquent\Model;
 
 #[Fillable([
     'match_id',
     'referee_id',
+    'role',
     'assigned_by',
     'assignment_date',
     'status',
-    'notes'
+    'notes',
 ])]
 class Designation extends Model
 {
+    /** Ruoli assegnabili a una designazione. */
+    public const ROLES = [
+        'Arbitro', 'Assistente 1', 'Assistente 2', 'Osservatore', '4° uomo', '5° uomo', 'Tutor',
+    ];
+
     // A designation belongs to a match
     public function match()
     {

@@ -21,16 +21,16 @@ Route::get('/designations/{designation}/respond/{action}', [DesignationResponseC
 Route::middleware('auth')->group(function () {
     Route::get('/dashboard', [DashboardController::class, 'private'])->name('dashboard');
 
-    Route::resource('referees',     RefereeController::class);
-    Route::resource('teams',        TeamController::class);
+    Route::resource('referees', RefereeController::class);
+    Route::resource('teams', TeamController::class);
     Route::resource('rugby-matches', RugbyMatchController::class);
     Route::resource('designations', DesignationController::class);
 
     Route::prefix('reports')->name('reports.')->group(function () {
-        Route::get('/',        [ReportController::class, 'index'])->name('index');
-        Route::get('/pdf',     [ReportController::class, 'pdf'])->name('pdf');
-        Route::get('/markdown',[ReportController::class, 'markdown'])->name('markdown');
-        Route::get('/text',    [ReportController::class, 'text'])->name('text');
+        Route::get('/', [ReportController::class, 'index'])->name('index');
+        Route::get('/pdf', [ReportController::class, 'pdf'])->name('pdf');
+        Route::get('/markdown', [ReportController::class, 'markdown'])->name('markdown');
+        Route::get('/text', [ReportController::class, 'text'])->name('text');
     });
 
     Route::get('/profile', [ProfileController::class, 'edit'])->name('profile.edit');

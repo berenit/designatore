@@ -5,7 +5,6 @@ namespace App\Http\Controllers;
 use App\Models\Team;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Redirect;
-use Illuminate\Validation\Rule;
 
 class TeamController extends Controller
 {
@@ -14,13 +13,13 @@ class TeamController extends Controller
      */
     public function index(Request $request)
     {
-        $sort   = in_array($request->sort, ['name', 'league_division']) ? $request->sort : 'name';
-        $dir    = $request->dir === 'desc' ? 'desc' : 'asc';
+        $sort = in_array($request->sort, ['name', 'league_division']) ? $request->sort : 'name';
+        $dir = $request->dir === 'desc' ? 'desc' : 'asc';
         $league = $request->filter_league;
 
         $leagues = Team::distinct()->orderBy('league_division')->pluck('league_division');
 
-        $teams = Team::when($league, fn($q) => $q->where('league_division', $league))
+        $teams = Team::when($league, fn ($q) => $q->where('league_division', $league))
             ->orderBy($sort, $dir)
             ->get();
 

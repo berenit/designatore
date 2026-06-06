@@ -52,18 +52,18 @@
                     <li class="px-5 py-3 flex items-center justify-between gap-3 hover:bg-gray-50 transition">
                         <div>
                             <p class="text-sm font-medium text-gray-900">
-                                {{ $match->homeTeam->name }} <span class="text-gray-400">vs</span> {{ $match->awayTeam->name }}
+                                {{ $match->label }}
                             </p>
                             <p class="text-xs text-gray-400 mt-0.5">
                                 {{ \Carbon\Carbon::parse($match->date_time)->format('d/m/Y H:i') }} — {{ $match->venue }}
                             </p>
                         </div>
-                        @if ($match->designation)
-                            <span class="flex-shrink-0 text-xs font-medium text-green-700">
-                                {{ $match->designation->referee->name }}
+                        @if ($match->designations->isNotEmpty())
+                            <span class="flex-shrink-0 text-xs font-medium text-green-700 text-right">
+                                {{ $match->designations->count() }} {{ $match->designations->count() === 1 ? 'arbitro' : 'arbitri' }}
                             </span>
                         @else
-                            <a href="{{ route('designations.create') }}?match_id={{ $match->id }}"
+                            <a href="{{ route('designations.create', ['match_id' => $match->id]) }}"
                                class="flex-shrink-0 text-xs text-indigo-600 hover:text-indigo-800 font-medium whitespace-nowrap">
                                 Designa →
                             </a>
@@ -87,9 +87,9 @@
                 @foreach ($recentDesignations as $d)
                     <li class="px-5 py-3 flex items-center justify-between gap-3 hover:bg-gray-50 transition">
                         <div>
-                            <p class="text-sm font-medium text-gray-900">{{ $d->referee->name }}</p>
+                            <p class="text-sm font-medium text-gray-900">{{ $d->referee->name }} <span class="text-xs font-normal text-gray-400">· {{ $d->role }}</span></p>
                             <p class="text-xs text-gray-400 mt-0.5">
-                                {{ $d->match->homeTeam->name }} vs {{ $d->match->awayTeam->name }}
+                                {{ $d->match->label }}
                             </p>
                         </div>
                         <span class="flex-shrink-0 inline-flex items-center px-2 py-0.5 rounded-full text-xs font-semibold

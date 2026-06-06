@@ -76,10 +76,13 @@
 
         tbody tr:last-child td { border-bottom: none; }
 
-        .col-date   { width: 13%; }
-        .col-match  { width: 43%; }
-        .col-ref    { width: 27%; }
-        .col-status { width: 17%; }
+        .col-date   { width: 12%; }
+        .col-match  { width: 38%; }
+        .col-ref    { width: 23%; }
+        .col-role   { width: 14%; }
+        .col-status { width: 13%; }
+
+        .role-name { font-size: 10px; color: #374151; }
 
         .date-day  { font-size: 11px; font-weight: bold; color: #374151; white-space: nowrap; }
         .date-time { font-size: 9.5px; color: #9ca3af; margin-top: 1px; }
@@ -178,6 +181,7 @@
                     <th class="col-date">Data</th>
                     <th class="col-match">Incontro</th>
                     <th class="col-ref">Arbitro</th>
+                    <th class="col-role">Ruolo</th>
                     <th class="col-status">Stato</th>
                 </tr>
             </thead>
@@ -189,12 +193,15 @@
                             <div class="date-time">{{ \Carbon\Carbon::parse($d->match->date_time)->format('H:i') }}</div>
                         </td>
                         <td class="col-match">
-                            <div class="match-name">{{ $d->match->homeTeam->name }} vs {{ $d->match->awayTeam->name }}</div>
+                            <div class="match-name">{{ $d->match->label }}</div>
                             <div class="match-meta">{{ $d->match->venue }} &nbsp;·&nbsp; {{ $d->match->competition_type }}</div>
                         </td>
                         <td class="col-ref">
                             <div class="ref-name">{{ $d->referee->name }}</div>
                             <div class="ref-level">{{ $d->referee->license_level }}</div>
+                        </td>
+                        <td class="col-role">
+                            <div class="role-name">{{ $d->role }}</div>
                         </td>
                         <td class="col-status">
                             <span class="badge badge-{{ $d->status }}">{{ ucfirst($d->status) }}</span>

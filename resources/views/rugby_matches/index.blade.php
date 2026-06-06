@@ -46,9 +46,10 @@
                                 {{ \Carbon\Carbon::parse($match->date_time)->format('d/m/Y H:i') }}
                             </td>
                             <td class="px-6 py-4">
-                                <span class="text-sm font-semibold text-gray-900">{{ $match->homeTeam->name }}</span>
-                                <span class="text-gray-400 text-xs mx-1">vs</span>
-                                <span class="text-sm font-semibold text-gray-900">{{ $match->awayTeam->name }}</span>
+                                <span class="text-sm font-semibold text-gray-900">{{ $match->label }}</span>
+                                @if ($match->isMultiTeam())
+                                    <div class="text-xs text-gray-400 mt-0.5">{{ $match->teams->pluck('name')->join(', ') }}</div>
+                                @endif
                             </td>
                             <td class="px-6 py-4 text-sm text-gray-600">{{ $match->venue }}</td>
                             <td class="px-6 py-4">
@@ -57,6 +58,8 @@
                                     @elseif ($match->competition_type === 'Cup') bg-purple-100 text-purple-800
                                     @elseif ($match->competition_type === 'Friendly') bg-green-100 text-green-800
                                     @elseif ($match->competition_type === 'Tournament') bg-pink-100 text-pink-800
+                                    @elseif ($match->competition_type === 'Concentramento') bg-orange-100 text-orange-800
+                                    @elseif ($match->competition_type === 'Torneo') bg-teal-100 text-teal-800
                                     @else bg-gray-100 text-gray-700
                                     @endif">
                                     {{ $match->competition_type }}

@@ -18,8 +18,9 @@
         </p>
         <div class="mt-4 bg-white rounded-xl border border-gray-200 shadow-sm p-6 text-left">
             <p class="font-bold text-gray-900 text-lg">
-                {{ $designation->match->homeTeam->name }} vs {{ $designation->match->awayTeam->name }}
+                {{ $designation->match->label }}
             </p>
+            <p class="text-indigo-600 text-sm font-medium mt-0.5">{{ $designation->role }}</p>
             <p class="text-gray-500 text-sm mt-1">
                 {{ \Carbon\Carbon::parse($designation->match->date_time)->format('d/m/Y \a\l\l\e H:i') }}
                 — {{ $designation->match->venue }}
@@ -34,8 +35,9 @@
         </p>
         <div class="mt-4 bg-white rounded-xl border border-gray-200 shadow-sm p-6 text-left">
             <p class="font-bold text-gray-900 text-lg">
-                {{ $designation->match->homeTeam->name }} vs {{ $designation->match->awayTeam->name }}
+                {{ $designation->match->label }}
             </p>
+            <p class="text-indigo-600 text-sm font-medium mt-0.5">{{ $designation->role }}</p>
             <p class="text-gray-500 text-sm mt-1">
                 {{ \Carbon\Carbon::parse($designation->match->date_time)->format('d/m/Y \a\l\l\e H:i') }}
                 — {{ $designation->match->venue }}

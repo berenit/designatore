@@ -2,8 +2,8 @@
 
 namespace App\Models;
 
-use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
+use Illuminate\Database\Eloquent\Model;
 
 #[Fillable([
     'name',
@@ -11,7 +11,7 @@ use Illuminate\Database\Eloquent\Attributes\Fillable;
     'league_division',
     'contact_person',
     'contact_email',
-    'contact_phone'
+    'contact_phone',
 ])]
 class Team extends Model
 {

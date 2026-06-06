@@ -24,7 +24,7 @@
                 <option value="">Seleziona una partita...</option>
                 @foreach($matches as $match)
                     <option value="{{ $match->id }}" {{ old('match_id', $preselect) == $match->id ? 'selected' : '' }}>
-                        {{ $match->homeTeam->name }} vs {{ $match->awayTeam->name }}
+                        {{ $match->label }}
                         ({{ \Carbon\Carbon::parse($match->date_time)->format('d/m/Y H:i') }})
                     </option>
                 @endforeach
@@ -44,6 +44,17 @@
                 @endforeach
             </select>
             @error('referee_id')<p class="mt-1 text-xs text-red-600">{{ $message }}</p>@enderror
+        </div>
+
+        <div>
+            <label for="role" class="block text-sm font-medium text-gray-700 mb-1">Ruolo</label>
+            <select id="role" name="role" required
+                    class="w-full rounded-lg border-gray-300 shadow-sm text-sm focus:border-indigo-500 focus:ring-indigo-500 @error('role') border-red-400 @enderror">
+                @foreach($roles as $role)
+                    <option value="{{ $role }}" {{ old('role', 'Arbitro') === $role ? 'selected' : '' }}>{{ $role }}</option>
+                @endforeach
+            </select>
+            @error('role')<p class="mt-1 text-xs text-red-600">{{ $message }}</p>@enderror
         </div>
 
         <div>
