@@ -1,6 +1,6 @@
 # 🏉 Designatore
 
-Applicazione web per la gestione delle designazioni arbitrali nel rugby. Permette al designatore (o a un suo delegato) di programmare le partite, assegnare gli arbitri e notificarli via email con un link per accettare o rifiutare la designazione.
+Applicazione web per la gestione delle designazioni arbitrali nel rugby. Permette al designatore (o a un suo delegato) di programmare partite singole oltre a **Concentramenti** e **Tornei** multi-squadra, assegnare uno o più arbitri con il relativo ruolo e notificarli via email con un link per accettare o rifiutare la designazione.
 
 ---
 
@@ -22,23 +22,26 @@ L'accesso alle funzioni gestionali è riservato a utenti con ruolo **designatore
 - Ordinamento per nome o campionato tramite icone nelle intestazioni della tabella
 - Filtro per campionato
 
-### Gestione partite
+### Gestione partite ed eventi
 - Programmazione con data/ora, campo, squadre e tipo di competizione
 - Default intelligente sulla domenica più prossima (ore 14:30 in ora legale, 15:30 in ora solare)
 - Selezione guidata: prima si sceglie il campionato, poi le squadre di quel campionato
-- Controllo automatico dei conflitti: non è possibile assegnare una squadra a due partite nello stesso giorno
-- Tipi di competizione: Campionato, Coppa, Amichevole, Internazionale, Torneo
+- **Concentramenti e Tornei**: eventi che coinvolgono **3 o più squadre**, identificati da un **nome** descrittivo (es. "Concentramento U14 - Roma"). Il form si adatta automaticamente, mostrando la selezione multipla delle squadre al posto del classico casa/ospite
+- Controllo automatico dei conflitti: una squadra non può essere impegnata in due incontri nello stesso giorno — vale anche per le squadre coinvolte in Concentramenti e Tornei
+- Tipi di competizione: Campionato, Coppa, Amichevole, Internazionale, Torneo (Tournament) e i due tipi multi-squadra **Concentramento** e **Torneo**
 - Stati: Programmata, Rinviata, Annullata, Completata
 
 ### Designazioni
 - Vista settimanale (lunedì–domenica) con navigazione prev/next
-- Mostra **tutte** le partite della settimana, comprese quelle senza arbitro assegnato
-- Le partite senza designazione sono evidenziate con un pulsante "Designa" diretto
+- Mostra **tutte** le partite e gli eventi della settimana, compresi quelli senza arbitro assegnato
+- **Più arbitri per incontro**, ciascuno con un **ruolo**: Arbitro, Assistente 1, Assistente 2, Osservatore, 4° uomo, 5° uomo, Tutor
+- Nelle partite singole ogni ruolo è assegnabile una sola volta; nei Concentramenti e Tornei lo stesso ruolo (es. più "Arbitro") può ripetersi
+- Gli incontri senza designazione sono evidenziati con un pulsante "Designa" diretto
 - Azioni per designazione esistente: Dettaglio, Modifica, Elimina
 
 ### Notifiche email agli arbitri
 Quando una designazione viene creata, l'arbitro riceve automaticamente un'email con:
-- Dettagli della partita (squadre, data, campo, competizione, note)
+- Dettagli dell'incontro (squadre o nome evento, ruolo assegnato, data, campo, competizione, note)
 - **Link per accettare** la designazione → cambia lo stato in *Confermata*
 - **Link per rifiutare** la designazione → cambia lo stato in *Annullata*
 
