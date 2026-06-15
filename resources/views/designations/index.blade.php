@@ -68,10 +68,7 @@
                         <tr class="hover:bg-gray-50 transition {{ $designations->isEmpty() ? 'bg-amber-50/40' : '' }}">
                             <td class="px-6 py-4 whitespace-nowrap align-top">
                                 <div class="text-sm font-medium text-gray-900">
-                                    {{ \Carbon\Carbon::parse($match->date_time)->locale('it')->isoFormat('ddd D/MM') }}
-                                </div>
-                                <div class="text-xs text-gray-900 mt-0.5">
-                                    {{ \Carbon\Carbon::parse($match->date_time)->format('H:i') }}
+                                    {{ \Carbon\Carbon::parse($match->date_time)->format('d/m/Y H:i') }}
                                 </div>
                             </td>
                             <td class="px-6 py-4 align-top">
