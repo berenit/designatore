@@ -8,6 +8,7 @@ use App\Models\Referee;
 use App\Models\RugbyMatch;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Facades\Redirect;
 use Illuminate\Validation\Rule;
@@ -107,17 +108,30 @@ class DesignationController extends Controller
             return Redirect::back()->withInput()->withErrors($errors);
         }
 
-        $designation = Designation::create([
-            ...$validated,
-            'assigned_by' => auth()->id(),
-            'assignment_date' => now(),
-            'status' => 'pending',
-        ]);
+        // Creazione ed email atomiche: se l'invio fallisce, la designazione viene annullata (rollback)
+        try {
+            $designation = DB::transaction(function () use ($validated) {
+                $designation = Designation::create([
+                    ...$validated,
+                    'assigned_by' => auth()->id(),
+                    'assignment_date' => now(),
+                    'status' => 'pending',
+                ]);
 
-        $designation->load(['match.homeTeam', 'match.awayTeam', 'match.teams', 'referee']);
+                $designation->load(['match.homeTeam', 'match.awayTeam', 'match.teams', 'referee']);
 
-        Mail::to($designation->referee->email)
-            ->send(new DesignationNotificationMail($designation));
+                Mail::to($designation->referee->email)
+                    ->send(new DesignationNotificationMail($designation));
+
+                return $designation;
+            });
+        } catch (\Throwable $e) {
+            report($e);
+
+            return Redirect::back()->withInput()->withErrors([
+                'email' => "Impossibile inviare l'email di notifica: la designazione non è stata salvata. Riprova.",
+            ]);
+        }
 
         return Redirect::route('designations.index')
             ->with('success', "Arbitro {$designation->referee->name} designato con successo. Email di notifica inviata.");

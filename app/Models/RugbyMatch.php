@@ -70,8 +70,14 @@ class RugbyMatch extends Model
     public function getLabelAttribute(): string
     {
         if ($this->isMultiTeam()) {
-            return $this->name
-                ?: $this->competition_type.' · '.$this->teams->count().' squadre';
+            if ($this->name) {
+                return $this->name;
+            }
+
+            // Evita di idratare l'intera relazione (e l'N+1) se 'teams' non è già caricata
+            $count = $this->relationLoaded('teams') ? $this->teams->count() : $this->teams()->count();
+
+            return $this->competition_type.' · '.$count.' squadre';
         }
 
         return ($this->homeTeam->name ?? 'N/A').' vs '.($this->awayTeam->name ?? 'N/A');

@@ -99,16 +99,30 @@ class RugbyMatchController extends Controller
     private function checkTeamConflicts(array $teams, string $dateTime, ?int $excludeMatchId = null): ?array
     {
         $date = Carbon::parse($dateTime)->toDateString();
-        $errors = [];
+
+        // Raggruppa i nomi in conflitto per chiave-errore: negli eventi multi-squadra
+        // più squadre condividono il campo 'team_ids' e vanno riportate tutte insieme.
+        $conflicting = [];
 
         foreach ($teams as $team) {
             if ($this->conflictForTeam($team['id'], $date, $excludeMatchId)) {
-                $name = Team::find($team['id'])?->name ?? 'La squadra';
-                $errors[$team['field']] = "{$name} ha già un impegno in questa data.";
+                $conflicting[$team['field']][] = Team::find($team['id'])?->name ?? 'La squadra';
             }
         }
 
-        return $errors ?: null;
+        if (! $conflicting) {
+            return null;
+        }
+
+        $errors = [];
+
+        foreach ($conflicting as $field => $names) {
+            $errors[$field] = count($names) === 1
+                ? "{$names[0]} ha già un impegno in questa data."
+                : implode(', ', $names).' hanno già un impegno in questa data.';
+        }
+
+        return $errors;
     }
 
     /** Costruisce l'elenco di squadre da verificare a partire dai dati validati. */
