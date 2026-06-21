@@ -18,6 +18,10 @@ class RugbyMatch extends Model
 {
     protected $table = 'matches';
 
+    protected $casts = [
+        'date_time' => 'datetime',
+    ];
+
     /** Tutti i tipi di competizione ammessi. */
     public const COMPETITION_TYPES = [
         'League', 'Cup', 'Friendly', 'International', 'Tournament', 'Concentramento', 'Torneo',
