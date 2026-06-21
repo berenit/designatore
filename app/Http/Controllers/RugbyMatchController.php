@@ -38,9 +38,10 @@ class RugbyMatchController extends Controller
         $bookedDates = $this->bookedTeamDates();
         $competitionTypes = RugbyMatch::COMPETITION_TYPES;
         $multiTeamTypes = RugbyMatch::MULTI_TEAM_TYPES;
+        $extraRoleOptions = RugbyMatch::EXTRA_ROLE_OPTIONS;
 
         return view('rugby_matches.create', compact(
-            'teams', 'leagues', 'defaultDate', 'bookedDates', 'competitionTypes', 'multiTeamTypes'
+            'teams', 'leagues', 'defaultDate', 'bookedDates', 'competitionTypes', 'multiTeamTypes', 'extraRoleOptions'
         ));
     }
 
@@ -54,6 +55,8 @@ class RugbyMatchController extends Controller
             'venue' => 'required|string|max:255',
             'competition_type' => ['required', Rule::in(RugbyMatch::COMPETITION_TYPES)],
             'status' => ['required', Rule::in(['scheduled', 'postponed', 'cancelled', 'completed'])],
+            'extra_roles' => 'nullable|array',
+            'extra_roles.*' => [Rule::in(array_keys(RugbyMatch::EXTRA_ROLE_OPTIONS))],
         ];
 
         if ($isMultiTeam) {
@@ -199,6 +202,7 @@ class RugbyMatchController extends Controller
             'name' => $isMultiTeam ? $validated['name'] : null,
             'home_team_id' => $isMultiTeam ? null : $validated['home_team_id'],
             'away_team_id' => $isMultiTeam ? null : $validated['away_team_id'],
+            'required_roles' => RugbyMatch::rolesFromExtraKeys($validated['extra_roles'] ?? []),
         ];
     }
 
@@ -227,6 +231,8 @@ class RugbyMatchController extends Controller
         $bookedDates = $this->bookedTeamDates($rugbyMatch->id);
         $competitionTypes = RugbyMatch::COMPETITION_TYPES;
         $multiTeamTypes = RugbyMatch::MULTI_TEAM_TYPES;
+        $extraRoleOptions = RugbyMatch::EXTRA_ROLE_OPTIONS;
+        $selectedExtraKeys = $rugbyMatch->selectedExtraKeys();
         $selectedTeamIds = $rugbyMatch->teams->pluck('id')->map(fn ($id) => (string) $id)->values();
 
         // Campionato corrente per preselezionare il filtro delle squadre
@@ -235,7 +241,8 @@ class RugbyMatchController extends Controller
             ?? '';
 
         return view('rugby_matches.edit', compact(
-            'match', 'teams', 'leagues', 'bookedDates', 'competitionTypes', 'multiTeamTypes', 'selectedTeamIds', 'currentLeague'
+            'match', 'teams', 'leagues', 'bookedDates', 'competitionTypes', 'multiTeamTypes',
+            'extraRoleOptions', 'selectedExtraKeys', 'selectedTeamIds', 'currentLeague'
         ));
     }
 

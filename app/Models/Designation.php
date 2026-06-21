@@ -18,7 +18,7 @@ class Designation extends Model
 {
     /** Ruoli assegnabili a una designazione. */
     public const ROLES = [
-        'Arbitro', 'Assistente 1', 'Assistente 2', 'Osservatore', '4° uomo', '5° uomo', 'Tutor',
+        'Arbitro', 'Assistente 1', 'Assistente 2', 'Osservatore', '4° uomo', '5° uomo', 'Tutor', 'Direttore di concentramento',
     ];
 
     // A designation belongs to a match

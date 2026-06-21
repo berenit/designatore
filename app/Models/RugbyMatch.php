@@ -13,6 +13,7 @@ use Illuminate\Database\Eloquent\Model;
     'away_team_id',
     'competition_type',
     'status',
+    'required_roles',
 ])]
 class RugbyMatch extends Model
 {
@@ -20,6 +21,7 @@ class RugbyMatch extends Model
 
     protected $casts = [
         'date_time' => 'datetime',
+        'required_roles' => 'array',
     ];
 
     /** Tutti i tipi di competizione ammessi. */
@@ -29,6 +31,58 @@ class RugbyMatch extends Model
 
     /** Tipi che coinvolgono 3+ squadre (gestiti via pivot match_team). */
     public const MULTI_TEAM_TYPES = ['Concentramento', 'Torneo'];
+
+    /**
+     * Figure di gara extra selezionabili via checkbox alla creazione della gara.
+     * Ogni chiave produce uno o più ruoli di designazione (i giudici di linea sono sempre due).
+     */
+    public const EXTRA_ROLE_OPTIONS = [
+        'linesmen' => ['label' => 'Giudici di linea (2)', 'roles' => ['Assistente 1', 'Assistente 2']],
+        'fourth' => ['label' => '4° uomo', 'roles' => ['4° uomo']],
+        'fifth' => ['label' => '5° uomo', 'roles' => ['5° uomo']],
+        'observer' => ['label' => 'Osservatore', 'roles' => ['Osservatore']],
+        'tutor' => ['label' => 'Tutor', 'roles' => ['Tutor']],
+        'director' => ['label' => 'Direttore di concentramento', 'roles' => ['Direttore di concentramento']],
+    ];
+
+    /** Ruolo sempre previsto su ogni gara. */
+    public const DEFAULT_ROLE = 'Arbitro';
+
+    /** Ruoli previsti per questa gara (sempre con l'Arbitro). */
+    public function requiredRoles(): array
+    {
+        return $this->required_roles ?: [self::DEFAULT_ROLE];
+    }
+
+    /** Calcola l'elenco dei ruoli previsti a partire dalle chiavi checkbox selezionate. */
+    public static function rolesFromExtraKeys(array $extraKeys): array
+    {
+        $roles = [self::DEFAULT_ROLE];
+
+        foreach ($extraKeys as $key) {
+            if (isset(self::EXTRA_ROLE_OPTIONS[$key])) {
+                $roles = array_merge($roles, self::EXTRA_ROLE_OPTIONS[$key]['roles']);
+            }
+        }
+
+        return array_values(array_unique($roles));
+    }
+
+    /** Reverse-map: chiavi checkbox attualmente selezionate per questa gara (per il form di modifica). */
+    public function selectedExtraKeys(): array
+    {
+        $current = $this->requiredRoles();
+        $keys = [];
+
+        foreach (self::EXTRA_ROLE_OPTIONS as $key => $option) {
+            // La chiave è selezionata se tutti i suoi ruoli sono presenti tra quelli previsti
+            if (! array_diff($option['roles'], $current)) {
+                $keys[] = $key;
+            }
+        }
+
+        return $keys;
+    }
 
     // A match belongs to a home team
     public function homeTeam()
