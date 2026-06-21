@@ -65,7 +65,7 @@
                                     @elseif ($referee->availability_status === 'limited') bg-yellow-100 text-yellow-800
                                     @else bg-red-100 text-red-800
                                     @endif">
-                                    {{ ucfirst($referee->availability_status) }}
+                                    {{ $referee->availability_label }}
                                 </span>
                             </td>
                             <td class="px-6 py-4 whitespace-nowrap text-right">

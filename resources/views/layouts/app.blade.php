@@ -23,12 +23,10 @@
                     <div class="hidden md:flex items-center gap-1">
                         @php
                             $navLinks = [
-                                ['url' => '/dashboard',    'label' => 'Dashboard', 'match' => 'dashboard'],
-                                ['url' => '/referees',     'label' => 'Arbitri',   'match' => 'referees*'],
-                                ['url' => '/teams',        'label' => 'Squadre',   'match' => 'teams*'],
-                                ['url' => '/rugby-matches','label' => 'Partite',   'match' => 'rugby-matches*'],
+                                ['url' => '/dashboard',    'label' => 'Dashboard',    'match' => 'dashboard'],
+                                ['url' => '/rugby-matches','label' => 'Partite',      'match' => 'rugby-matches*'],
                                 ['url' => '/designations', 'label' => 'Designazioni', 'match' => 'designations*'],
-                                ['url' => '/reports',      'label' => 'Report',        'match' => 'reports*'],
+                                ['url' => '/reports',      'label' => 'Report',       'match' => 'reports*'],
                             ];
                         @endphp
                         @foreach ($navLinks as $link)
@@ -45,6 +43,38 @@
 
                 <div class="flex items-center gap-3">
                     @auth
+                        @php $configActive = request()->is('referees*') || request()->is('teams*'); @endphp
+                        <div x-data="{ open: false }" class="relative hidden md:block">
+                            <button @click="open = !open" @keydown.escape.window="open = false"
+                                    class="inline-flex items-center gap-1 px-3 py-2 rounded-md text-sm font-medium transition
+                                           {{ $configActive ? 'bg-indigo-50 text-indigo-700' : 'text-gray-600 hover:text-gray-900 hover:bg-gray-50' }}">
+                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"/>
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/>
+                                </svg>
+                                Configurazioni
+                                <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
+                                    <path fill-rule="evenodd" d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" clip-rule="evenodd"/>
+                                </svg>
+                            </button>
+                            <div x-show="open" x-transition @click.outside="open = false" x-cloak
+                                 class="absolute right-0 mt-2 w-48 rounded-lg bg-white shadow-lg border border-gray-100 py-1 z-50">
+                                @php
+                                    $configLinks = [
+                                        ['url' => '/referees', 'label' => 'Arbitri', 'match' => 'referees*'],
+                                        ['url' => '/teams',    'label' => 'Squadre', 'match' => 'teams*'],
+                                    ];
+                                @endphp
+                                @foreach ($configLinks as $link)
+                                    @php $active = request()->is(ltrim($link['match'], '/')); @endphp
+                                    <a href="{{ url($link['url']) }}"
+                                       class="block px-4 py-2 text-sm transition
+                                              {{ $active ? 'bg-indigo-50 text-indigo-700 font-medium' : 'text-gray-700 hover:bg-gray-50' }}">
+                                        {{ $link['label'] }}
+                                    </a>
+                                @endforeach
+                            </div>
+                        </div>
                         <span class="hidden md:block text-sm text-gray-500">
                             {{ auth()->user()->name }}
                             @if(auth()->user()->role)

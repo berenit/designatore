@@ -55,9 +55,9 @@
                 <select id="availability_status" name="availability_status" required
                         class="w-full rounded-lg border-gray-300 shadow-sm text-sm focus:border-indigo-500 focus:ring-indigo-500 @error('availability_status') border-red-400 @enderror">
                     <option value="">Seleziona...</option>
-                    <option value="available" {{ old('availability_status') === 'available' ? 'selected' : '' }}>Disponibile</option>
-                    <option value="limited" {{ old('availability_status') === 'limited' ? 'selected' : '' }}>Limitata</option>
-                    <option value="unavailable" {{ old('availability_status') === 'unavailable' ? 'selected' : '' }}>Non disponibile</option>
+                    @foreach (\App\Models\Referee::AVAILABILITY_LABELS as $value => $label)
+                        <option value="{{ $value }}" {{ old('availability_status') === $value ? 'selected' : '' }}>{{ $label }}</option>
+                    @endforeach
                 </select>
                 @error('availability_status')<p class="mt-1 text-xs text-red-600">{{ $message }}</p>@enderror
             </div>
