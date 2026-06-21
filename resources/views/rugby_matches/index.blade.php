@@ -54,10 +54,10 @@
                             <td class="px-6 py-4 text-sm text-gray-600">{{ $match->venue }}</td>
                             <td class="px-6 py-4">
                                 <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold
-                                    @if ($match->competition_type === 'International') bg-blue-100 text-blue-800
-                                    @elseif ($match->competition_type === 'Cup') bg-purple-100 text-purple-800
-                                    @elseif ($match->competition_type === 'Friendly') bg-green-100 text-green-800
-                                    @elseif ($match->competition_type === 'Tournament') bg-pink-100 text-pink-800
+                                    @if ($match->competition_type === 'Internazionale') bg-blue-100 text-blue-800
+                                    @elseif ($match->competition_type === 'Coppa') bg-purple-100 text-purple-800
+                                    @elseif ($match->competition_type === 'Amichevole') bg-green-100 text-green-800
+                                    @elseif ($match->competition_type === 'Campionato') bg-pink-100 text-pink-800
                                     @elseif ($match->competition_type === 'Concentramento') bg-orange-100 text-orange-800
                                     @elseif ($match->competition_type === 'Torneo') bg-teal-100 text-teal-800
                                     @else bg-gray-100 text-gray-700

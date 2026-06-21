@@ -26,7 +26,7 @@ class RugbyMatch extends Model
 
     /** Tutti i tipi di competizione ammessi. */
     public const COMPETITION_TYPES = [
-        'League', 'Cup', 'Friendly', 'International', 'Tournament', 'Concentramento', 'Torneo',
+        'Campionato', 'Coppa', 'Amichevole', 'Internazionale', 'Concentramento', 'Torneo',
     ];
 
     /** Tipi che coinvolgono 3+ squadre (gestiti via pivot match_team). */

@@ -14,6 +14,18 @@ use Illuminate\Database\Eloquent\Model;
 ])]
 class Referee extends Model
 {
+    /**
+     * Categorie arbitrali previste.
+     */
+    public const CATEGORIES = [
+        'Regionale',
+        'Nazionale serie B',
+        'Nazionale serie A',
+        'Nazionale serie A Elite',
+        'Assistente serie A',
+        'Assistente serie A Elite',
+    ];
+
     // A referee can have many designations
     public function designations()
     {

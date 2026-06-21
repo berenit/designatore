@@ -39,11 +39,11 @@
 
         <div class="grid grid-cols-2 gap-4">
             <div>
-                <label for="license_level" class="block text-sm font-medium text-gray-700 mb-1">Livello patente</label>
+                <label for="license_level" class="block text-sm font-medium text-gray-700 mb-1">Categoria</label>
                 <select id="license_level" name="license_level" required
                         class="w-full rounded-lg border-gray-300 shadow-sm text-sm focus:border-indigo-500 focus:ring-indigo-500 @error('license_level') border-red-400 @enderror">
                     <option value="">Seleziona...</option>
-                    @foreach (['Local', 'Regional', 'National', 'International'] as $level)
+                    @foreach (\App\Models\Referee::CATEGORIES as $level)
                         <option value="{{ $level }}" {{ old('license_level', $referee->license_level) === $level ? 'selected' : '' }}>{{ $level }}</option>
                     @endforeach
                 </select>

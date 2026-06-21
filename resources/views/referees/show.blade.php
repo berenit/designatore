@@ -17,9 +17,11 @@
                 <h1 class="text-xl font-bold text-gray-900">{{ $referee->name }}</h1>
                 <div class="flex items-center gap-2 mt-1">
                     <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold
-                        @if ($referee->license_level === 'International') bg-blue-100 text-blue-800
-                        @elseif ($referee->license_level === 'National') bg-purple-100 text-purple-800
-                        @elseif ($referee->license_level === 'Regional') bg-pink-100 text-pink-800
+                        @if ($referee->license_level === 'Nazionale serie A Elite') bg-blue-100 text-blue-800
+                        @elseif ($referee->license_level === 'Nazionale serie A') bg-purple-100 text-purple-800
+                        @elseif ($referee->license_level === 'Nazionale serie B') bg-indigo-100 text-indigo-800
+                        @elseif ($referee->license_level === 'Regionale') bg-pink-100 text-pink-800
+                        @elseif (str_starts_with($referee->license_level, 'Assistente')) bg-amber-100 text-amber-800
                         @else bg-gray-100 text-gray-700
                         @endif">
                         {{ $referee->license_level }}
