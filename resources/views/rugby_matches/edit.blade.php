@@ -151,6 +151,28 @@
             </div>
         </div>
 
+        {{-- Figure di gara previste --}}
+        @php $checkedExtraKeys = old('extra_roles', $selectedExtraKeys); @endphp
+        <div>
+            <label class="block text-sm font-medium text-gray-700 mb-2">Figure di gara previste</label>
+            <div class="rounded-lg border border-gray-200 p-3 space-y-2">
+                <label class="flex items-center gap-2 text-sm text-gray-500">
+                    <input type="checkbox" checked disabled
+                           class="rounded border-gray-300 text-indigo-600">
+                    <span>Arbitro <span class="text-gray-400">(sempre previsto)</span></span>
+                </label>
+                @foreach ($extraRoleOptions as $key => $option)
+                    <label class="flex items-center gap-2 text-sm text-gray-700">
+                        <input type="checkbox" name="extra_roles[]" value="{{ $key }}"
+                               {{ in_array($key, $checkedExtraKeys) ? 'checked' : '' }}
+                               class="rounded border-gray-300 text-indigo-600 focus:ring-indigo-500">
+                        <span>{{ $option['label'] }}</span>
+                    </label>
+                @endforeach
+            </div>
+            <p class="mt-1 text-xs text-gray-400">Determina le righe arbitro da compilare in fase di designazione.</p>
+        </div>
+
         <div class="flex items-center justify-between pt-2">
             <button type="submit"
                     class="inline-flex items-center gap-2 px-5 py-2 bg-indigo-600 text-white text-sm font-medium rounded-lg hover:bg-indigo-700 transition">

@@ -47,15 +47,20 @@ class DesignationController extends Controller
      */
     public function create(Request $request)
     {
-        // Tutte le partite: più arbitri possono essere designati sullo stesso incontro
-        $matches = RugbyMatch::with(['homeTeam', 'awayTeam', 'teams'])
+        // Tutte le partite, con i ruoli previsti e le designazioni già esistenti (per il pre-fill)
+        $matches = RugbyMatch::with(['homeTeam', 'awayTeam', 'teams', 'designations'])
             ->orderBy('date_time')
             ->get();
         $referees = Referee::orderBy('name')->get();
-        $roles = Designation::ROLES;
         $preselect = $request->match_id;
 
-        return view('designations.create', compact('matches', 'referees', 'roles', 'preselect'));
+        // Mappe per Alpine: ruoli previsti e arbitri già assegnati per ciascuna gara
+        $matchRoles = $matches->mapWithKeys(fn ($m) => [$m->id => $m->requiredRoles()]);
+        $matchAssignments = $matches->mapWithKeys(fn ($m) => [
+            $m->id => $m->designations->pluck('referee_id', 'role'),
+        ]);
+
+        return view('designations.create', compact('matches', 'referees', 'preselect', 'matchRoles', 'matchAssignments'));
     }
 
     /** Verifica i vincoli di unicità arbitro/ruolo su una partita. Ritorna gli errori o null. */
@@ -93,48 +98,75 @@ class DesignationController extends Controller
     {
         $validated = $request->validate([
             'match_id' => ['required', 'exists:matches,id'],
-            'referee_id' => ['required', 'exists:referees,id'],
-            'role' => ['required', Rule::in(Designation::ROLES)],
+            'referees' => ['required', 'array'],
+            'referees.*' => ['nullable', 'exists:referees,id'],
             'notes' => 'nullable|string|max:1000',
         ]);
 
-        $errors = $this->checkDesignationConflicts(
-            $validated['match_id'],
-            $validated['referee_id'],
-            $validated['role']
-        );
+        $match = RugbyMatch::findOrFail($validated['match_id']);
 
-        if ($errors) {
-            return Redirect::back()->withInput()->withErrors($errors);
+        // Tieni solo i ruoli previsti dalla gara con un arbitro effettivamente selezionato
+        $assignments = collect($validated['referees'])
+            ->only($match->requiredRoles())
+            ->filter(fn ($refId) => ! empty($refId))
+            ->map(fn ($refId) => (int) $refId);
+
+        // L'Arbitro è sempre obbligatorio
+        if (! $assignments->has(RugbyMatch::DEFAULT_ROLE)) {
+            return Redirect::back()->withInput()->withErrors([
+                'referees' => "È obbligatorio assegnare almeno l'Arbitro.",
+            ]);
         }
 
-        // Creazione ed email atomiche: se l'invio fallisce, la designazione viene annullata (rollback)
+        // Nessun arbitro può ricoprire due ruoli nella stessa gara
+        // (considera anche le designazioni esistenti sui ruoli non toccati da questo invio)
+        $untouched = $match->designations()
+            ->whereNotIn('role', $assignments->keys()->all())
+            ->pluck('referee_id', 'role');
+
+        if ($untouched->merge($assignments)->duplicates()->isNotEmpty()) {
+            return Redirect::back()->withInput()->withErrors([
+                'referees' => 'Lo stesso arbitro non può ricoprire due ruoli nella stessa gara.',
+            ]);
+        }
+
+        // Creazione ed email atomiche: se un invio fallisce, viene annullato tutto (rollback)
         try {
-            $designation = DB::transaction(function () use ($validated) {
-                $designation = Designation::create([
-                    ...$validated,
-                    'assigned_by' => auth()->id(),
-                    'assignment_date' => now(),
-                    'status' => 'pending',
-                ]);
+            $designations = DB::transaction(function () use ($assignments, $match, $validated) {
+                $created = [];
 
-                $designation->load(['match.homeTeam', 'match.awayTeam', 'match.teams', 'referee']);
+                foreach ($assignments as $role => $refereeId) {
+                    $designation = Designation::updateOrCreate(
+                        ['match_id' => $match->id, 'role' => $role],
+                        [
+                            'referee_id' => $refereeId,
+                            'assigned_by' => auth()->id(),
+                            'assignment_date' => now(),
+                            'status' => 'pending',
+                            'notes' => $validated['notes'] ?? null,
+                        ]
+                    );
 
-                Mail::to($designation->referee->email)
-                    ->send(new DesignationNotificationMail($designation));
+                    $designation->load(['match.homeTeam', 'match.awayTeam', 'match.teams', 'referee']);
 
-                return $designation;
+                    Mail::to($designation->referee->email)
+                        ->send(new DesignationNotificationMail($designation));
+
+                    $created[] = $designation;
+                }
+
+                return $created;
             });
         } catch (\Throwable $e) {
             report($e);
 
             return Redirect::back()->withInput()->withErrors([
-                'email' => "Impossibile inviare l'email di notifica: la designazione non è stata salvata. Riprova.",
+                'email' => 'Impossibile inviare le email di notifica: le designazioni non sono state salvate. Riprova.',
             ]);
         }
 
         return Redirect::route('designations.index')
-            ->with('success', "Arbitro {$designation->referee->name} designato con successo. Email di notifica inviata.");
+            ->with('success', count($designations).' designazione/i salvata/e con successo. Email di notifica inviate.');
     }
 
     /**
@@ -154,7 +186,8 @@ class DesignationController extends Controller
     {
         $matches = RugbyMatch::with(['homeTeam', 'awayTeam', 'teams'])->orderBy('date_time')->get();
         $referees = Referee::orderBy('name')->get();
-        $roles = Designation::ROLES;
+        // Ruoli previsti dalla gara, garantendo che quello attuale resti selezionabile
+        $roles = array_values(array_unique([...$designation->match->requiredRoles(), $designation->role]));
 
         return view('designations.edit', compact('designation', 'matches', 'referees', 'roles'));
     }
