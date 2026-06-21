@@ -34,7 +34,7 @@
                         <th class="px-6 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Nome</th>
                         <th class="px-6 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Email</th>
                         <th class="px-6 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Telefono</th>
-                        <th class="px-6 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Livello</th>
+                        <th class="px-6 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Categoria</th>
                         <th class="px-6 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Disponibilità</th>
                         <th class="px-6 py-3 text-right text-xs font-semibold text-gray-500 uppercase tracking-wider">Azioni</th>
                     </tr>
@@ -49,9 +49,11 @@
                             <td class="px-6 py-4 text-sm text-gray-500">{{ $referee->phone ?? '—' }}</td>
                             <td class="px-6 py-4">
                                 <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold
-                                    @if ($referee->license_level === 'International') bg-blue-100 text-blue-800
-                                    @elseif ($referee->license_level === 'National') bg-purple-100 text-purple-800
-                                    @elseif ($referee->license_level === 'Regional') bg-pink-100 text-pink-800
+                                    @if ($referee->license_level === 'Nazionale serie A Elite') bg-blue-100 text-blue-800
+                                    @elseif ($referee->license_level === 'Nazionale serie A') bg-purple-100 text-purple-800
+                                    @elseif ($referee->license_level === 'Nazionale serie B') bg-indigo-100 text-indigo-800
+                                    @elseif ($referee->license_level === 'Regionale') bg-pink-100 text-pink-800
+                                    @elseif (str_starts_with($referee->license_level, 'Assistente')) bg-amber-100 text-amber-800
                                     @else bg-gray-100 text-gray-700
                                     @endif">
                                     {{ $referee->license_level }}

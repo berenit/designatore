@@ -36,7 +36,7 @@ class RefereeController extends Controller
             'name' => 'required|string|max:255',
             'email' => 'required|email|max:255|unique:referees',
             'phone' => 'nullable|string|max:20',
-            'license_level' => ['required', Rule::in(['Local', 'Regional', 'National', 'International'])],
+            'license_level' => ['required', Rule::in(Referee::CATEGORIES)],
             'availability_status' => ['required', Rule::in(['available', 'limited', 'unavailable'])],
         ]);
 
@@ -71,7 +71,7 @@ class RefereeController extends Controller
             'name' => 'required|string|max:255',
             'email' => ['required', 'email', 'max:255', Rule::unique('referees')->ignore($referee->id)],
             'phone' => 'nullable|string|max:20',
-            'license_level' => ['required', Rule::in(['Local', 'Regional', 'National', 'International'])],
+            'license_level' => ['required', Rule::in(Referee::CATEGORIES)],
             'availability_status' => ['required', Rule::in(['available', 'limited', 'unavailable'])],
         ]);
 
