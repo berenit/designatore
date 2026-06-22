@@ -75,21 +75,38 @@
                                 @endforeach
                             </div>
                         </div>
-                        <span class="hidden md:block text-sm text-gray-500">
-                            {{ auth()->user()->name }}
-                            @if(auth()->user()->role)
-                                <span class="inline-flex items-center ml-1 px-2 py-0.5 rounded-full text-xs font-medium bg-indigo-100 text-indigo-700">
-                                    {{ ucfirst(auth()->user()->role) }}
-                                </span>
-                            @endif
-                        </span>
-                        <form method="POST" action="{{ route('logout') }}">
-                            @csrf
-                            <button type="submit"
-                                    class="text-sm text-gray-500 hover:text-gray-700 px-3 py-2 rounded-md hover:bg-gray-50 transition">
-                                Esci
+                        @php $accountActive = request()->is('profile*'); @endphp
+                        <div x-data="{ open: false }" class="relative">
+                            <button @click="open = !open" @keydown.escape.window="open = false"
+                                    class="inline-flex items-center gap-2 px-3 py-2 rounded-md text-sm font-medium transition
+                                           {{ $accountActive ? 'bg-indigo-50 text-indigo-700' : 'text-gray-600 hover:text-gray-900 hover:bg-gray-50' }}">
+                                <span>{{ auth()->user()->name }}</span>
+                                @if(auth()->user()->role)
+                                    <span class="hidden md:inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-indigo-100 text-indigo-700">
+                                        {{ ucfirst(auth()->user()->role) }}
+                                    </span>
+                                @endif
+                                <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
+                                    <path fill-rule="evenodd" d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" clip-rule="evenodd"/>
+                                </svg>
                             </button>
-                        </form>
+                            <div x-show="open" x-transition @click.outside="open = false" x-cloak
+                                 class="absolute right-0 mt-2 w-48 rounded-lg bg-white shadow-lg border border-gray-100 py-1 z-50">
+                                <a href="{{ route('profile.edit') }}"
+                                   class="block px-4 py-2 text-sm transition
+                                          {{ $accountActive ? 'bg-indigo-50 text-indigo-700 font-medium' : 'text-gray-700 hover:bg-gray-50' }}">
+                                    Profilo e password
+                                </a>
+                                <div class="my-1 border-t border-gray-100"></div>
+                                <form method="POST" action="{{ route('logout') }}">
+                                    @csrf
+                                    <button type="submit"
+                                            class="block w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 transition">
+                                        Esci
+                                    </button>
+                                </form>
+                            </div>
+                        </div>
                     @else
                         <a href="{{ route('login') }}"
                            class="text-sm font-medium text-gray-600 hover:text-gray-900 px-3 py-2 rounded-md hover:bg-gray-50 transition">
