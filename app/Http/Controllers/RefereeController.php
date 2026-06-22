@@ -12,11 +12,36 @@ class RefereeController extends Controller
     /**
      * Display a listing of the resource.
      */
-    public function index()
+    public function index(Request $request)
     {
-        $referees = Referee::orderBy('name')->get();
+        $sortable = ['name', 'license_level'];
 
-        return view('referees.index', compact('referees'));
+        $sort = in_array($request->query('sort'), $sortable, true)
+            ? $request->query('sort')
+            : 'name';
+
+        $dir = $request->query('dir') === 'desc' ? 'desc' : 'asc';
+
+        $query = Referee::query();
+
+        if ($sort === 'license_level') {
+            // Ordina per gerarchia di categoria (vedi Referee::CATEGORIES),
+            // non alfabeticamente, così "Elite" non finisce prima di "serie B".
+            $cases = collect(Referee::CATEGORIES)
+                ->map(fn ($category, $i) => 'WHEN ? THEN '.$i)
+                ->implode(' ');
+
+            $query->orderByRaw(
+                "CASE license_level {$cases} ELSE ".count(Referee::CATEGORIES).' END '.$dir,
+                Referee::CATEGORIES
+            );
+        } else {
+            $query->orderBy($sort, $dir);
+        }
+
+        $referees = $query->get();
+
+        return view('referees.index', compact('referees', 'sort', 'dir'));
     }
 
     /**

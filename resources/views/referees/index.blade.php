@@ -30,11 +30,35 @@
         <div class="overflow-x-auto">
             <table class="min-w-full divide-y divide-gray-100">
                 <thead>
+                    @php
+                        $sortIcon = fn($col) => $sort === $col
+                            ? ($dir === 'asc'
+                                ? '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 15l7-7 7 7"/>'
+                                : '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/>')
+                            : '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M7 16V4m0 0L3 8m4-4l4 4M17 8v12m0 0l4-4m-4 4l-4-4"/>';
+                        $nextDir = fn($col) => ($sort === $col && $dir === 'asc') ? 'desc' : 'asc';
+                    @endphp
                     <tr class="bg-gray-50">
-                        <th class="px-6 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Nome</th>
+                        <th class="px-6 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">
+                            <a href="{{ route('referees.index', ['sort' => 'name', 'dir' => $nextDir('name')]) }}"
+                               class="inline-flex items-center gap-1 hover:text-gray-800 transition {{ $sort === 'name' ? 'text-indigo-600' : '' }}">
+                                Nome
+                                <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    {!! $sortIcon('name') !!}
+                                </svg>
+                            </a>
+                        </th>
                         <th class="px-6 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Email</th>
                         <th class="px-6 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Telefono</th>
-                        <th class="px-6 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Categoria</th>
+                        <th class="px-6 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">
+                            <a href="{{ route('referees.index', ['sort' => 'license_level', 'dir' => $nextDir('license_level')]) }}"
+                               class="inline-flex items-center gap-1 hover:text-gray-800 transition {{ $sort === 'license_level' ? 'text-indigo-600' : '' }}">
+                                Categoria
+                                <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    {!! $sortIcon('license_level') !!}
+                                </svg>
+                            </a>
+                        </th>
                         <th class="px-6 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Disponibilità</th>
                         <th class="px-6 py-3 text-right text-xs font-semibold text-gray-500 uppercase tracking-wider">Azioni</th>
                     </tr>
