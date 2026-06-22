@@ -5,46 +5,48 @@ namespace Database\Seeders;
 use App\Models\Referee;
 use Illuminate\Database\Console\Seeds\WithoutModelEvents;
 use Illuminate\Database\Seeder;
+use Illuminate\Support\Str;
 
 class RefereeSeeder extends Seeder
 {
     use WithoutModelEvents;
 
     /**
-     * Run the database seeds.
+     * Arbitri di rugby dell'Abruzzo con la rispettiva categoria.
+     *
+     * Nomi e categorie sono ricavati dall'Organigramma Arbitrale ufficiale
+     * della Commissione Nazionale Arbitri FIR, stagione 2025/2026
+     * (https://federugby.it/wp-content/uploads/Organigramma-CNA-2025-2026_DEF.pdf),
+     * selezionando gli ufficiali di gara con sezione/città abruzzese.
+     *
+     * Le categorie sono mappate sui valori previsti da Referee::CATEGORIES.
+     * Le email e i telefoni NON sono dati pubblici: sono segnaposto generati
+     * dal nome (le email servono solo a soddisfare il vincolo di unicità).
      */
     public function run(): void
     {
-        Referee::create([
-            'name' => 'John Smith',
-            'email' => 'john.smith@rugbyref.com',
-            'phone' => '+1234567890',
-            'license_level' => 'Nazionale serie A Elite',
-            'availability_status' => 'available',
-        ]);
+        // [ nome, città, categoria, ruolo/nota dalla fonte ]
+        $referees = [
+            ['Daniele Pompa', 'Chieti', 'Nazionale serie A Elite', 'Arbitro Serie A Elite'],
+            ['Luca Giurina', 'L\'Aquila', 'Assistente serie A Elite', 'Assistente Serie A Elite'],
+            ['Gianluca Capone', 'Pescara', 'Assistente serie A', 'Assistente Serie A'],
+            ['Danilo Antonio Paolini', 'Pescara', 'Assistente serie A', 'Assistente Serie A'],
+            ['Fabio Paolucci', 'L\'Aquila', 'Nazionale serie B', 'Arbitro Nazionale Serie B'],
+            ['Riccardo Persio', 'L\'Aquila', 'Nazionale serie B', 'Arbitro Nazionale Serie B'],
+            ['Richard Spagnoli', 'L\'Aquila', 'Nazionale serie B', 'Arbitro Nazionale Serie B'],
+            ['Alessio Silvano Colamarino', 'Sulmona', 'Regionale', 'Capo Sezione Sulmona'],
+        ];
 
-        Referee::create([
-            'name' => 'Maria Garcia',
-            'email' => 'maria.garcia@rugbyref.com',
-            'phone' => '+0987654321',
-            'license_level' => 'Nazionale serie A',
-            'availability_status' => 'available',
-        ]);
+        foreach ($referees as [$name, $city, $category, $role]) {
+            $slug = Str::slug($name, '.');
 
-        Referee::create([
-            'name' => 'David Wilson',
-            'email' => 'david.wilson@rugbyref.com',
-            'phone' => '+1122334455',
-            'license_level' => 'Nazionale serie B',
-            'availability_status' => 'limited',
-        ]);
-
-        Referee::create([
-            'name' => 'Sarah Johnson',
-            'email' => 'sarah.johnson@rugbyref.com',
-            'phone' => '+5566778899',
-            'license_level' => 'Assistente serie A',
-            'availability_status' => 'available',
-        ]);
+            Referee::create([
+                'name' => $name,
+                'email' => $slug.'@arbitri-abruzzo.example',
+                'phone' => null,
+                'license_level' => $category,
+                'availability_status' => 'available',
+            ]);
+        }
     }
 }
