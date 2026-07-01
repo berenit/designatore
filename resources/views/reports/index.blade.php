@@ -8,7 +8,9 @@
     </div>
 </div>
 
-<div class="max-w-2xl space-y-6">
+<div class="grid grid-cols-1 lg:grid-cols-2 gap-6 items-start">
+
+  <div class="space-y-6">
 
     {{-- Filtri --}}
     <div class="bg-white rounded-xl border border-gray-200 shadow-sm p-6">
@@ -95,8 +97,10 @@
         </div>
     </div>
 
+  </div>
+
     {{-- Anteprima designazioni --}}
-    <div class="bg-white rounded-xl border border-gray-200 shadow-sm overflow-hidden">
+    <div class="bg-white rounded-xl border border-gray-200 shadow-sm overflow-hidden lg:sticky lg:top-6">
         <div class="px-5 py-4 border-b border-gray-100 flex items-center justify-between">
             <h2 class="font-semibold text-gray-900 text-sm">Anteprima ({{ $designations->count() }} risultati)</h2>
         </div>
