@@ -114,6 +114,22 @@ class RugbyMatch extends Model
         return $this->hasMany(Designation::class, 'match_id');
     }
 
+    /** Vero se ogni ruolo previsto ha una designazione attiva (non rifiutata/cancellata). */
+    public function isFullyDesignated(): bool
+    {
+        $activeRoles = $this->designations
+            ->where('status', '!=', 'cancelled')
+            ->pluck('role');
+
+        return collect($this->requiredRoles())->diff($activeRoles)->isEmpty();
+    }
+
+    /** Vero se esiste almeno una partita non ancora completamente designata. */
+    public static function hasMatchesNeedingDesignation(): bool
+    {
+        return static::with('designations')->get()->contains(fn ($m) => ! $m->isFullyDesignated());
+    }
+
     /** Vero se l'evento coinvolge più squadre (Concentramento / Torneo). */
     public function isMultiTeam(): bool
     {

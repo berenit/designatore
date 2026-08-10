@@ -8,13 +8,23 @@
             {{ $weekStart->locale('it')->isoFormat('D MMMM') }} – {{ $weekEnd->locale('it')->isoFormat('D MMMM YYYY') }}
         </p>
     </div>
-    <a href="{{ route('designations.create') }}"
-       class="inline-flex items-center gap-2 px-4 py-2 bg-indigo-600 text-white text-sm font-medium rounded-lg hover:bg-indigo-700 transition shadow-sm">
-        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/>
-        </svg>
-        Nuova Designazione
-    </a>
+    @if ($hasMatchesToDesignate)
+        <a href="{{ route('designations.create') }}"
+           class="inline-flex items-center gap-2 px-4 py-2 bg-indigo-600 text-white text-sm font-medium rounded-lg hover:bg-indigo-700 transition shadow-sm">
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/>
+            </svg>
+            Nuova Designazione
+        </a>
+    @else
+        <span title="Tutte le partite sono già completamente designate"
+              class="inline-flex items-center gap-2 px-4 py-2 bg-gray-300 text-gray-500 text-sm font-medium rounded-lg shadow-sm cursor-not-allowed">
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/>
+            </svg>
+            Nuova Designazione
+        </span>
+    @endif
 </div>
 
 {{-- Navigazione settimana --}}

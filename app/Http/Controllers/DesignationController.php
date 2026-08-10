@@ -39,7 +39,9 @@ class DesignationController extends Controller
         $prevWeek = $weekStart->copy()->subWeek()->format('Y-m-d');
         $nextWeek = $weekStart->copy()->addWeek()->format('Y-m-d');
 
-        return view('designations.index', compact('matches', 'weekStart', 'weekEnd', 'prevWeek', 'nextWeek'));
+        $hasMatchesToDesignate = RugbyMatch::hasMatchesNeedingDesignation();
+
+        return view('designations.index', compact('matches', 'weekStart', 'weekEnd', 'prevWeek', 'nextWeek', 'hasMatchesToDesignate'));
     }
 
     /**
@@ -47,10 +49,12 @@ class DesignationController extends Controller
      */
     public function create(Request $request)
     {
-        // Tutte le partite, con i ruoli previsti e le designazioni già esistenti (per il pre-fill)
+        // Tutte le partite non ancora completamente designate, con i ruoli previsti
+        // e le designazioni già esistenti (per il pre-fill)
         $matches = RugbyMatch::with(['homeTeam', 'awayTeam', 'teams', 'designations'])
             ->orderBy('date_time')
-            ->get();
+            ->get()
+            ->reject->isFullyDesignated();
         $referees = Referee::orderBy('name')->get();
         $preselect = $request->match_id;
 

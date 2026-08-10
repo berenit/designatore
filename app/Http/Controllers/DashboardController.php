@@ -30,6 +30,10 @@ class DashboardController extends Controller
             'upcoming_matches' => RugbyMatch::where('status', 'scheduled')->where('date_time', '>=', now())->count(),
             'pending_designations' => Designation::where('status', 'pending')->count(),
             'confirmed_designations' => Designation::where('status', 'confirmed')->count(),
+            'matches_without_designation' => RugbyMatch::where('status', 'scheduled')
+                ->where('date_time', '>=', now())
+                ->whereDoesntHave('designations')
+                ->count(),
         ];
 
         $recentDesignations = Designation::with(['match.homeTeam', 'match.awayTeam', 'match.teams', 'match.venue', 'referee'])
@@ -44,6 +48,8 @@ class DashboardController extends Controller
             ->limit(5)
             ->get();
 
-        return view('dashboard.private', compact('stats', 'recentDesignations', 'upcomingMatches'));
+        $hasMatchesToDesignate = RugbyMatch::hasMatchesNeedingDesignation();
+
+        return view('dashboard.private', compact('stats', 'recentDesignations', 'upcomingMatches', 'hasMatchesToDesignate'));
     }
 }

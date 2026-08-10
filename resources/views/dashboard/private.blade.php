@@ -27,14 +27,36 @@
         </div>
     @endforeach
 
-    <a href="{{ route('designations.create') }}"
-       class="bg-indigo-600 rounded-xl shadow-sm p-5 flex items-center gap-4 hover:bg-indigo-700 transition group">
-        <div class="text-3xl">➕</div>
+    @php $missing = $stats['matches_without_designation']; @endphp
+    <a href="{{ route('rugby-matches.index') }}"
+       class="rounded-xl shadow-sm p-5 flex items-center gap-4 transition
+           {{ $missing > 0 ? 'bg-red-50 border border-red-200 hover:bg-red-100' : 'bg-white border border-gray-200 hover:bg-gray-50' }}">
+        <div class="text-3xl">{{ $missing > 0 ? '🚨' : '✅' }}</div>
         <div>
-            <p class="text-base font-bold text-white">Nuova designazione</p>
-            <p class="text-sm text-indigo-200">Assegna un arbitro</p>
+            <p class="text-2xl font-bold {{ $missing > 0 ? 'text-red-700' : 'text-gray-900' }}">{{ $missing }}</p>
+            <p class="text-sm {{ $missing > 0 ? 'text-red-600' : 'text-gray-500' }}">Partite senza designazione</p>
         </div>
     </a>
+
+    @if ($hasMatchesToDesignate)
+        <a href="{{ route('designations.create') }}"
+           class="bg-indigo-600 rounded-xl shadow-sm p-5 flex items-center gap-4 hover:bg-indigo-700 transition group">
+            <div class="text-3xl">➕</div>
+            <div>
+                <p class="text-base font-bold text-white">Nuova designazione</p>
+                <p class="text-sm text-indigo-200">Assegna un arbitro</p>
+            </div>
+        </a>
+    @else
+        <span title="Tutte le partite sono già completamente designate"
+              class="bg-gray-200 rounded-xl shadow-sm p-5 flex items-center gap-4 cursor-not-allowed">
+            <div class="text-3xl opacity-50">➕</div>
+            <div>
+                <p class="text-base font-bold text-gray-500">Nuova designazione</p>
+                <p class="text-sm text-gray-400">Nessuna partita da designare</p>
+            </div>
+        </span>
+    @endif
 </div>
 
 <div class="grid lg:grid-cols-2 gap-6">
