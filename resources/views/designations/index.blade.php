@@ -73,7 +73,7 @@
                             </td>
                             <td class="px-6 py-4 align-top">
                                 <div class="text-sm font-semibold text-gray-900">{{ $match->label }}</div>
-                                <div class="text-xs text-gray-400 mt-0.5">{{ $match->venue }} · {{ $match->competition_type }}</div>
+                                <div class="text-xs text-gray-400 mt-0.5">{{ $match->venue_label }} · {{ $match->competition_type }}</div>
                             </td>
                             <td class="px-6 py-4 align-top">
                                 <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold

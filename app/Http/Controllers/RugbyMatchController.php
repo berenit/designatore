@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\RugbyMatch;
 use App\Models\Team;
+use App\Models\Venue;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -17,7 +18,7 @@ class RugbyMatchController extends Controller
      */
     public function index()
     {
-        $matches = RugbyMatch::with(['homeTeam', 'awayTeam', 'teams'])->orderBy('date_time')->get();
+        $matches = RugbyMatch::with(['homeTeam', 'awayTeam', 'teams', 'venue'])->orderBy('date_time')->get();
 
         return view('rugby_matches.index', compact('matches'));
     }
@@ -29,6 +30,7 @@ class RugbyMatchController extends Controller
     {
         $teams = Team::orderBy('name')->get();
         $leagues = $teams->pluck('league_division')->unique()->sort()->values();
+        $venues = Venue::orderBy('name')->get();
 
         $nextSunday = now()->next(Carbon::SUNDAY);
         $kickoffHour = $nextSunday->isDST() ? 14 : 15;
@@ -41,7 +43,7 @@ class RugbyMatchController extends Controller
         $extraRoleOptions = RugbyMatch::EXTRA_ROLE_OPTIONS;
 
         return view('rugby_matches.create', compact(
-            'teams', 'leagues', 'defaultDate', 'bookedDates', 'competitionTypes', 'multiTeamTypes', 'extraRoleOptions'
+            'teams', 'leagues', 'venues', 'defaultDate', 'bookedDates', 'competitionTypes', 'multiTeamTypes', 'extraRoleOptions'
         ));
     }
 
@@ -52,7 +54,7 @@ class RugbyMatchController extends Controller
 
         $rules = [
             'date_time' => 'required|date',
-            'venue' => 'required|string|max:255',
+            'venue_id' => 'required|exists:venues,id',
             'competition_type' => ['required', Rule::in(RugbyMatch::COMPETITION_TYPES)],
             'status' => ['required', Rule::in(['scheduled', 'postponed', 'cancelled', 'completed'])],
             'extra_roles' => 'nullable|array',
@@ -196,7 +198,7 @@ class RugbyMatchController extends Controller
 
         return [
             'date_time' => $validated['date_time'],
-            'venue' => $validated['venue'],
+            'venue_id' => $validated['venue_id'],
             'competition_type' => $validated['competition_type'],
             'status' => $validated['status'],
             'name' => $isMultiTeam ? $validated['name'] : null,
@@ -211,7 +213,7 @@ class RugbyMatchController extends Controller
      */
     public function show(RugbyMatch $rugbyMatch)
     {
-        $rugbyMatch->load(['homeTeam', 'awayTeam', 'teams', 'designations.referee']);
+        $rugbyMatch->load(['homeTeam', 'awayTeam', 'teams', 'venue', 'designations.referee']);
         $match = $rugbyMatch;
 
         return view('rugby_matches.show', compact('match'));
@@ -224,8 +226,9 @@ class RugbyMatchController extends Controller
     {
         $teams = Team::orderBy('name')->get();
         $leagues = $teams->pluck('league_division')->unique()->sort()->values();
+        $venues = Venue::orderBy('name')->get();
 
-        $rugbyMatch->load(['homeTeam', 'teams']);
+        $rugbyMatch->load(['homeTeam', 'teams', 'venue']);
         $match = $rugbyMatch;
 
         $bookedDates = $this->bookedTeamDates($rugbyMatch->id);
@@ -241,7 +244,7 @@ class RugbyMatchController extends Controller
             ?? '';
 
         return view('rugby_matches.edit', compact(
-            'match', 'teams', 'leagues', 'bookedDates', 'competitionTypes', 'multiTeamTypes',
+            'match', 'teams', 'leagues', 'venues', 'bookedDates', 'competitionTypes', 'multiTeamTypes',
             'extraRoleOptions', 'selectedExtraKeys', 'selectedTeamIds', 'currentLeague'
         ));
     }

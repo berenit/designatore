@@ -7,7 +7,7 @@ use Illuminate\Database\Eloquent\Model;
 
 #[Fillable([
     'date_time',
-    'venue',
+    'venue_id',
     'name',
     'home_team_id',
     'away_team_id',
@@ -84,6 +84,12 @@ class RugbyMatch extends Model
         return $keys;
     }
 
+    // A match is played at a venue
+    public function venue()
+    {
+        return $this->belongsTo(Venue::class, 'venue_id');
+    }
+
     // A match belongs to a home team
     public function homeTeam()
     {
@@ -139,5 +145,11 @@ class RugbyMatch extends Model
         }
 
         return ($this->homeTeam->name ?? 'N/A').' vs '.($this->awayTeam->name ?? 'N/A');
+    }
+
+    /** Etichetta leggibile del campo di gioco per liste, report ed email. */
+    public function getVenueLabelAttribute(): string
+    {
+        return $this->venue->label ?? '—';
     }
 }

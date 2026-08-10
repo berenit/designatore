@@ -18,7 +18,7 @@
                     {{ $designation->match->label }}
                 </h1>
                 <p class="text-sm text-gray-500 mt-1">
-                    {{ \Carbon\Carbon::parse($designation->match->date_time)->format('d/m/Y H:i') }} — {{ $designation->match->venue }}
+                    {{ \Carbon\Carbon::parse($designation->match->date_time)->format('d/m/Y H:i') }} — {{ $designation->match->venue_label }}
                 </p>
             </div>
             <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold

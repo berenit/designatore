@@ -23,7 +23,7 @@
             <p class="text-indigo-600 text-sm font-medium mt-0.5">{{ $designation->role }}</p>
             <p class="text-gray-500 text-sm mt-1">
                 {{ \Carbon\Carbon::parse($designation->match->date_time)->format('d/m/Y \a\l\l\e H:i') }}
-                — {{ $designation->match->venue }}
+                — {{ $designation->match->venue_label }}
             </p>
         </div>
         <p class="text-gray-400 text-sm mt-6">Il designatore è stato informato della tua conferma.</p>
@@ -40,7 +40,7 @@
             <p class="text-indigo-600 text-sm font-medium mt-0.5">{{ $designation->role }}</p>
             <p class="text-gray-500 text-sm mt-1">
                 {{ \Carbon\Carbon::parse($designation->match->date_time)->format('d/m/Y \a\l\l\e H:i') }}
-                — {{ $designation->match->venue }}
+                — {{ $designation->match->venue_label }}
             </p>
         </div>
         <p class="text-gray-400 text-sm mt-6">Il designatore è stato informato del rifiuto e provvederà a una nuova assegnazione.</p>

@@ -51,7 +51,7 @@
                                     <div class="text-xs text-gray-400 mt-0.5">{{ $match->teams->pluck('name')->join(', ') }}</div>
                                 @endif
                             </td>
-                            <td class="px-6 py-4 text-sm text-gray-600">{{ $match->venue }}</td>
+                            <td class="px-6 py-4 text-sm text-gray-600">{{ $match->venue_label }}</td>
                             <td class="px-6 py-4">
                                 <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold
                                     @if ($match->competition_type === 'Internazionale') bg-blue-100 text-blue-800

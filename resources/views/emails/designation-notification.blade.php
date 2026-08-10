@@ -11,7 +11,7 @@ sei stato designato per il seguente incontro di rugby:
 | **Incontro** | {{ $designation->match->label }} |
 | **Ruolo** | {{ $designation->role }} |
 | **Data e ora** | {{ \Carbon\Carbon::parse($designation->match->date_time)->format('d/m/Y \a\l\l\e H:i') }} |
-| **Campo** | {{ $designation->match->venue }} |
+| **Campo** | {{ $designation->match->venue_label }} |
 | **Competizione** | {{ $designation->match->competition_type }} |
 @if($designation->notes)
 | **Note** | {{ $designation->notes }} |

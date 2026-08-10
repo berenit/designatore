@@ -11,7 +11,7 @@ class ReportController extends Controller
 {
     private function getDesignations(Request $request)
     {
-        return Designation::with(['match.homeTeam', 'match.awayTeam', 'match.teams', 'referee'])
+        return Designation::with(['match.homeTeam', 'match.awayTeam', 'match.teams', 'match.venue', 'referee'])
             ->join('matches', 'matches.id', '=', 'designations.match_id')
             ->when($request->status, fn ($q) => $q->where('designations.status', $request->status))
             ->when($request->date_from, fn ($q) => $q->whereDate('matches.date_time', '>=', $request->date_from))
@@ -91,7 +91,7 @@ class ReportController extends Controller
         foreach ($designations as $d) {
             $date = Carbon::parse($d->match->date_time)->format('d/m/Y H:i');
             $match = $d->match->label;
-            $venue = $d->match->venue;
+            $venue = $d->match->venue_label;
             $ref = $d->referee->name;
             $role = $d->role;
             $status = ucfirst($d->status);
@@ -140,7 +140,7 @@ class ReportController extends Controller
             $lines[] = '';
             $lines[] = "{$emoji} *{$d->match->label}*";
             $lines[] = "   🗓 {$date}";
-            $lines[] = "   📍 {$d->match->venue}";
+            $lines[] = "   📍 {$d->match->venue_label}";
             $lines[] = "   👤 {$d->referee->name} ({$d->referee->license_level}) — {$d->role}";
         }
 

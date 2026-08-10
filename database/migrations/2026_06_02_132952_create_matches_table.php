@@ -14,7 +14,7 @@ return new class extends Migration
         Schema::create('matches', function (Blueprint $table) {
             $table->id();
             $table->dateTime('date_time');
-            $table->string('venue');
+            $table->foreignId('venue_id')->constrained('venues');
             // Nome/titolo descrittivo per Concentramenti e Tornei (es. "Concentramento U14 - Roma").
             $table->string('name')->nullable();
             // Ruoli previsti per la gara; null è interpretato come ["Arbitro"] dal model per retrocompatibilità.

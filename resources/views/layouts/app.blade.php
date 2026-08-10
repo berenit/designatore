@@ -43,7 +43,7 @@
 
                 <div class="flex items-center gap-3">
                     @auth
-                        @php $configActive = request()->is('referees*') || request()->is('teams*'); @endphp
+                        @php $configActive = request()->is('referees*') || request()->is('teams*') || request()->is('venues*'); @endphp
                         <div x-data="{ open: false }" class="relative hidden md:block">
                             <button @click="open = !open" @keydown.escape.window="open = false"
                                     class="inline-flex items-center gap-1 px-3 py-2 rounded-md text-sm font-medium transition
@@ -63,6 +63,7 @@
                                     $configLinks = [
                                         ['url' => '/referees', 'label' => 'Arbitri', 'match' => 'referees*'],
                                         ['url' => '/teams',    'label' => 'Squadre', 'match' => 'teams*'],
+                                        ['url' => '/venues',   'label' => 'Campi da Rugby', 'match' => 'venues*'],
                                     ];
                                 @endphp
                                 @foreach ($configLinks as $link)

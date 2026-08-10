@@ -11,7 +11,7 @@ class DashboardController extends Controller
 {
     public function public()
     {
-        $upcomingMatches = RugbyMatch::with(['homeTeam', 'awayTeam', 'teams', 'designations.referee'])
+        $upcomingMatches = RugbyMatch::with(['homeTeam', 'awayTeam', 'teams', 'venue', 'designations.referee'])
             ->where('status', 'scheduled')
             ->where('date_time', '>=', now())
             ->orderBy('date_time')
@@ -32,12 +32,12 @@ class DashboardController extends Controller
             'confirmed_designations' => Designation::where('status', 'confirmed')->count(),
         ];
 
-        $recentDesignations = Designation::with(['match.homeTeam', 'match.awayTeam', 'match.teams', 'referee'])
+        $recentDesignations = Designation::with(['match.homeTeam', 'match.awayTeam', 'match.teams', 'match.venue', 'referee'])
             ->orderByDesc('created_at')
             ->limit(10)
             ->get();
 
-        $upcomingMatches = RugbyMatch::with(['homeTeam', 'awayTeam', 'teams', 'designations.referee'])
+        $upcomingMatches = RugbyMatch::with(['homeTeam', 'awayTeam', 'teams', 'venue', 'designations.referee'])
             ->where('status', 'scheduled')
             ->where('date_time', '>=', now())
             ->orderBy('date_time')

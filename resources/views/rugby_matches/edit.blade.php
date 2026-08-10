@@ -131,10 +131,17 @@
             </div>
 
             <div>
-                <label for="venue" class="block text-sm font-medium text-gray-700 mb-1">Campo</label>
-                <input id="venue" type="text" name="venue" value="{{ old('venue', $match->venue) }}" required
-                       class="w-full rounded-lg border-gray-300 shadow-sm text-sm focus:border-indigo-500 focus:ring-indigo-500 @error('venue') border-red-400 @enderror">
-                @error('venue')<p class="mt-1 text-xs text-red-600">{{ $message }}</p>@enderror
+                <label for="venue_id" class="block text-sm font-medium text-gray-700 mb-1">Campo</label>
+                <select id="venue_id" name="venue_id" required
+                        class="w-full rounded-lg border-gray-300 shadow-sm text-sm focus:border-indigo-500 focus:ring-indigo-500 @error('venue_id') border-red-400 @enderror">
+                    <option value="">Seleziona...</option>
+                    @foreach ($venues as $v)
+                        <option value="{{ $v->id }}" {{ (string) old('venue_id', $match->venue_id) === (string) $v->id ? 'selected' : '' }}>
+                            {{ $v->name }} — {{ $v->city }}
+                        </option>
+                    @endforeach
+                </select>
+                @error('venue_id')<p class="mt-1 text-xs text-red-600">{{ $message }}</p>@enderror
             </div>
 
             <div class="col-span-2">

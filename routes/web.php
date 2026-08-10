@@ -8,6 +8,7 @@ use App\Http\Controllers\RefereeController;
 use App\Http\Controllers\ReportController;
 use App\Http\Controllers\RugbyMatchController;
 use App\Http\Controllers\TeamController;
+use App\Http\Controllers\VenueController;
 use Illuminate\Support\Facades\Route;
 
 // Public dashboard — visible to all
@@ -23,6 +24,7 @@ Route::middleware('auth')->group(function () {
 
     Route::resource('referees', RefereeController::class);
     Route::resource('teams', TeamController::class);
+    Route::resource('venues', VenueController::class);
     Route::resource('rugby-matches', RugbyMatchController::class);
     Route::resource('designations', DesignationController::class);
 

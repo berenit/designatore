@@ -30,7 +30,7 @@ class DesignationResponseController extends Controller
         ]);
 
         return view('designations.respond', [
-            'designation' => $designation->fresh(['match.homeTeam', 'match.awayTeam', 'match.teams', 'referee']),
+            'designation' => $designation->fresh(['match.homeTeam', 'match.awayTeam', 'match.teams', 'match.venue', 'referee']),
             'action' => $action,
             'alreadyProcessed' => false,
         ]);

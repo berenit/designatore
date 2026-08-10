@@ -30,7 +30,7 @@ class DesignationController extends Controller
 
         // Tutte le partite della settimana (qualunque stato), con le designazioni se esistono
         // whereDate confronta solo la parte data, più affidabile in SQLite
-        $matches = RugbyMatch::with(['homeTeam', 'awayTeam', 'teams', 'designations.referee'])
+        $matches = RugbyMatch::with(['homeTeam', 'awayTeam', 'teams', 'venue', 'designations.referee'])
             ->whereDate('date_time', '>=', $weekStart->toDateString())
             ->whereDate('date_time', '<=', $weekEnd->toDateString())
             ->orderBy('date_time')
@@ -147,7 +147,7 @@ class DesignationController extends Controller
                         ]
                     );
 
-                    $designation->load(['match.homeTeam', 'match.awayTeam', 'match.teams', 'referee']);
+                    $designation->load(['match.homeTeam', 'match.awayTeam', 'match.teams', 'match.venue', 'referee']);
 
                     Mail::to($designation->referee->email)
                         ->send(new DesignationNotificationMail($designation));
@@ -174,7 +174,7 @@ class DesignationController extends Controller
      */
     public function show(Designation $designation)
     {
-        $designation->load(['match.homeTeam', 'match.awayTeam', 'match.teams', 'referee']);
+        $designation->load(['match.homeTeam', 'match.awayTeam', 'match.teams', 'match.venue', 'referee']);
 
         return view('designations.show', compact('designation'));
     }

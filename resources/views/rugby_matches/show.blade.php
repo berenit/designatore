@@ -19,7 +19,7 @@
                         {{ $match->label }}
                     </h1>
                     <p class="text-sm text-gray-500 mt-1">
-                        {{ \Carbon\Carbon::parse($match->date_time)->format('d/m/Y H:i') }} — {{ $match->venue }}
+                        {{ \Carbon\Carbon::parse($match->date_time)->format('d/m/Y H:i') }} — {{ $match->venue_label }}
                     </p>
                 </div>
                 <div class="flex gap-2">
