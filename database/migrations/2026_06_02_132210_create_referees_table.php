@@ -16,7 +16,14 @@ return new class extends Migration
             $table->string('name');
             $table->string('email')->unique();
             $table->string('phone')->nullable();
-            $table->enum('license_level', ['National', 'Regional', 'International', 'Local'])->default('Local');
+            $table->enum('license_level', [
+                'Regionale',
+                'Nazionale serie B',
+                'Nazionale serie A',
+                'Nazionale serie A Elite',
+                'Assistente serie A',
+                'Assistente serie A Elite',
+            ])->default('Regionale');
             $table->enum('availability_status', ['available', 'unavailable', 'limited'])->default('available');
             $table->timestamps();
         });

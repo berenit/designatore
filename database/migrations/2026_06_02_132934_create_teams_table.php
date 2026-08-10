@@ -16,8 +16,8 @@ return new class extends Migration
             $table->string('name');
             $table->string('city');
             $table->string('league_division');
-            $table->string('contact_person');
-            $table->string('contact_email');
+            $table->string('contact_person')->nullable();
+            $table->string('contact_email')->nullable();
             $table->string('contact_phone')->nullable();
             $table->timestamps();
         });
