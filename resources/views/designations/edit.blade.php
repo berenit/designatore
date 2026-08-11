@@ -38,8 +38,11 @@
                     class="w-full rounded-lg border-gray-300 shadow-sm text-sm focus:border-indigo-500 focus:ring-indigo-500 @error('referee_id') border-red-400 @enderror">
                 <option value="">Seleziona un arbitro...</option>
                 @foreach($referees as $referee)
-                    <option value="{{ $referee->id }}" {{ old('referee_id', $designation->referee_id) == $referee->id ? 'selected' : '' }}>
+                    <option value="{{ $referee->id }}"
+                            @class(['text-red-600 font-medium' => $conflictingRefereeIds->contains($referee->id)])
+                            {{ old('referee_id', $designation->referee_id) == $referee->id ? 'selected' : '' }}>
                         {{ $referee->name }} — {{ $referee->license_level }}
+                        @if ($conflictingRefereeIds->contains($referee->id)) (già impegnato in questa giornata) @endif
                     </option>
                 @endforeach
             </select>

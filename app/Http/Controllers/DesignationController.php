@@ -49,14 +49,18 @@ class DesignationController extends Controller
      */
     public function create(Request $request)
     {
+        $preselect = $request->match_id;
+
         // Tutte le partite non ancora completamente designate, con i ruoli previsti
-        // e le designazioni già esistenti (per il pre-fill)
+        // e le designazioni già esistenti (per il pre-fill). La partita preselezionata
+        // (es. dall'icona "Azioni" di una partita già designata) resta inclusa anche se
+        // già completa, per permettere di sostituire gli arbitri già assegnati.
         $matches = RugbyMatch::with(['homeTeam', 'awayTeam', 'teams', 'designations'])
             ->orderBy('date_time')
             ->get()
-            ->reject->isFullyDesignated();
+            ->filter(fn ($m) => ! $m->isFullyDesignated() || $m->id == $preselect)
+            ->values();
         $referees = Referee::orderBy('name')->get();
-        $preselect = $request->match_id;
 
         // Mappe per Alpine: ruoli previsti, se la gara è multi-squadra e arbitri già assegnati per ciascuna gara
         $matchRoles = $matches->mapWithKeys(fn ($m) => [$m->id => $m->requiredRoles()]);
@@ -69,7 +73,21 @@ class DesignationController extends Controller
             ],
         ]);
 
-        return view('designations.create', compact('matches', 'referees', 'preselect', 'matchRoles', 'matchIsMulti', 'matchAssignments'));
+        // Data di ciascuna gara (per il confronto "stessa giornata" lato client)
+        $matchDates = $matches->mapWithKeys(fn ($m) => [$m->id => $m->date_time->format('Y-m-d')]);
+
+        // Prenotazioni attive per arbitro (data + partita), per evidenziare le sovrapposizioni nella stessa giornata
+        $refereeBookings = DB::table('designations')
+            ->join('matches', 'matches.id', '=', 'designations.match_id')
+            ->where('designations.status', '!=', 'cancelled')
+            ->selectRaw('designations.referee_id, designations.match_id, DATE(matches.date_time) as match_date')
+            ->get()
+            ->groupBy('referee_id')
+            ->map(fn ($rows) => $rows->map(fn ($r) => ['date' => $r->match_date, 'match_id' => $r->match_id])->values());
+
+        return view('designations.create', compact(
+            'matches', 'referees', 'preselect', 'matchRoles', 'matchIsMulti', 'matchAssignments', 'matchDates', 'refereeBookings'
+        ));
     }
 
     /** Verifica i vincoli di unicità arbitro/ruolo su una partita. Ritorna gli errori o null. */
@@ -269,7 +287,18 @@ class DesignationController extends Controller
             ->values()
             ->all();
 
-        return view('designations.edit', compact('designation', 'matches', 'referees', 'roles'));
+        // Arbitri già impegnati nella stessa giornata su un'ALTRA gara, da evidenziare in rosso
+        // (esclude la gara corrente: gli altri ruoli sulla stessa gara non sono un conflitto)
+        $matchDate = $designation->match->date_time->format('Y-m-d');
+        $conflictingRefereeIds = DB::table('designations')
+            ->join('matches', 'matches.id', '=', 'designations.match_id')
+            ->where('designations.status', '!=', 'cancelled')
+            ->where('designations.match_id', '!=', $designation->match_id)
+            ->whereDate('matches.date_time', $matchDate)
+            ->pluck('designations.referee_id')
+            ->unique();
+
+        return view('designations.edit', compact('designation', 'matches', 'referees', 'roles', 'conflictingRefereeIds'));
     }
 
     /**

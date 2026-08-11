@@ -116,10 +116,10 @@
                             </td>
                             <td class="px-6 py-4 whitespace-nowrap text-right align-top">
                                 <a href="{{ route('designations.create', ['match_id' => $match->id]) }}"
-                                   title="{{ $designations->isEmpty() ? 'Designa' : 'Aggiungi' }}"
+                                   title="{{ $designations->isEmpty() ? 'Designa' : 'Modifica designazioni' }}"
                                    class="inline-flex items-center justify-center w-7 h-7 text-indigo-600 hover:text-indigo-800 hover:bg-indigo-50 rounded transition">
                                     <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/>
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z"/>
                                     </svg>
                                 </a>
                             </td>

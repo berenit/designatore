@@ -14,10 +14,6 @@
     <h1 class="text-2xl font-bold text-gray-900 mb-6">Nuova Designazione</h1>
 
     @php
-        $refereesJson = $referees->map(fn ($r) => [
-            'id' => $r->id,
-            'label' => $r->name.' — '.$r->license_level,
-        ])->values()->toJson();
         $oldState = [
             'matchId'   => (string) old('match_id', $preselect),
             'referees'  => (object) old('referees', []),
@@ -31,7 +27,8 @@
               {{ json_encode($matchRoles) }},
               {{ json_encode($matchIsMulti) }},
               {{ json_encode($matchAssignments) }},
-              {{ $refereesJson }},
+              {{ json_encode($matchDates) }},
+              {{ json_encode($refereeBookings) }},
               {{ json_encode($oldState) }}
           )">
         @csrf
@@ -61,9 +58,9 @@
                                 <select class="flex-1 w-full rounded-lg border-gray-300 shadow-sm text-sm focus:border-indigo-500 focus:ring-indigo-500"
                                         name="arbitri[]" x-model="arbitri[index]">
                                     <option value="">— nessuno —</option>
-                                    <template x-for="r in refereeList" :key="r.id">
-                                        <option :value="r.id" x-text="r.label"></option>
-                                    </template>
+                                    @foreach ($referees as $referee)
+                                        <option value="{{ $referee->id }}" :class="conflictClass({{ $referee->id }})">{{ $referee->name }} — {{ $referee->license_level }}</option>
+                                    @endforeach
                                 </select>
                                 <button type="button" @click="removeArbitro(index)"
                                         class="text-gray-400 hover:text-red-500 px-2" title="Rimuovi arbitro">&times;</button>
@@ -86,9 +83,9 @@
                         <select class="col-span-2 w-full rounded-lg border-gray-300 shadow-sm text-sm focus:border-indigo-500 focus:ring-indigo-500"
                                 name="referees[Arbitro]" x-model="referees['Arbitro']">
                             <option value="">— nessuno —</option>
-                            <template x-for="r in refereeList" :key="r.id">
-                                <option :value="r.id" x-text="r.label"></option>
-                            </template>
+                            @foreach ($referees as $referee)
+                                <option value="{{ $referee->id }}" :class="conflictClass({{ $referee->id }})">{{ $referee->name }} — {{ $referee->license_level }}</option>
+                            @endforeach
                         </select>
                     </div>
                 </template>
@@ -98,9 +95,9 @@
                         <select class="col-span-2 w-full rounded-lg border-gray-300 shadow-sm text-sm focus:border-indigo-500 focus:ring-indigo-500"
                                 :name="`referees[${role}]`" x-model="referees[role]">
                             <option value="">— nessuno —</option>
-                            <template x-for="r in refereeList" :key="r.id">
-                                <option :value="r.id" x-text="r.label"></option>
-                            </template>
+                            @foreach ($referees as $referee)
+                                <option value="{{ $referee->id }}" :class="conflictClass({{ $referee->id }})">{{ $referee->name }} — {{ $referee->license_level }}</option>
+                            @endforeach
                         </select>
                     </div>
                 </template>
@@ -127,7 +124,7 @@
 </div>
 
 <script>
-function designationForm(matchRoles, matchIsMulti, matchAssignments, refereeList, old) {
+function designationForm(matchRoles, matchIsMulti, matchAssignments, matchDates, refereeBookings, old) {
     // Etichette più leggibili per alcuni ruoli interni
     const LABELS = {
         'Assistente 1': 'Giudice di linea 1',
@@ -138,7 +135,8 @@ function designationForm(matchRoles, matchIsMulti, matchAssignments, refereeList
         matchRoles,        // { match_id: ['Arbitro', ...] }
         matchIsMulti,      // { match_id: bool }
         matchAssignments,  // { match_id: { roles: { role: referee_id, ... }, arbitri: [referee_id, ...] } }
-        refereeList,       // [{ id, label }]
+        matchDates,        // { match_id: 'YYYY-MM-DD' }
+        refereeBookings,   // { referee_id: [{ date, match_id }, ...] }
         matchId: old.matchId || '',
         referees: {},      // { role: referee_id }, ruolo Arbitro incluso solo per le gare singole
         arbitri: [],       // [referee_id, ...], uno o più arbitri liberi per Concentramenti/Tornei
@@ -171,20 +169,37 @@ function designationForm(matchRoles, matchIsMulti, matchAssignments, refereeList
             return LABELS[role] || role;
         },
 
+        // Vero se l'arbitro ha già una designazione attiva in un'altra gara della stessa giornata
+        hasConflict(refereeId) {
+            const date = this.matchDates[this.matchId];
+            if (! date) return false;
+
+            const bookings = this.refereeBookings[refereeId] || [];
+
+            return bookings.some((b) => b.date === date && String(b.match_id) !== String(this.matchId));
+        },
+
+        conflictClass(refereeId) {
+            return this.hasConflict(refereeId) ? 'text-red-600 font-medium' : '';
+        },
+
         // Al cambio gara, pre-compila con le designazioni eventualmente già presenti
         onMatchChange() {
             const prefill = this.matchAssignments[this.matchId] || { roles: {}, arbitri: [] };
             const next = {};
+
+            if (! this.isMulti) {
+                next['Arbitro'] = prefill.roles['Arbitro'] != null ? String(prefill.roles['Arbitro']) : '';
+            }
             for (const role of this.otherRoles) {
                 next[role] = prefill.roles[role] != null ? String(prefill.roles[role]) : '';
             }
+
             this.referees = next;
 
             if (this.isMulti) {
                 this.arbitri = (prefill.arbitri || []).map(String);
                 if (this.arbitri.length === 0) this.arbitri = [''];
-            } else {
-                this.referees['Arbitro'] = prefill.roles['Arbitro'] != null ? String(prefill.roles['Arbitro']) : '';
             }
         },
 
