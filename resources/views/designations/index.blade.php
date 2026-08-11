@@ -67,7 +67,6 @@
                     <tr class="bg-gray-50">
                         <th class="px-6 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Data & Ora</th>
                         <th class="px-6 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Incontro</th>
-                        <th class="px-6 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Stato partita</th>
                         <th class="px-6 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Arbitri &amp; ruoli</th>
                         <th class="px-6 py-3 text-right text-xs font-semibold text-gray-500 uppercase tracking-wider">Azioni</th>
                     </tr>
@@ -84,15 +83,6 @@
                             <td class="px-6 py-4 align-top">
                                 <div class="text-sm font-semibold text-gray-900">{{ $match->label }}</div>
                                 <div class="text-xs text-gray-400 mt-0.5">{{ $match->venue_label }} · {{ $match->competition_type }}</div>
-                            </td>
-                            <td class="px-6 py-4 align-top">
-                                <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold
-                                    @if ($match->status === 'scheduled') bg-blue-100 text-blue-800
-                                    @elseif ($match->status === 'postponed') bg-yellow-100 text-yellow-800
-                                    @elseif ($match->status === 'cancelled') bg-red-100 text-red-800
-                                    @else bg-green-100 text-green-800 @endif">
-                                    {{ ucfirst($match->status) }}
-                                </span>
                             </td>
                             <td class="px-6 py-4 align-top">
                                 @forelse ($designations as $designation)
@@ -126,11 +116,11 @@
                             </td>
                             <td class="px-6 py-4 whitespace-nowrap text-right align-top">
                                 <a href="{{ route('designations.create', ['match_id' => $match->id]) }}"
-                                   class="inline-flex items-center gap-1 text-xs font-medium text-indigo-600 hover:text-indigo-800">
+                                   title="{{ $designations->isEmpty() ? 'Designa' : 'Aggiungi' }}"
+                                   class="inline-flex items-center justify-center w-7 h-7 text-indigo-600 hover:text-indigo-800 hover:bg-indigo-50 rounded transition">
                                     <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/>
                                     </svg>
-                                    {{ $designations->isEmpty() ? 'Designa' : 'Aggiungi' }}
                                 </a>
                             </td>
                         </tr>
