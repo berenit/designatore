@@ -36,13 +36,14 @@ class RugbyMatch extends Model
      * Figure di gara extra selezionabili via checkbox alla creazione della gara.
      * Ogni chiave produce uno o più ruoli di designazione (i giudici di linea sono sempre due).
      */
+    /** Nell'ordine canonico di visualizzazione/gestione (Arbitro sempre primo, non elencato qui). */
     public const EXTRA_ROLE_OPTIONS = [
         'linesmen' => ['label' => 'Giudici di linea (2)', 'roles' => ['Assistente 1', 'Assistente 2']],
         'fourth' => ['label' => '4° uomo', 'roles' => ['4° uomo']],
         'fifth' => ['label' => '5° uomo', 'roles' => ['5° uomo']],
+        'director' => ['label' => 'Direttore di concentramento', 'roles' => ['Direttore di concentramento']],
         'observer' => ['label' => 'Osservatore', 'roles' => ['Osservatore']],
         'tutor' => ['label' => 'Tutor', 'roles' => ['Tutor']],
-        'director' => ['label' => 'Direttore di concentramento', 'roles' => ['Direttore di concentramento']],
     ];
 
     /** Ruolo sempre previsto su ogni gara. */
@@ -54,18 +55,32 @@ class RugbyMatch extends Model
         return $this->required_roles ?: [self::DEFAULT_ROLE];
     }
 
-    /** Calcola l'elenco dei ruoli previsti a partire dalle chiavi checkbox selezionate. */
+    /** Calcola l'elenco dei ruoli previsti a partire dalle chiavi checkbox selezionate, nell'ordine canonico. */
     public static function rolesFromExtraKeys(array $extraKeys): array
     {
         $roles = [self::DEFAULT_ROLE];
 
-        foreach ($extraKeys as $key) {
-            if (isset(self::EXTRA_ROLE_OPTIONS[$key])) {
-                $roles = array_merge($roles, self::EXTRA_ROLE_OPTIONS[$key]['roles']);
+        foreach (self::EXTRA_ROLE_OPTIONS as $key => $option) {
+            if (in_array($key, $extraKeys, true)) {
+                $roles = array_merge($roles, $option['roles']);
             }
         }
 
         return array_values(array_unique($roles));
+    }
+
+    /** Designazioni della gara ordinate secondo l'ordine canonico dei ruoli. */
+    public function designationsOrdered()
+    {
+        $order = Designation::ROLES;
+
+        return $this->designations
+            ->sortBy(function ($d) use ($order) {
+                $index = array_search($d->role, $order, true);
+
+                return $index === false ? count($order) : $index;
+            })
+            ->values();
     }
 
     /** Reverse-map: chiavi checkbox attualmente selezionate per questa gara (per il form di modifica). */

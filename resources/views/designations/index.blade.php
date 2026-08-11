@@ -74,7 +74,7 @@
                 </thead>
                 <tbody class="divide-y divide-gray-100">
                     @foreach ($matches as $match)
-                        @php $designations = $match->designations; @endphp
+                        @php $designations = $match->designationsOrdered(); @endphp
                         <tr class="hover:bg-gray-50 transition {{ $designations->isEmpty() ? 'bg-amber-50/40' : '' }}">
                             <td class="px-6 py-4 whitespace-nowrap align-top">
                                 <div class="text-sm font-medium text-gray-900">

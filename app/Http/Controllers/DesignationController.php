@@ -258,8 +258,16 @@ class DesignationController extends Controller
     {
         $matches = RugbyMatch::with(['homeTeam', 'awayTeam', 'teams'])->orderBy('date_time')->get();
         $referees = Referee::orderBy('name')->get();
-        // Ruoli previsti dalla gara, garantendo che quello attuale resti selezionabile
-        $roles = array_values(array_unique([...$designation->match->requiredRoles(), $designation->role]));
+        // Ruoli previsti dalla gara, garantendo che quello attuale resti selezionabile, nell'ordine canonico
+        $roles = collect([...$designation->match->requiredRoles(), $designation->role])
+            ->unique()
+            ->sortBy(function ($role) {
+                $index = array_search($role, Designation::ROLES, true);
+
+                return $index === false ? count(Designation::ROLES) : $index;
+            })
+            ->values()
+            ->all();
 
         return view('designations.edit', compact('designation', 'matches', 'referees', 'roles'));
     }

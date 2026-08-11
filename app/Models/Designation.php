@@ -16,9 +16,9 @@ use Illuminate\Database\Eloquent\Model;
 ])]
 class Designation extends Model
 {
-    /** Ruoli assegnabili a una designazione. */
+    /** Ruoli assegnabili a una designazione, nell'ordine canonico di visualizzazione/gestione. */
     public const ROLES = [
-        'Arbitro', 'Assistente 1', 'Assistente 2', 'Osservatore', '4° uomo', '5° uomo', 'Tutor', 'Direttore di concentramento',
+        'Arbitro', 'Assistente 1', 'Assistente 2', '4° uomo', '5° uomo', 'Direttore di concentramento', 'Osservatore', 'Tutor',
     ];
 
     // A designation belongs to a match

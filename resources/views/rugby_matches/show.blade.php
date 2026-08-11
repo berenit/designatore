@@ -59,7 +59,7 @@
             <div class="px-6 py-4 grid grid-cols-3 gap-4">
                 <dt class="text-sm font-medium text-gray-500">Designazioni</dt>
                 <dd class="text-sm col-span-2 space-y-2">
-                    @forelse ($match->designations as $designation)
+                    @forelse ($match->designationsOrdered() as $designation)
                         <div class="flex items-center gap-2 flex-wrap">
                             <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-indigo-100 text-indigo-700">
                                 {{ $designation->role }}
