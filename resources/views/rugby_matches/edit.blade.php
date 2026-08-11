@@ -28,6 +28,7 @@
             'date'    => old('date_time', \Carbon\Carbon::parse($match->date_time)->format('Y-m-d\TH:i')),
             'teamIds' => array_map('strval', old('team_ids', $selectedTeamIds->all())),
             'status'  => old('status', $match->status),
+            'extraRoles' => old('extra_roles', $selectedExtraKeys),
         ];
     @endphp
 
@@ -159,7 +160,6 @@
         </div>
 
         {{-- Figure di gara previste --}}
-        @php $checkedExtraKeys = old('extra_roles', $selectedExtraKeys); @endphp
         <div>
             <label class="block text-sm font-medium text-gray-700 mb-2">Figure di gara previste</label>
             <div class="rounded-lg border border-gray-200 p-3 space-y-2">
@@ -170,10 +170,17 @@
                 </label>
                 @foreach ($extraRoleOptions as $key => $option)
                     <label class="flex items-center gap-2 text-sm text-gray-700">
-                        <input type="checkbox" name="extra_roles[]" value="{{ $key }}"
-                               {{ in_array($key, $checkedExtraKeys) ? 'checked' : '' }}
-                               class="rounded border-gray-300 text-indigo-600 focus:ring-indigo-500">
-                        <span>{{ $option['label'] }}</span>
+                        @if ($key === 'director')
+                            <input type="checkbox" name="extra_roles[]" value="{{ $key }}"
+                                   x-model="directorChecked" :disabled="type === 'Concentramento'"
+                                   class="rounded border-gray-300 text-indigo-600 focus:ring-indigo-500">
+                            <span>{{ $option['label'] }} <span class="text-gray-400 text-xs" x-show="type === 'Concentramento'">— obbligatorio nei Concentramenti</span></span>
+                        @else
+                            <input type="checkbox" name="extra_roles[]" value="{{ $key }}"
+                                   {{ in_array($key, old('extra_roles', $selectedExtraKeys)) ? 'checked' : '' }}
+                                   class="rounded border-gray-300 text-indigo-600 focus:ring-indigo-500">
+                            <span>{{ $option['label'] }}</span>
+                        @endif
                     </label>
                 @endforeach
             </div>
@@ -204,6 +211,14 @@ function matchForm(teams, bookedDates, multiTeamTypes, old) {
         dateTime: old.date || '',
         teamIds:  old.teamIds || [],
         status:   old.status || '',
+        directorChecked: (old.extraRoles || []).includes('director'),
+
+        init() {
+            // Nei Concentramenti il Direttore di concentramento è sempre obbligatorio
+            this.$watch('type', (value) => {
+                if (value === 'Concentramento') this.directorChecked = true;
+            });
+        },
 
         get isMulti() {
             return this.multiTeamTypes.includes(this.type);

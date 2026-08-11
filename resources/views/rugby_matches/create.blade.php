@@ -29,6 +29,7 @@
             'date'    => old('date_time', $defaultDate),
             'teamIds' => array_map('strval', old('team_ids', [])),
             'status'  => old('status', ''),
+            'extraRoles' => old('extra_roles', []),
         ];
     @endphp
 
@@ -171,10 +172,17 @@
                 </label>
                 @foreach ($extraRoleOptions as $key => $option)
                     <label class="flex items-center gap-2 text-sm text-gray-700">
-                        <input type="checkbox" name="extra_roles[]" value="{{ $key }}"
-                               {{ in_array($key, old('extra_roles', [])) ? 'checked' : '' }}
-                               class="rounded border-gray-300 text-indigo-600 focus:ring-indigo-500">
-                        <span>{{ $option['label'] }}</span>
+                        @if ($key === 'director')
+                            <input type="checkbox" name="extra_roles[]" value="{{ $key }}"
+                                   x-model="directorChecked" :disabled="type === 'Concentramento'"
+                                   class="rounded border-gray-300 text-indigo-600 focus:ring-indigo-500">
+                            <span>{{ $option['label'] }} <span class="text-gray-400 text-xs" x-show="type === 'Concentramento'">— obbligatorio nei Concentramenti</span></span>
+                        @else
+                            <input type="checkbox" name="extra_roles[]" value="{{ $key }}"
+                                   {{ in_array($key, old('extra_roles', [])) ? 'checked' : '' }}
+                                   class="rounded border-gray-300 text-indigo-600 focus:ring-indigo-500">
+                            <span>{{ $option['label'] }}</span>
+                        @endif
                     </label>
                 @endforeach
             </div>
@@ -205,6 +213,14 @@ function matchForm(teams, bookedDates, multiTeamTypes, old) {
         dateTime: old.date || '',
         teamIds:  old.teamIds || [],
         status:   old.status || '',
+        directorChecked: (old.extraRoles || []).includes('director'),
+
+        init() {
+            // Nei Concentramenti il Direttore di concentramento è sempre obbligatorio
+            this.$watch('type', (value) => {
+                if (value === 'Concentramento') this.directorChecked = true;
+            });
+        },
 
         // Vero per Concentramento / Torneo
         get isMulti() {

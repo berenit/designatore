@@ -195,6 +195,13 @@ class RugbyMatchController extends Controller
     private function matchAttributes(array $validated): array
     {
         $isMultiTeam = in_array($validated['competition_type'], RugbyMatch::MULTI_TEAM_TYPES, true);
+        $extraRoles = $validated['extra_roles'] ?? [];
+
+        // Nei Concentramenti (non nei Tornei) il Direttore di concentramento è sempre obbligatorio,
+        // indipendentemente dalla checkbox inviata (disabilitata e forzata lato UI).
+        if ($validated['competition_type'] === 'Concentramento' && ! in_array('director', $extraRoles, true)) {
+            $extraRoles[] = 'director';
+        }
 
         return [
             'date_time' => $validated['date_time'],
@@ -204,7 +211,7 @@ class RugbyMatchController extends Controller
             'name' => $isMultiTeam ? $validated['name'] : null,
             'home_team_id' => $isMultiTeam ? null : $validated['home_team_id'],
             'away_team_id' => $isMultiTeam ? null : $validated['away_team_id'],
-            'required_roles' => RugbyMatch::rolesFromExtraKeys($validated['extra_roles'] ?? []),
+            'required_roles' => RugbyMatch::rolesFromExtraKeys($extraRoles),
         ];
     }
 

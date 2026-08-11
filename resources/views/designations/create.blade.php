@@ -21,6 +21,7 @@
         $oldState = [
             'matchId'   => (string) old('match_id', $preselect),
             'referees'  => (object) old('referees', []),
+            'arbitri'   => array_map('strval', old('arbitri', [])),
         ];
     @endphp
 
@@ -28,6 +29,7 @@
           class="bg-white rounded-xl border border-gray-200 shadow-sm p-6 space-y-5"
           x-data="designationForm(
               {{ json_encode($matchRoles) }},
+              {{ json_encode($matchIsMulti) }},
               {{ json_encode($matchAssignments) }},
               {{ $refereesJson }},
               {{ json_encode($oldState) }}
@@ -48,11 +50,49 @@
             @error('match_id')<p class="mt-1 text-xs text-red-600">{{ $message }}</p>@enderror
         </div>
 
-        {{-- Una riga arbitro per ciascun ruolo previsto dalla gara selezionata --}}
         <div x-show="matchId" x-transition>
-            <label class="block text-sm font-medium text-gray-700 mb-2">Arbitri per ruolo</label>
+            {{-- Arbitri: uno o più, liberi (senza ruolo specifico) nei Concentramenti/Tornei --}}
+            <template x-if="isMulti">
+                <div class="mb-4">
+                    <label class="block text-sm font-medium text-gray-700 mb-2">Arbitri</label>
+                    <div class="space-y-2">
+                        <template x-for="(refId, index) in arbitri" :key="index">
+                            <div class="flex items-center gap-2">
+                                <select class="flex-1 w-full rounded-lg border-gray-300 shadow-sm text-sm focus:border-indigo-500 focus:ring-indigo-500"
+                                        name="arbitri[]" x-model="arbitri[index]">
+                                    <option value="">— nessuno —</option>
+                                    <template x-for="r in refereeList" :key="r.id">
+                                        <option :value="r.id" x-text="r.label"></option>
+                                    </template>
+                                </select>
+                                <button type="button" @click="removeArbitro(index)"
+                                        class="text-gray-400 hover:text-red-500 px-2" title="Rimuovi arbitro">&times;</button>
+                            </div>
+                        </template>
+                    </div>
+                    <button type="button" @click="addArbitro()"
+                            class="mt-2 text-sm text-indigo-600 hover:text-indigo-800">+ Aggiungi arbitro</button>
+                    <p class="mt-2 text-xs text-gray-400">Almeno un arbitro è obbligatorio.</p>
+                    @error('arbitri')<p class="mt-1 text-xs text-red-600">{{ $message }}</p>@enderror
+                </div>
+            </template>
+
+            {{-- Una riga arbitro per ciascun ruolo previsto dalla gara selezionata --}}
+            <label class="block text-sm font-medium text-gray-700 mb-2" x-text="isMulti ? 'Altre figure di gara' : 'Arbitri per ruolo'"></label>
             <div class="space-y-3">
-                <template x-for="role in roles" :key="role">
+                <template x-if="!isMulti">
+                    <div class="grid grid-cols-3 gap-3 items-center">
+                        <span class="text-sm text-gray-700">Arbitro</span>
+                        <select class="col-span-2 w-full rounded-lg border-gray-300 shadow-sm text-sm focus:border-indigo-500 focus:ring-indigo-500"
+                                name="referees[Arbitro]" x-model="referees['Arbitro']">
+                            <option value="">— nessuno —</option>
+                            <template x-for="r in refereeList" :key="r.id">
+                                <option :value="r.id" x-text="r.label"></option>
+                            </template>
+                        </select>
+                    </div>
+                </template>
+                <template x-for="role in otherRoles" :key="role">
                     <div class="grid grid-cols-3 gap-3 items-center">
                         <span class="text-sm text-gray-700" x-text="roleLabel(role)"></span>
                         <select class="col-span-2 w-full rounded-lg border-gray-300 shadow-sm text-sm focus:border-indigo-500 focus:ring-indigo-500"
@@ -65,7 +105,7 @@
                     </div>
                 </template>
             </div>
-            <p class="mt-2 text-xs text-gray-400">L'Arbitro è sempre obbligatorio. Lascia "nessuno" per i ruoli che non vuoi designare ora.</p>
+            <p class="mt-2 text-xs text-gray-400" x-text="isMulti ? 'Nei Concentramenti il Direttore di concentramento è obbligatorio.' : 'L\'Arbitro è sempre obbligatorio. Lascia \'nessuno\' per i ruoli che non vuoi designare ora.'"></p>
             @error('referees')<p class="mt-1 text-xs text-red-600">{{ $message }}</p>@enderror
         </div>
 
@@ -87,7 +127,7 @@
 </div>
 
 <script>
-function designationForm(matchRoles, matchAssignments, refereeList, old) {
+function designationForm(matchRoles, matchIsMulti, matchAssignments, refereeList, old) {
     // Etichette più leggibili per alcuni ruoli interni
     const LABELS = {
         'Assistente 1': 'Giudice di linea 1',
@@ -96,21 +136,35 @@ function designationForm(matchRoles, matchAssignments, refereeList, old) {
 
     return {
         matchRoles,        // { match_id: ['Arbitro', ...] }
-        matchAssignments,  // { match_id: { 'Arbitro': referee_id, ... } }
+        matchIsMulti,      // { match_id: bool }
+        matchAssignments,  // { match_id: { roles: { role: referee_id, ... }, arbitri: [referee_id, ...] } }
         refereeList,       // [{ id, label }]
         matchId: old.matchId || '',
-        referees: {},      // { role: referee_id }
+        referees: {},      // { role: referee_id }, ruolo Arbitro incluso solo per le gare singole
+        arbitri: [],       // [referee_id, ...], uno o più arbitri liberi per Concentramenti/Tornei
 
         init() {
             if (this.matchId) {
                 this.onMatchChange();
                 // Ripristina i valori inviati in caso di errore di validazione
                 Object.assign(this.referees, old.referees || {});
+                if (old.arbitri && old.arbitri.length) {
+                    this.arbitri = old.arbitri;
+                }
             }
+        },
+
+        get isMulti() {
+            return !!this.matchIsMulti[this.matchId];
         },
 
         get roles() {
             return this.matchRoles[this.matchId] || [];
+        },
+
+        // Ruoli previsti diversi dall'Arbitro, gestito a parte (singolo o lista libera)
+        get otherRoles() {
+            return this.roles.filter((r) => r !== 'Arbitro');
         },
 
         roleLabel(role) {
@@ -119,12 +173,28 @@ function designationForm(matchRoles, matchAssignments, refereeList, old) {
 
         // Al cambio gara, pre-compila con le designazioni eventualmente già presenti
         onMatchChange() {
-            const prefill = this.matchAssignments[this.matchId] || {};
+            const prefill = this.matchAssignments[this.matchId] || { roles: {}, arbitri: [] };
             const next = {};
-            for (const role of this.roles) {
-                next[role] = prefill[role] != null ? String(prefill[role]) : '';
+            for (const role of this.otherRoles) {
+                next[role] = prefill.roles[role] != null ? String(prefill.roles[role]) : '';
             }
             this.referees = next;
+
+            if (this.isMulti) {
+                this.arbitri = (prefill.arbitri || []).map(String);
+                if (this.arbitri.length === 0) this.arbitri = [''];
+            } else {
+                this.referees['Arbitro'] = prefill.roles['Arbitro'] != null ? String(prefill.roles['Arbitro']) : '';
+            }
+        },
+
+        addArbitro() {
+            this.arbitri.push('');
+        },
+
+        removeArbitro(index) {
+            this.arbitri.splice(index, 1);
+            if (this.arbitri.length === 0) this.arbitri.push('');
         },
     }
 }
