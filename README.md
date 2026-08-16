@@ -219,6 +219,28 @@ MAIL_FROM_ADDRESS=designatore@example.com
 MAIL_FROM_NAME="Designatore Rugby"
 ```
 
+### Invio via Gmail API (OAuth2)
+
+In alternativa a SMTP, l'app supporta un mailer `gmail` che invia le email tramite Gmail API usando `google/apiclient`, con un transport Symfony Mailer custom (`app/Mail/Transport/GmailApiTransport.php`) registrato in `AppServiceProvider`. Utile per usare direttamente una casella Gmail/Workspace senza password per app né relay SMTP.
+
+1. Su [Google Cloud Console](https://console.cloud.google.com/), crea un progetto, abilita la **Gmail API** e crea una credenziale OAuth2 di tipo **App desktop**. Annota `Client ID` e `Client secret`.
+2. Configura `.env`:
+   ```env
+   MAIL_MAILER=gmail
+   GMAIL_CLIENT_ID=...
+   GMAIL_CLIENT_SECRET=...
+   ```
+3. Genera il refresh token (una tantum), accedendo con l'account Google da cui devono partire le email:
+   ```bash
+   php artisan gmail:authorize
+   ```
+   Il comando apre un piccolo server locale, stampa l'URL di autorizzazione da aprire nel browser e, dopo il consenso, mostra il valore da copiare in `.env`:
+   ```env
+   GMAIL_REFRESH_TOKEN=...
+   ```
+
+L'account Google autorizzato deve avere accesso allo scope `gmail.send`; non serve alcuna configurazione SMTP.
+
 ---
 
 ## Struttura delle route principali
