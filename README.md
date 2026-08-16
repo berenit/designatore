@@ -223,20 +223,29 @@ MAIL_FROM_NAME="Designatore Rugby"
 
 In alternativa a SMTP, l'app supporta un mailer `gmail` che invia le email tramite Gmail API usando `google/apiclient`, con un transport Symfony Mailer custom (`app/Mail/Transport/GmailApiTransport.php`) registrato in `AppServiceProvider`. Utile per usare direttamente una casella Gmail/Workspace senza password per app né relay SMTP.
 
-1. Su [Google Cloud Console](https://console.cloud.google.com/), crea un progetto, abilita la **Gmail API** e crea una credenziale OAuth2 di tipo **TV e dispositivi con input limitato** (`TVs and Limited Input devices`) — è l'unico tipo che supporta il Device Flow usato dal comando qui sotto; il tipo "App desktop" viene rifiutato da Google con `invalid_client: Invalid client type`. Annota `Client ID` e `Client secret`.
-2. Configura `.env`:
+> Nota: Google **non** supporta gli scope Gmail (né altri scope sensibili) tramite il Device Authorization Grant ("inserisci questo codice su google.com/device") — quel flusso funziona solo per un set ristretto di API a basso rischio. Per Gmail va usato il classico Authorization Code flow con redirect, gestito dal comando `gmail:authorize` qui sotto tramite un piccolo listener locale su porta fissa.
+
+1. Su [Google Cloud Console](https://console.cloud.google.com/), crea un progetto, abilita la **Gmail API** e crea una credenziale OAuth2 di tipo **App desktop** (`Desktop app`). Annota `Client ID` e `Client secret`.
+2. Nella **schermata consenso OAuth** del progetto:
+   - in **Ambiti** (Scopes), aggiungi lo scope `.../auth/gmail.send` (Gmail API);
+   - se l'app è in stato **Testing**, aggiungi in **Utenti di test** l'indirizzo Gmail da cui vuoi inviare le notifiche (altrimenti Google rifiuta l'autorizzazione).
+3. Configura `.env`:
    ```env
    MAIL_MAILER=gmail
    GMAIL_CLIENT_ID=...
    GMAIL_CLIENT_SECRET=...
    ```
-3. Genera il refresh token (una tantum), accedendo con l'account Google da cui devono partire le email:
+4. Genera il refresh token (una tantum), accedendo con l'account Google autorizzato al passo 2:
    ```bash
    php artisan gmail:authorize
    # oppure, se l'app gira in Docker:
    docker compose exec app php artisan gmail:authorize
    ```
-   Il comando usa il flusso OAuth2 **Device Authorization Grant**: non apre nessun server né richiede un browser sulla stessa macchina, quindi funziona anche su un server remoto senza interfaccia grafica. Mostra un codice da inserire su `google.com/device` da un qualsiasi altro dispositivo (telefono, laptop); dopo aver autorizzato l'app, stampa il valore da copiare in `.env`:
+   Il comando apre un listener sulla porta `8901` (già pubblicata dal servizio `app` in `docker-compose.yml`, configurabile con `GMAIL_AUTH_PORT` in `.env.docker`) e stampa l'URL di autorizzazione. Se lo esegui su un **server remoto senza browser**, apri prima un tunnel SSH dal tuo computer:
+   ```bash
+   ssh -L 8901:localhost:8901 <utente>@<host-remoto>
+   ```
+   poi apri l'URL stampato dal comando nel browser locale: dopo il consenso, il comando riceve il redirect e stampa il valore da copiare in `.env`:
    ```env
    GMAIL_REFRESH_TOKEN=...
    ```

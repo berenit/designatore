@@ -9,6 +9,10 @@ services:
     container_name: laravel_app
     restart: unless-stopped
     working_dir: /var/www/html
+    ports:
+      # Usata solo da "php artisan gmail:authorize" per ricevere il redirect
+      # OAuth2 (vedi README, sezione "Invio via Gmail API").
+      - "${GMAIL_AUTH_PORT:-8901}:8901"
     volumes:
       - ./:/var/www/html
     networks:
