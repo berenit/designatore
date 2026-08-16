@@ -115,6 +115,65 @@ Avvia in parallelo: server Laravel, queue worker e Vite dev server.
 
 ---
 
+## Avvio con Docker
+
+In alternativa all'installazione locale, l'app può essere eseguita interamente tramite Docker Compose (Nginx + PHP-FPM + MySQL + Redis).
+
+### Requisiti
+- Docker e Docker Compose
+
+### Avvio
+
+```bash
+cp .env.docker.example .env.docker
+cp .env.example .env
+```
+
+Nel file `.env` imposta le variabili del database in modo che puntino ai servizi Docker (coerenti con `.env.docker`):
+
+```env
+DB_CONNECTION=mysql
+DB_HOST=mysql
+DB_PORT=3306
+DB_DATABASE=laravel
+DB_USERNAME=laravel
+DB_PASSWORD=secret
+REDIS_HOST=redis
+```
+
+Poi avvia i container:
+
+```bash
+docker compose --env-file .env.docker up -d --build
+```
+
+Al primo avvio, esegui dentro il container `app` i comandi di setup:
+
+```bash
+docker compose exec app php artisan key:generate
+docker compose exec app php artisan migrate --seed
+```
+
+L'applicazione sarà raggiungibile su `http://localhost:8080` (porta configurabile con `APP_PORT` in `.env.docker`).
+
+I servizi avviati sono:
+
+| Servizio | Descrizione |
+|----------|-------------|
+| `app` | PHP-FPM 8.3 (Laravel) |
+| `nginx` | Web server, esposto su `APP_PORT` |
+| `mysql` | Database MySQL 8.4 |
+| `redis` | Cache/queue driver |
+| `queue` | Worker per `php artisan queue:work` |
+
+Per fermare i container:
+
+```bash
+docker compose down
+```
+
+---
+
 ## Credenziali di default
 
 | Campo | Valore |
