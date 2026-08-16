@@ -21,4 +21,11 @@ fi
 
 chown -R laravel:laravel /var/www/html/vendor /var/www/html/public/build
 
+# Il master di php-fpm deve restare root (scrive il proprio error_log su
+# /proc/self/fd/2); i worker vengono eseguiti come laravel via www.conf.
+# Per qualsiasi altro comando (es. queue:work) passiamo invece a laravel.
+if [ "$1" = "php-fpm" ]; then
+    exec docker-php-entrypoint "$@"
+fi
+
 exec su-exec laravel docker-php-entrypoint "$@"

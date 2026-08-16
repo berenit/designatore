@@ -58,9 +58,11 @@ COPY --from=composer:2 /usr/bin/composer /usr/bin/composer
 RUN addgroup -g ${GID} laravel \
     && adduser -G laravel -u ${UID} -D laravel
 
-# Configurazioni PHP e OPcache
+# Configurazioni PHP, OPcache e pool FPM (worker eseguiti come laravel,
+# master resta root: necessario per scrivere il log su /proc/self/fd/2)
 COPY docker/php/php.ini /usr/local/etc/php/conf.d/laravel.ini
 COPY docker/php/opcache.ini /usr/local/etc/php/conf.d/opcache.ini
+COPY docker/php/www.conf /usr/local/etc/php-fpm.d/www.conf
 
 # L'app viene costruita in /opt/app-build (fuori dal path del bind mount
 # ./:/var/www/html) cosi' vendor/ e public/build/ generati qui sopravvivono
@@ -78,7 +80,8 @@ COPY docker/php/entrypoint.sh /usr/local/bin/entrypoint.sh
 RUN chmod +x /usr/local/bin/entrypoint.sh
 
 # Il container parte come root: l'entrypoint sistema i permessi sul bind
-# mount e poi passa all'utente laravel (via su-exec) per eseguire php-fpm.
+# mount, poi il master php-fpm resta root (necessario per i suoi log) e
+# fa il drop dei privilegi ai worker come utente laravel via www.conf.
 EXPOSE 9000
 
 ENTRYPOINT ["/usr/local/bin/entrypoint.sh"]
