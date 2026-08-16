@@ -223,7 +223,7 @@ MAIL_FROM_NAME="Designatore Rugby"
 
 In alternativa a SMTP, l'app supporta un mailer `gmail` che invia le email tramite Gmail API usando `google/apiclient`, con un transport Symfony Mailer custom (`app/Mail/Transport/GmailApiTransport.php`) registrato in `AppServiceProvider`. Utile per usare direttamente una casella Gmail/Workspace senza password per app né relay SMTP.
 
-1. Su [Google Cloud Console](https://console.cloud.google.com/), crea un progetto, abilita la **Gmail API** e crea una credenziale OAuth2 di tipo **App desktop**. Annota `Client ID` e `Client secret`.
+1. Su [Google Cloud Console](https://console.cloud.google.com/), crea un progetto, abilita la **Gmail API** e crea una credenziale OAuth2 di tipo **App desktop** (oppure **TV e dispositivi con input limitato**, entrambe supportano il Device Flow usato qui sotto). Annota `Client ID` e `Client secret`.
 2. Configura `.env`:
    ```env
    MAIL_MAILER=gmail
@@ -233,11 +233,14 @@ In alternativa a SMTP, l'app supporta un mailer `gmail` che invia le email trami
 3. Genera il refresh token (una tantum), accedendo con l'account Google da cui devono partire le email:
    ```bash
    php artisan gmail:authorize
+   # oppure, se l'app gira in Docker:
+   docker compose exec app php artisan gmail:authorize
    ```
-   Il comando apre un piccolo server locale, stampa l'URL di autorizzazione da aprire nel browser e, dopo il consenso, mostra il valore da copiare in `.env`:
+   Il comando usa il flusso OAuth2 **Device Authorization Grant**: non apre nessun server né richiede un browser sulla stessa macchina, quindi funziona anche su un server remoto senza interfaccia grafica. Mostra un codice da inserire su `google.com/device` da un qualsiasi altro dispositivo (telefono, laptop); dopo aver autorizzato l'app, stampa il valore da copiare in `.env`:
    ```env
    GMAIL_REFRESH_TOKEN=...
    ```
+   Se il comando gira dentro un container Docker, ricorda che `.env` è condiviso via bind mount con l'host: dopo averlo aggiornato basta un `docker compose restart app queue` perché i container lo rileggano.
 
 L'account Google autorizzato deve avere accesso allo scope `gmail.send`; non serve alcuna configurazione SMTP.
 

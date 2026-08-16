@@ -2,39 +2,50 @@
 
 namespace App\Console\Commands;
 
-use Google\Client as GoogleClient;
-use Google\Service\Gmail;
 use Illuminate\Console\Command;
+use Illuminate\Support\Facades\Http;
 
 class GmailAuthorizeCommand extends Command
 {
     protected $signature = 'gmail:authorize';
 
-    protected $description = "Autorizza via OAuth2 l'account Google da cui inviare le email e genera il refresh token da salvare in .env";
+    protected $description = "Autorizza via OAuth2 (Device Flow) l'account Google da cui inviare le email e genera il refresh token da salvare in .env";
+
+    private const DEVICE_CODE_URL = 'https://oauth2.googleapis.com/device/code';
+
+    private const TOKEN_URL = 'https://oauth2.googleapis.com/token';
+
+    private const GMAIL_SEND_SCOPE = 'https://www.googleapis.com/auth/gmail.send';
 
     public function handle(): int
     {
         $clientId = config('services.google_mail.client_id') ?: $this->ask('Google OAuth Client ID');
         $clientSecret = config('services.google_mail.client_secret') ?: $this->secret('Google OAuth Client Secret');
 
-        $client = new GoogleClient();
-        $client->setClientId($clientId);
-        $client->setClientSecret($clientSecret);
-        $client->setAccessType('offline');
-        $client->setPrompt('consent');
-        $client->addScope(Gmail::GMAIL_SEND);
+        $device = Http::asForm()->post(self::DEVICE_CODE_URL, [
+            'client_id' => $clientId,
+            'scope' => self::GMAIL_SEND_SCOPE,
+        ]);
 
-        $code = $this->captureAuthorizationCode($client);
+        if ($device->failed()) {
+            $this->error('Richiesta del device code fallita: '.$device->body());
 
-        if ($code === null) {
             return self::FAILURE;
         }
 
-        $token = $client->fetchAccessTokenWithAuthCode($code);
+        $device = $device->json();
 
-        if (isset($token['error'])) {
-            $this->error('Errore nello scambio del codice: '.($token['error_description'] ?? $token['error']));
+        $this->newLine();
+        $this->info("Vai su {$device['verification_url']} da un browser qualsiasi (anche sul telefono) e inserisci questo codice:");
+        $this->line('');
+        $this->line('    '.$device['user_code']);
+        $this->line('');
+        $this->line("Accedi con l'account Google da cui devono partire le email e autorizza l'app.");
+        $this->line('In attesa della conferma...');
 
+        $token = $this->pollForToken($clientId, $clientSecret, $device['device_code'], $device['interval'] ?? 5, $device['expires_in'] ?? 1800);
+
+        if ($token === null) {
             return self::FAILURE;
         }
 
@@ -57,61 +68,45 @@ class GmailAuthorizeCommand extends Command
     }
 
     /**
-     * Apre un piccolo server locale sul loopback per catturare il redirect
-     * OAuth2 (tipo client "App desktop", nessun redirect URI da registrare
-     * su Google Cloud Console: è ammesso qualunque porta su 127.0.0.1).
+     * @return array<string, mixed>|null
      */
-    private function captureAuthorizationCode(GoogleClient $client): ?string
+    private function pollForToken(string $clientId, string $clientSecret, string $deviceCode, int $interval, int $expiresIn): ?array
     {
-        $server = stream_socket_server('tcp://127.0.0.1:0', $errno, $errstr);
+        $deadline = time() + $expiresIn;
 
-        if (! $server) {
-            $this->error("Impossibile aprire un server locale sul loopback: {$errstr}");
+        while (time() < $deadline) {
+            sleep($interval);
 
-            return null;
-        }
+            $response = Http::asForm()->post(self::TOKEN_URL, [
+                'client_id' => $clientId,
+                'client_secret' => $clientSecret,
+                'device_code' => $deviceCode,
+                'grant_type' => 'urn:ietf:params:oauth:grant-type:device_code',
+            ])->json();
 
-        $address = stream_socket_get_name($server, false);
-        $port = (int) substr($address, strrpos($address, ':') + 1);
-        $redirectUri = "http://127.0.0.1:{$port}/callback";
+            if (isset($response['access_token'])) {
+                return $response;
+            }
 
-        $client->setRedirectUri($redirectUri);
+            $error = $response['error'] ?? null;
 
-        $this->info("Apri quest'URL, accedi con l'account Google da cui inviare le email e autorizza l'app:");
-        $this->line($client->createAuthUrl());
-        $this->line("In attesa del redirect su {$redirectUri} (timeout 120s)...");
+            if ($error === 'authorization_pending') {
+                continue;
+            }
 
-        $connection = stream_socket_accept($server, 120);
-        fclose($server);
+            if ($error === 'slow_down') {
+                $interval += 5;
 
-        if (! $connection) {
-            $this->error("Timeout: nessuna risposta ricevuta su {$redirectUri}.");
+                continue;
+            }
 
-            return null;
-        }
-
-        $request = fread($connection, 8192);
-        fwrite(
-            $connection,
-            "HTTP/1.1 200 OK\r\nContent-Type: text/html; charset=utf-8\r\n\r\n".
-            '<html><body>Autorizzazione completata, puoi chiudere questa finestra.</body></html>'
-        );
-        fclose($connection);
-
-        if (! preg_match('#^GET /callback\?(\S*) HTTP#', (string) $request, $matches)) {
-            $this->error('Richiesta di callback non riconosciuta.');
+            $this->error('Autorizzazione fallita: '.($response['error_description'] ?? $error ?? 'errore sconosciuto'));
 
             return null;
         }
 
-        parse_str($matches[1], $query);
+        $this->error('Tempo scaduto in attesa della conferma su Google.');
 
-        if (isset($query['error'])) {
-            $this->error('Autorizzazione negata da Google: '.$query['error']);
-
-            return null;
-        }
-
-        return $query['code'] ?? null;
+        return null;
     }
 }
