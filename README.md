@@ -165,6 +165,22 @@ I servizi avviati sono:
 | `mysql` | Database MySQL 8.4 |
 | `redis` | Cache/queue driver |
 | `queue` | Worker per `php artisan queue:work` |
+| `proxy` | Nginx Proxy Manager, esposto su `PROXY_HTTP_PORT`/`PROXY_HTTPS_PORT`/`PROXY_ADMIN_PORT` |
+
+### Dominio e HTTPS con Nginx Proxy Manager
+
+Il servizio `proxy` (Nginx Proxy Manager) espone le porte 80, 443 e 81 (pannello di amministrazione) e fa da reverse proxy davanti al servizio `nginx` interno, permettendo di legare un dominio e generare certificati Let's Encrypt.
+
+1. Punta il DNS del dominio (record A) verso l'IP pubblico del server, sulle porte 80/443.
+2. Apri il pannello di amministrazione su `http://<host>:81` (credenziali di default alla prima apertura: `admin@example.com` / `changeme`, da cambiare subito).
+3. Crea un nuovo **Proxy Host**:
+   - Domain Names: il tuo dominio
+   - Forward Hostname/IP: `nginx`
+   - Forward Port: `80`
+   - Abilita **Block Common Exploits**
+4. Nella tab **SSL**, richiedi un nuovo certificato **Let's Encrypt**, abilita **Force SSL** e accetta i termini.
+
+Le porte esposte da Nginx Proxy Manager sono configurabili in `.env.docker` (`PROXY_HTTP_PORT`, `PROXY_HTTPS_PORT`, `PROXY_ADMIN_PORT`); i suoi dati (configurazione e certificati) sono persistiti nei volumi `proxy_data` e `proxy_letsencrypt`.
 
 Per fermare i container:
 
