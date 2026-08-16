@@ -223,7 +223,7 @@ MAIL_FROM_NAME="Designatore Rugby"
 
 In alternativa a SMTP, l'app supporta un mailer `gmail` che invia le email tramite Gmail API usando `google/apiclient`, con un transport Symfony Mailer custom (`app/Mail/Transport/GmailApiTransport.php`) registrato in `AppServiceProvider`. Utile per usare direttamente una casella Gmail/Workspace senza password per app né relay SMTP.
 
-1. Su [Google Cloud Console](https://console.cloud.google.com/), crea un progetto, abilita la **Gmail API** e crea una credenziale OAuth2 di tipo **App desktop** (oppure **TV e dispositivi con input limitato**, entrambe supportano il Device Flow usato qui sotto). Annota `Client ID` e `Client secret`.
+1. Su [Google Cloud Console](https://console.cloud.google.com/), crea un progetto, abilita la **Gmail API** e crea una credenziale OAuth2 di tipo **TV e dispositivi con input limitato** (`TVs and Limited Input devices`) — è l'unico tipo che supporta il Device Flow usato dal comando qui sotto; il tipo "App desktop" viene rifiutato da Google con `invalid_client: Invalid client type`. Annota `Client ID` e `Client secret`.
 2. Configura `.env`:
    ```env
    MAIL_MAILER=gmail
