@@ -3,20 +3,28 @@ set -e
 
 # Il bind mount della repo su /var/www/html nasconde vendor/ e public/build/
 # generati durante la build dell'immagine (che risiedono in /opt/app-build).
-# Li riportiamo dentro il bind mount ad ogni avvio, se mancanti. Gira come
+# Li riportiamo dentro il bind mount ad ogni avvio se mancanti O obsoleti
+# (composer.lock/package-lock.json cambiati rispetto all'ultimo seeding: es.
+# un nuovo pacchetto aggiunto e poi "docker compose up --build"). Gira come
 # root per poter scrivere anche se il bind mount è di proprietà di root
 # (es. residuo di tentativi precedenti), poi cede i permessi a laravel.
 
-if [ ! -f /var/www/html/vendor/autoload.php ]; then
+vendor_hash="$(md5sum /opt/app-build/composer.lock | cut -d' ' -f1)"
+if [ ! -f /var/www/html/vendor/autoload.php ] || [ "$(cat /var/www/html/vendor/.seed-hash 2>/dev/null)" != "$vendor_hash" ]; then
     echo "Seeding vendor/ dal build dell'immagine..."
+    rm -rf /var/www/html/vendor
     mkdir -p /var/www/html/vendor
     cp -a /opt/app-build/vendor/. /var/www/html/vendor/
+    echo "$vendor_hash" > /var/www/html/vendor/.seed-hash
 fi
 
-if [ ! -f /var/www/html/public/build/manifest.json ]; then
+assets_hash="$(md5sum /opt/app-build/package-lock.json | cut -d' ' -f1)"
+if [ ! -f /var/www/html/public/build/manifest.json ] || [ "$(cat /var/www/html/public/build/.seed-hash 2>/dev/null)" != "$assets_hash" ]; then
     echo "Seeding public/build/ dal build dell'immagine..."
+    rm -rf /var/www/html/public/build
     mkdir -p /var/www/html/public/build
     cp -a /opt/app-build/public/build/. /var/www/html/public/build/
+    echo "$assets_hash" > /var/www/html/public/build/.seed-hash
 fi
 
 chown -R laravel:laravel /var/www/html/vendor /var/www/html/public/build
