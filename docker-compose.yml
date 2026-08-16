@@ -11,6 +11,7 @@ services:
     working_dir: /var/www/html
     volumes:
       - ./:/var/www/html
+      - vendor:/var/www/html/vendor
     networks:
       - laravel
     depends_on:
@@ -73,6 +74,7 @@ services:
     command: php artisan queue:work --sleep=3 --tries=3
     volumes:
       - ./:/var/www/html
+      - vendor:/var/www/html/vendor
     networks:
       - laravel
     depends_on:
@@ -86,4 +88,6 @@ networks:
 
 volumes:
   mysql_data:
+    driver: local
+  vendor:
     driver: local
