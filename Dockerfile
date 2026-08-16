@@ -61,15 +61,23 @@ RUN addgroup -g ${GID} laravel \
 COPY docker/php/php.ini /usr/local/etc/php/conf.d/laravel.ini
 COPY docker/php/opcache.ini /usr/local/etc/php/conf.d/opcache.ini
 
-COPY --chown=laravel:laravel . /var/www/html
-COPY --chown=laravel:laravel --from=assets /app/public/build /var/www/html/public/build
+# L'app viene costruita in /opt/app-build (fuori dal path del bind mount
+# ./:/var/www/html) cosi' vendor/ e public/build/ generati qui sopravvivono
+# e vengono seminati nel bind mount da entrypoint.sh ad ogni avvio.
+COPY --chown=laravel:laravel . /opt/app-build
+COPY --chown=laravel:laravel --from=assets /app/public/build /opt/app-build/public/build
 
 USER laravel
 
 # Installa le dipendenze (in produzione: --no-dev --optimize-autoloader)
-RUN composer install --no-interaction --prefer-dist --optimize-autoloader
+RUN cd /opt/app-build && composer install --no-interaction --prefer-dist --optimize-autoloader
+
+USER root
+COPY docker/php/entrypoint.sh /usr/local/bin/entrypoint.sh
+RUN chmod +x /usr/local/bin/entrypoint.sh
+USER laravel
 
 EXPOSE 9000
 
-ENTRYPOINT ["docker-php-entrypoint"]
+ENTRYPOINT ["/usr/local/bin/entrypoint.sh"]
 CMD ["php-fpm"]

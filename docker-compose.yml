@@ -11,8 +11,6 @@ services:
     working_dir: /var/www/html
     volumes:
       - ./:/var/www/html
-      - vendor:/var/www/html/vendor
-      - build_assets:/var/www/html/public/build
     networks:
       - laravel
     depends_on:
@@ -32,7 +30,6 @@ services:
       - "${APP_PORT:-8080}:80"
     volumes:
       - ./:/var/www/html
-      - build_assets:/var/www/html/public/build
       - ./docker/nginx/default.conf:/etc/nginx/conf.d/default.conf
     networks:
       - laravel
@@ -78,7 +75,6 @@ services:
     command: php artisan queue:work --sleep=3 --tries=3
     volumes:
       - ./:/var/www/html
-      - vendor:/var/www/html/vendor
     networks:
       - laravel
     depends_on:
@@ -95,8 +91,4 @@ networks:
 
 volumes:
   mysql_data:
-    driver: local
-  vendor:
-    driver: local
-  build_assets:
     driver: local
