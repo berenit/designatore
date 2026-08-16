@@ -7,7 +7,8 @@ set -e
 
 if [ ! -f /var/www/html/vendor/autoload.php ]; then
     echo "Seeding vendor/ dal build dell'immagine..."
-    cp -a /opt/app-build/vendor /var/www/html/vendor
+    mkdir -p /var/www/html/vendor
+    cp -a /opt/app-build/vendor/. /var/www/html/vendor/
 fi
 
 if [ ! -f /var/www/html/public/build/manifest.json ]; then
