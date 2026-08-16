@@ -1,3 +1,12 @@
+FROM node:20-alpine AS assets
+
+WORKDIR /app
+COPY package.json package-lock.json ./
+RUN npm ci
+COPY resources ./resources
+COPY vite.config.js tailwind.config.js postcss.config.js ./
+RUN npm run build
+
 FROM php:8.3-fpm-alpine
 
 # Argomenti build (utile per ambienti diversi)
@@ -53,6 +62,7 @@ COPY docker/php/php.ini /usr/local/etc/php/conf.d/laravel.ini
 COPY docker/php/opcache.ini /usr/local/etc/php/conf.d/opcache.ini
 
 COPY --chown=laravel:laravel . /var/www/html
+COPY --chown=laravel:laravel --from=assets /app/public/build /var/www/html/public/build
 
 USER laravel
 
