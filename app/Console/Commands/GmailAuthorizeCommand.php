@@ -24,6 +24,9 @@ class GmailAuthorizeCommand extends Command
         $client->setAccessType('offline');
         $client->setPrompt('consent');
         $client->addScope(Gmail::GMAIL_SEND);
+        // Senza uno state esplicito, il client aggiunge "state" vuoto
+        // all'URL (senza "="), che Google rifiuta con "invalid_request".
+        $client->setState(bin2hex(random_bytes(16)));
 
         $code = $this->captureAuthorizationCode($client, $port);
 
