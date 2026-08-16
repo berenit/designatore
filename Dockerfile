@@ -31,6 +31,7 @@ RUN apk add --no-cache \
     linux-headers \
     oniguruma-dev \
     postgresql-dev \
+    su-exec \
     unzip \
     zip
 
@@ -75,8 +76,9 @@ RUN cd /opt/app-build && composer install --no-interaction --prefer-dist --optim
 USER root
 COPY docker/php/entrypoint.sh /usr/local/bin/entrypoint.sh
 RUN chmod +x /usr/local/bin/entrypoint.sh
-USER laravel
 
+# Il container parte come root: l'entrypoint sistema i permessi sul bind
+# mount e poi passa all'utente laravel (via su-exec) per eseguire php-fpm.
 EXPOSE 9000
 
 ENTRYPOINT ["/usr/local/bin/entrypoint.sh"]

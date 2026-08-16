@@ -3,7 +3,9 @@ set -e
 
 # Il bind mount della repo su /var/www/html nasconde vendor/ e public/build/
 # generati durante la build dell'immagine (che risiedono in /opt/app-build).
-# Li riportiamo dentro il bind mount ad ogni avvio, se mancanti.
+# Li riportiamo dentro il bind mount ad ogni avvio, se mancanti. Gira come
+# root per poter scrivere anche se il bind mount è di proprietà di root
+# (es. residuo di tentativi precedenti), poi cede i permessi a laravel.
 
 if [ ! -f /var/www/html/vendor/autoload.php ]; then
     echo "Seeding vendor/ dal build dell'immagine..."
@@ -17,4 +19,6 @@ if [ ! -f /var/www/html/public/build/manifest.json ]; then
     cp -a /opt/app-build/public/build/. /var/www/html/public/build/
 fi
 
-exec docker-php-entrypoint "$@"
+chown -R laravel:laravel /var/www/html/vendor /var/www/html/public/build
+
+exec su-exec laravel docker-php-entrypoint "$@"
