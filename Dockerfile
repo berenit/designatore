@@ -8,7 +8,9 @@ WORKDIR /var/www/html
 
 # Dipendenze di sistema necessarie alle estensioni PHP di Laravel
 RUN apk add --no-cache \
+    autoconf \
     bash \
+    build-base \
     curl \
     freetype-dev \
     git \
@@ -17,6 +19,7 @@ RUN apk add --no-cache \
     libpng-dev \
     libwebp-dev \
     libzip-dev \
+    linux-headers \
     oniguruma-dev \
     postgresql-dev \
     unzip \
