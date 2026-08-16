@@ -8,7 +8,6 @@ storage/logs/*
 storage/framework/cache/*
 storage/framework/sessions/*
 storage/framework/views/*
-docker
 docker-compose.yml
 README.md
 tests
