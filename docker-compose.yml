@@ -15,8 +15,10 @@ services:
     networks:
       - laravel
     depends_on:
-      - mysql
-      - redis
+      mysql:
+        condition: service_healthy
+      redis:
+        condition: service_started
     environment:
       - DB_HOST=mysql
       - REDIS_HOST=redis
@@ -78,9 +80,12 @@ services:
     networks:
       - laravel
     depends_on:
-      - app
-      - mysql
-      - redis
+      app:
+        condition: service_started
+      mysql:
+        condition: service_healthy
+      redis:
+        condition: service_started
 
 networks:
   laravel:
