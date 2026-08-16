@@ -66,11 +66,12 @@ I report supportano filtri per intervallo di date della partita e stato della de
 |-------|-----------|
 | Backend | PHP 8.3 · Laravel 13 |
 | Frontend | Blade · Tailwind CSS · Alpine.js |
-| Database | SQLite (sviluppo) |
+| Database | SQLite (sviluppo locale) · MySQL 8.4 (Docker) |
+| Cache/queue | Redis (Docker) |
 | PDF | barryvdh/laravel-dompdf |
 | Auth | Laravel Breeze (Blade stack) |
 | Test | Pest |
-| Dev server | Laravel Herd |
+| Dev server | Laravel Herd · Docker Compose |
 
 ---
 
@@ -155,6 +156,8 @@ docker compose exec app php artisan migrate --seed
 ```
 
 L'applicazione sarà raggiungibile su `http://localhost:8080` (porta configurabile con `APP_PORT` in `.env.docker`).
+
+> Le dipendenze Composer e gli asset Vite vengono compilati durante la build dell'immagine e seminati automaticamente nel container ad ogni avvio (vedi `docker/php/entrypoint.sh`): non serve eseguire `composer install` o `npm run build` a mano dentro i container.
 
 I servizi avviati sono:
 
