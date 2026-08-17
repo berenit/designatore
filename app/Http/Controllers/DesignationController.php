@@ -245,6 +245,22 @@ class DesignationController extends Controller
     /** Crea/aggiorna una designazione e invia l'email di notifica al relativo arbitro. */
     private function saveDesignation(RugbyMatch $match, string $role, int $refereeId, array $validated, array $key): Designation
     {
+        $existing = Designation::where($key)->first();
+
+        // Se la designazione esisteva già con un arbitro diverso, avvisa quello sostituito
+        // prima che venga sovrascritto da updateOrCreate.
+        if ($existing && $existing->referee_id !== $refereeId && $existing->status !== 'cancelled') {
+            $existing->load(['match.homeTeam', 'match.awayTeam', 'match.teams', 'match.venue', 'referee']);
+
+            Mail::to($existing->referee->email)->send(new DesignationRemovedMail($existing));
+
+            Log::info('Email di rimozione designazione inviata all\'arbitro sostituito', [
+                'designation_id' => $existing->id,
+                'match_id' => $existing->match_id,
+                'referee_email' => $existing->referee->email,
+            ]);
+        }
+
         $designation = Designation::updateOrCreate($key, [
             'referee_id' => $refereeId,
             'assigned_by' => auth()->id(),
@@ -333,10 +349,38 @@ class DesignationController extends Controller
             return Redirect::back()->withInput()->withErrors($errors);
         }
 
+        $designation->load(['match.homeTeam', 'match.awayTeam', 'match.teams', 'match.venue', 'referee']);
+        $refereeChanged = $designation->referee_id !== (int) $validated['referee_id'];
+
+        // Se cambia l'arbitro, avvisa quello sostituito che la designazione non è più sua
+        // (stesso avviso usato quando una designazione viene rimossa)
+        if ($refereeChanged && $designation->status !== 'cancelled') {
+            Mail::to($designation->referee->email)->send(new DesignationRemovedMail($designation));
+
+            Log::info('Email di rimozione designazione inviata all\'arbitro sostituito', [
+                'designation_id' => $designation->id,
+                'match_id' => $designation->match_id,
+                'referee_email' => $designation->referee->email,
+            ]);
+        }
+
         $designation->update($validated);
 
+        // Il nuovo arbitro va notificato come una designazione nuova
+        if ($refereeChanged) {
+            $designation->load(['match.homeTeam', 'match.awayTeam', 'match.teams', 'match.venue', 'referee']);
+
+            Mail::to($designation->referee->email)->send(new DesignationNotificationMail($designation));
+
+            Log::info('Email di designazione inviata al nuovo arbitro', [
+                'designation_id' => $designation->id,
+                'match_id' => $designation->match_id,
+                'referee_email' => $designation->referee->email,
+            ]);
+        }
+
         return Redirect::route('designations.index')
-            ->with('success', 'Designazione aggiornata con successo.');
+            ->with('success', 'Designazione aggiornata con successo.'.($refereeChanged ? ' Email di notifica inviate.' : ''));
     }
 
     /**
