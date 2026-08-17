@@ -28,7 +28,7 @@
     @endforeach
 
     @php $missing = $stats['matches_without_designation']; @endphp
-    <a href="{{ route('rugby-matches.index') }}"
+    <a href="{{ route('designations.index') }}"
        class="rounded-xl shadow-sm p-5 flex items-center gap-4 transition
            {{ $missing > 0 ? 'bg-red-50 border border-red-200 hover:bg-red-100' : 'bg-white border border-gray-200 hover:bg-gray-50' }}">
         <div class="text-3xl">{{ $missing > 0 ? '🚨' : '✅' }}</div>
