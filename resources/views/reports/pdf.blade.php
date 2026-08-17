@@ -194,7 +194,9 @@
                         </td>
                         <td class="col-match">
                             <div class="match-name">{{ $d->match->label }}</div>
-                            <div class="match-meta">{{ $d->match->venue_label }} &nbsp;·&nbsp; {{ $d->match->competition_type }}</div>
+                            <div class="match-meta">{{ $d->match->venue_label }} &nbsp;·&nbsp; {{ $d->match->competition_type }}@if($d->match->category_label)
+                                    &nbsp;·&nbsp; {{ $d->match->category_label }}
+                                @endif</div>
                         </td>
                         <td class="col-ref">
                             <div class="ref-name">{{ $d->referee->name }}</div>
