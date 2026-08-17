@@ -49,6 +49,8 @@ I link sono firmati con URL sicuri (Laravel Signed Routes) e non richiedono che 
 
 Se un arbitro non risponde entro 24 ore, riceve automaticamente un sollecito (stessa email, reinviata), ripetuto ogni 24 ore finché non conferma o rifiuta. Gestito dal comando schedulato `designations:send-reminders` (`routes/console.php`, esecuzione oraria) — in ambiente Docker richiede il servizio `scheduler` (già incluso in `docker-compose.yml`); in locale serve un cron/`schedule:work` attivo perché venga eseguito.
 
+Se una **designazione viene eliminata**, l'arbitro riceve un'email di avviso (a meno che avesse già rifiutato, nel qual caso è già informato). Se una **partita viene annullata** (stato → *Annullata*) o **eliminata**, ogni arbitro con una designazione ancora attiva su quella gara riceve un'email dedicata.
+
 ### Report designazioni
 Esportazione delle designazioni in tre formati:
 

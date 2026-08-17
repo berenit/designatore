@@ -2,12 +2,15 @@
 
 namespace App\Http\Controllers;
 
+use App\Mail\MatchCancelledMail;
 use App\Models\RugbyMatch;
 use App\Models\Team;
 use App\Models\Venue;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Facades\Redirect;
 use Illuminate\Validation\Rule;
 
@@ -273,12 +276,18 @@ class RugbyMatchController extends Controller
             return Redirect::back()->withInput()->withErrors($errors);
         }
 
+        $wasCancelled = $rugbyMatch->status === 'cancelled';
+
         $rugbyMatch->update($this->matchAttributes($validated));
 
         if ($rugbyMatch->isMultiTeam()) {
             $rugbyMatch->teams()->sync($validated['team_ids']);
         } else {
             $rugbyMatch->teams()->detach();
+        }
+
+        if (! $wasCancelled && $rugbyMatch->status === 'cancelled') {
+            $this->notifyRefereesOfCancellation($rugbyMatch);
         }
 
         return Redirect::route('rugby-matches.index')
@@ -290,9 +299,27 @@ class RugbyMatchController extends Controller
      */
     public function destroy(RugbyMatch $rugbyMatch)
     {
+        $this->notifyRefereesOfCancellation($rugbyMatch);
+
         $rugbyMatch->delete();
 
         return Redirect::route('rugby-matches.index')
             ->with('success', 'Partita eliminata.');
+    }
+
+    /** Notifica via email ogni arbitro con una designazione ancora attiva sulla gara annullata/eliminata. */
+    private function notifyRefereesOfCancellation(RugbyMatch $rugbyMatch): void
+    {
+        $rugbyMatch->load(['homeTeam', 'awayTeam', 'teams', 'venue', 'designations.referee']);
+
+        foreach ($rugbyMatch->designations->where('status', '!=', 'cancelled') as $designation) {
+            Mail::to($designation->referee->email)->send(new MatchCancelledMail($rugbyMatch, $designation));
+
+            Log::info('Email di partita annullata inviata all\'arbitro', [
+                'match_id' => $rugbyMatch->id,
+                'designation_id' => $designation->id,
+                'referee_email' => $designation->referee->email,
+            ]);
+        }
     }
 }

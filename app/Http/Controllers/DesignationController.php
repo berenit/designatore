@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Mail\DesignationNotificationMail;
+use App\Mail\DesignationRemovedMail;
 use App\Models\Designation;
 use App\Models\Referee;
 use App\Models\RugbyMatch;
@@ -343,6 +344,19 @@ class DesignationController extends Controller
      */
     public function destroy(Designation $designation)
     {
+        $designation->load(['match.homeTeam', 'match.awayTeam', 'match.teams', 'match.venue', 'referee']);
+
+        // Se l'arbitro ha già rifiutato, è già informato: evita di notificarlo di nuovo.
+        if ($designation->status !== 'cancelled') {
+            Mail::to($designation->referee->email)->send(new DesignationRemovedMail($designation));
+
+            Log::info('Email di rimozione designazione inviata all\'arbitro', [
+                'designation_id' => $designation->id,
+                'match_id' => $designation->match_id,
+                'referee_email' => $designation->referee->email,
+            ]);
+        }
+
         $designation->delete();
 
         return Redirect::route('designations.index')
