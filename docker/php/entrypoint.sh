@@ -3,11 +3,13 @@ set -e
 
 # Il bind mount della repo su /var/www/html nasconde vendor/ e public/build/
 # generati durante la build dell'immagine (che risiedono in /opt/app-build).
-# Li riportiamo dentro il bind mount ad ogni avvio se mancanti O obsoleti
-# (composer.lock/package-lock.json cambiati rispetto all'ultimo seeding: es.
-# un nuovo pacchetto aggiunto e poi "docker compose up --build"). Gira come
-# root per poter scrivere anche se il bind mount è di proprietà di root
-# (es. residuo di tentativi precedenti), poi cede i permessi a laravel.
+# Li riportiamo dentro il bind mount ad ogni avvio se mancanti O obsoleti:
+# vendor/ confrontando composer.lock, public/build/ confrontando il contenuto
+# degli asset compilati (non basta package-lock.json: le classi Tailwind
+# derivano dalla scansione dei .blade.php, quindi un asset può cambiare anche
+# senza toccare le dipendenze npm). Gira come root per poter scrivere anche se
+# il bind mount è di proprietà di root (es. residuo di tentativi precedenti),
+# poi cede i permessi a laravel.
 
 vendor_hash="$(md5sum /opt/app-build/composer.lock | cut -d' ' -f1)"
 if [ ! -f /var/www/html/vendor/autoload.php ] || [ "$(cat /var/www/html/vendor/.seed-hash 2>/dev/null)" != "$vendor_hash" ]; then
@@ -18,7 +20,7 @@ if [ ! -f /var/www/html/vendor/autoload.php ] || [ "$(cat /var/www/html/vendor/.
     echo "$vendor_hash" > /var/www/html/vendor/.seed-hash
 fi
 
-assets_hash="$(md5sum /opt/app-build/package-lock.json | cut -d' ' -f1)"
+assets_hash="$(find /opt/app-build/public/build -type f ! -name '.seed-hash' -exec md5sum {} + | sort | md5sum | cut -d' ' -f1)"
 if [ ! -f /var/www/html/public/build/manifest.json ] || [ "$(cat /var/www/html/public/build/.seed-hash 2>/dev/null)" != "$assets_hash" ]; then
     echo "Seeding public/build/ dal build dell'immagine..."
     rm -rf /var/www/html/public/build
