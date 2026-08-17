@@ -12,7 +12,14 @@ return Application::configure(basePath: dirname(__DIR__))
         health: '/up',
     )
     ->withMiddleware(function (Middleware $middleware): void {
-        //
+        // L'app gira sempre dietro al reverse proxy interno (nginx + Nginx
+        // Proxy Manager per HTTPS/Let's Encrypt): senza questo, Laravel non
+        // si fida dell'header X-Forwarded-Proto e genera URL http:// (asset,
+        // redirect) anche quando il sito è servito in https://, con
+        // conseguente blocco "contenuto misto" nei browser (soprattutto
+        // mobile). "*" è sicuro qui perché non c'è modo di raggiungere
+        // l'app se non passando dai proxy della rete Docker interna.
+        $middleware->trustProxies(at: '*');
     })
     ->withExceptions(function (Exceptions $exceptions): void {
         $exceptions->shouldRenderJsonWhen(

@@ -187,6 +187,7 @@ Il servizio `proxy` (Nginx Proxy Manager) espone le porte 80, 443 e 81 (pannello
    - Forward Port: `80`
    - Abilita **Block Common Exploits**
 4. Nella tab **SSL**, richiedi un nuovo certificato **Let's Encrypt**, abilita **Force SSL** e accetta i termini.
+5. In `.env` imposta `APP_URL` sul dominio HTTPS (es. `APP_URL=https://tuodominio.it`), poi `docker compose restart app queue`. L'app si fida del proxy interno (`bootstrap/app.php`, `trustProxies(at: '*')`) e genera correttamente URL `https://` per asset e link firmati; senza `APP_URL` corretto, alcuni link (es. nelle email) potrebbero comunque puntare all'host/porta sbagliati.
 
 Le porte esposte da Nginx Proxy Manager sono configurabili in `.env.docker` (`PROXY_HTTP_PORT`, `PROXY_HTTPS_PORT`, `PROXY_ADMIN_PORT`); i suoi dati (configurazione e certificati) sono persistiti nei volumi `proxy_data` e `proxy_letsencrypt`.
 
