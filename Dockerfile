@@ -1,3 +1,5 @@
+# syntax=docker/dockerfile:1.7
+
 FROM node:20-alpine AS assets
 
 WORKDIR /app
@@ -72,8 +74,14 @@ COPY --chown=laravel:laravel --from=assets /app/public/build /opt/app-build/publ
 
 USER laravel
 
+# Cache di download di Composer persistente tra build (BuildKit "cache mount"):
+# senza, ogni build riscarica da zero tutti i pacchetti da codeload.github.com,
+# che ha un rate limit basso e restituisce presto HTTP 429 su build ripetute.
+ENV COMPOSER_CACHE_DIR=/tmp/composer-cache
+
 # Installa le dipendenze (in produzione: --no-dev --optimize-autoloader)
-RUN cd /opt/app-build && composer install --no-interaction --prefer-dist --optimize-autoloader
+RUN --mount=type=cache,target=/tmp/composer-cache,uid=${UID},gid=${GID} \
+    cd /opt/app-build && composer install --no-interaction --prefer-dist --optimize-autoloader
 
 USER root
 COPY docker/php/entrypoint.sh /usr/local/bin/entrypoint.sh
