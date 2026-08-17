@@ -16,6 +16,5 @@ il seguente incontro per cui eri stato designato è stato annullato:
 
 La tua designazione non è quindi più valida. Non è richiesta alcuna azione da parte tua. Se hai domande, contatta il designatore.
 
-Grazie,<br>
-{{ config('app.name') }}
+Grazie!
 </x-mail::message>

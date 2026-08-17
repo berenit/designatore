@@ -13,6 +13,9 @@ sei stato designato per il seguente incontro di rugby:
 | **Data e ora** | {{ \Carbon\Carbon::parse($designation->match->date_time)->format('d/m/Y \a\l\l\e H:i') }} |
 | **Campo** | {{ $designation->match->venue_label }} |
 | **Competizione** | {{ $designation->match->competition_type }} |
+@if($designation->match->category_label)
+| **Categoria** | {{ $designation->match->category_label }} |
+@endif
 @if($designation->notes)
 | **Note** | {{ $designation->notes }} |
 @endif
@@ -30,6 +33,5 @@ Conferma la tua disponibilità entro 48 ore:
 
 Se hai domande, contatta il designatore.
 
-Grazie,<br>
-{{ config('app.name') }}
+Grazie!
 </x-mail::message>

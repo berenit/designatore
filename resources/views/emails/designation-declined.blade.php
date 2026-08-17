@@ -19,6 +19,5 @@ Assegna un nuovo arbitro appena possibile.
 Vai alle designazioni
 </x-mail::button>
 
-Grazie,<br>
-{{ config('app.name') }}
+Grazie!
 </x-mail::message>
