@@ -183,4 +183,24 @@ class RugbyMatch extends Model
     {
         return $this->venue->label ?? '—';
     }
+
+    /** Categoria/campionato della gara (es. "Serie A", "U18"), desunta dalle squadre coinvolte. */
+    public function getCategoryLabelAttribute(): ?string
+    {
+        if ($this->isMultiTeam()) {
+            $divisions = ($this->relationLoaded('teams') ? $this->teams : $this->teams()->get())
+                ->pluck('league_division')
+                ->filter()
+                ->unique()
+                ->values();
+
+            if ($divisions->isEmpty()) {
+                return null;
+            }
+
+            return $divisions->count() === 1 ? $divisions->first() : $divisions->implode(', ');
+        }
+
+        return $this->homeTeam->league_division ?? $this->awayTeam->league_division ?? null;
+    }
 }

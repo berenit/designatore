@@ -6,19 +6,34 @@ use App\Models\Designation;
 use App\Models\Referee;
 use App\Models\RugbyMatch;
 use App\Models\Team;
+use Illuminate\Http\Request;
 
 class DashboardController extends Controller
 {
-    public function public()
+    public function public(Request $request)
     {
+        $category = $request->query('category');
+
         $upcomingMatches = RugbyMatch::with(['homeTeam', 'awayTeam', 'teams', 'venue', 'designations.referee'])
             ->where('status', 'scheduled')
             ->where('date_time', '>=', now())
+            ->when($category, function ($query, $category) {
+                $query->where(function ($q) use ($category) {
+                    $q->whereHas('homeTeam', fn ($t) => $t->where('league_division', $category))
+                        ->orWhereHas('awayTeam', fn ($t) => $t->where('league_division', $category))
+                        ->orWhereHas('teams', fn ($t) => $t->where('league_division', $category));
+                });
+            })
             ->orderBy('date_time')
             ->limit(20)
             ->get();
 
-        return view('dashboard.public', compact('upcomingMatches'));
+        $categories = Team::whereNotNull('league_division')
+            ->distinct()
+            ->orderBy('league_division')
+            ->pluck('league_division');
+
+        return view('dashboard.public', compact('upcomingMatches', 'categories', 'category'));
     }
 
     public function private()

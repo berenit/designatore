@@ -6,11 +6,32 @@
     <p class="text-gray-500 mt-1 text-sm">Designazioni arbitrali in programma</p>
 </div>
 
+@if ($categories->isNotEmpty())
+    <div class="mb-6 flex flex-wrap gap-2">
+        <a href="{{ route('home') }}"
+           class="px-3 py-1 rounded-full text-sm font-medium border {{ $category ? 'bg-white text-gray-600 border-gray-200 hover:bg-gray-50' : 'bg-indigo-600 text-white border-indigo-600' }}">
+            Tutte
+        </a>
+        @foreach ($categories as $cat)
+            <a href="{{ route('home', ['category' => $cat]) }}"
+               class="px-3 py-1 rounded-full text-sm font-medium border {{ $category === $cat ? 'bg-indigo-600 text-white border-indigo-600' : 'bg-white text-gray-600 border-gray-200 hover:bg-gray-50' }}">
+                {{ $cat }}
+            </a>
+        @endforeach
+    </div>
+@endif
+
 @if ($upcomingMatches->isEmpty())
     <div class="bg-white rounded-xl border border-gray-200 shadow-sm py-16 text-center">
         <div class="text-5xl mb-4">📅</div>
         <h3 class="text-lg font-semibold text-gray-700">Nessuna partita in programma</h3>
-        <p class="text-gray-400 text-sm mt-1">Le prossime partite appariranno qui.</p>
+        <p class="text-gray-400 text-sm mt-1">
+            @if ($category)
+                Nessuna partita in programma per la categoria «{{ $category }}».
+            @else
+                Le prossime partite appariranno qui.
+            @endif
+        </p>
     </div>
 @else
     <div class="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
@@ -21,6 +42,9 @@
                     <div>
                         <p class="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-1">
                             {{ $match->competition_type }}
+                            @if ($match->category_label)
+                                · {{ $match->category_label }}
+                            @endif
                         </p>
                         <h3 class="font-bold text-gray-900 text-base leading-tight">
                             {{ $match->label }}
