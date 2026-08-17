@@ -12,7 +12,7 @@
 </head>
 <body class="font-sans antialiased bg-gray-100 min-h-screen">
 
-    <nav class="bg-white border-b border-gray-200 shadow-sm">
+    <nav class="bg-white border-b border-gray-200 shadow-sm" x-data="{ mobileOpen: false }">
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
             <div class="flex items-center justify-between h-16">
                 <div class="flex items-center gap-8">
@@ -44,6 +44,15 @@
 
                 <div class="flex items-center gap-3">
                     @auth
+                        <button @click="mobileOpen = !mobileOpen"
+                                class="md:hidden inline-flex items-center justify-center p-2 rounded-md text-gray-600 hover:text-gray-900 hover:bg-gray-50 transition">
+                            <svg x-show="!mobileOpen" class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"/>
+                            </svg>
+                            <svg x-show="mobileOpen" x-cloak class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
+                            </svg>
+                        </button>
                         @php $configActive = request()->is('referees*') || request()->is('teams*') || request()->is('venues*'); @endphp
                         <div x-data="{ open: false }" class="relative hidden md:block">
                             <button @click="open = !open" @keydown.escape.window="open = false"
@@ -118,6 +127,32 @@
                 </div>
             </div>
         </div>
+
+        @auth
+        <div x-show="mobileOpen" x-cloak x-transition class="md:hidden border-t border-gray-200 bg-white">
+            <div class="px-4 py-3 space-y-1">
+                @foreach ($navLinks as $link)
+                    @php $active = request()->is(ltrim($link['match'], '/')); @endphp
+                    <a href="{{ url($link['url']) }}"
+                       class="block px-3 py-2 rounded-md text-sm font-medium transition
+                              {{ $active ? 'bg-indigo-50 text-indigo-700' : 'text-gray-600 hover:text-gray-900 hover:bg-gray-50' }}">
+                        {{ $link['label'] }}
+                    </a>
+                @endforeach
+
+                <div class="my-2 border-t border-gray-100"></div>
+                <p class="px-3 pt-1 pb-1 text-xs font-semibold text-gray-400 uppercase tracking-wide">Configurazioni</p>
+                @foreach ($configLinks as $link)
+                    @php $active = request()->is(ltrim($link['match'], '/')); @endphp
+                    <a href="{{ url($link['url']) }}"
+                       class="block px-3 py-2 rounded-md text-sm font-medium transition
+                              {{ $active ? 'bg-indigo-50 text-indigo-700' : 'text-gray-600 hover:text-gray-900 hover:bg-gray-50' }}">
+                        {{ $link['label'] }}
+                    </a>
+                @endforeach
+            </div>
+        </div>
+        @endauth
     </nav>
 
     <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
