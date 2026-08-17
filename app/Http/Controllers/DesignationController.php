@@ -9,6 +9,7 @@ use App\Models\RugbyMatch;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Facades\Redirect;
 use Illuminate\Validation\Rule;
@@ -255,6 +256,12 @@ class DesignationController extends Controller
 
         Mail::to($designation->referee->email)
             ->send(new DesignationNotificationMail($designation));
+
+        Log::info('Email di designazione inviata all\'arbitro', [
+            'designation_id' => $designation->id,
+            'match_id' => $designation->match_id,
+            'referee_email' => $designation->referee->email,
+        ]);
 
         return $designation;
     }

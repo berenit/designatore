@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Mail\DesignationDeclinedMail;
 use App\Models\Designation;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Mail;
 
 class DesignationResponseController extends Controller
@@ -35,6 +36,13 @@ class DesignationResponseController extends Controller
 
         if ($action === 'decline' && $designation->assignedBy) {
             Mail::to($designation->assignedBy->email)->send(new DesignationDeclinedMail($designation));
+
+            Log::info('Email di designazione rifiutata inviata al designatore', [
+                'designation_id' => $designation->id,
+                'match_id' => $designation->match_id,
+                'referee_email' => $designation->referee->email,
+                'designatore_email' => $designation->assignedBy->email,
+            ]);
         }
 
         return view('designations.respond', [
