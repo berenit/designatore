@@ -13,9 +13,17 @@ use Illuminate\Database\Eloquent\Model;
     'assignment_date',
     'status',
     'notes',
+    'reminder_sent_at',
 ])]
 class Designation extends Model
 {
+    protected function casts(): array
+    {
+        return [
+            'reminder_sent_at' => 'datetime',
+        ];
+    }
+
     /** Ruoli assegnabili a una designazione, nell'ordine canonico di visualizzazione/gestione. */
     public const ROLES = [
         'Arbitro', 'Assistente 1', 'Assistente 2', '4° uomo', '5° uomo', 'Direttore di concentramento', 'Osservatore', 'Tutor',

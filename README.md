@@ -45,7 +45,9 @@ Quando una designazione viene creata, l'arbitro riceve automaticamente un'email 
 - **Link per accettare** la designazione → cambia lo stato in *Confermata*
 - **Link per rifiutare** la designazione → cambia lo stato in *Annullata*
 
-I link sono firmati con URL sicuri (Laravel Signed Routes) e non richiedono che l'arbitro abbia un account nell'applicazione.
+I link sono firmati con URL sicuri (Laravel Signed Routes) e non richiedono che l'arbitro abbia un account nell'applicazione. Se una designazione viene **rifiutata**, il designatore che l'ha creata riceve a sua volta un'email di notifica.
+
+Se un arbitro non risponde entro 24 ore, riceve automaticamente un sollecito (stessa email, reinviata), ripetuto ogni 24 ore finché non conferma o rifiuta. Gestito dal comando schedulato `designations:send-reminders` (`routes/console.php`, esecuzione oraria) — in ambiente Docker richiede il servizio `scheduler` (già incluso in `docker-compose.yml`); in locale serve un cron/`schedule:work` attivo perché venga eseguito.
 
 ### Report designazioni
 Esportazione delle designazioni in tre formati:
@@ -168,6 +170,7 @@ I servizi avviati sono:
 | `mysql` | Database MySQL 8.4 |
 | `redis` | Cache/queue driver |
 | `queue` | Worker per `php artisan queue:work` |
+| `scheduler` | Esegue `php artisan schedule:run` ogni minuto (solleciti designazioni, ecc.) |
 | `proxy` | Nginx Proxy Manager, esposto su `PROXY_HTTP_PORT`/`PROXY_HTTPS_PORT`/`PROXY_ADMIN_PORT` |
 
 ### Dominio e HTTPS con Nginx Proxy Manager

@@ -48,3 +48,41 @@ function something()
 {
     // ..
 }
+
+function createDesignation(\App\Models\User $designatore, array $attributes = []): \App\Models\Designation
+{
+    $venue = \App\Models\Venue::create(['name' => 'Stadio Test', 'city' => 'Roma', 'address' => 'Via Test 1']);
+    $home = \App\Models\Team::create(['name' => 'Casa', 'city' => 'Roma', 'league_division' => 'Serie A']);
+    $away = \App\Models\Team::create(['name' => 'Ospiti', 'city' => 'Milano', 'league_division' => 'Serie A']);
+
+    $match = \App\Models\RugbyMatch::create([
+        'date_time' => now()->addWeek(),
+        'venue_id' => $venue->id,
+        'home_team_id' => $home->id,
+        'away_team_id' => $away->id,
+        'competition_type' => 'Campionato',
+        'status' => 'scheduled',
+    ]);
+
+    $referee = \App\Models\Referee::create([
+        'name' => 'Mario Rossi',
+        'email' => 'referee-'.\Illuminate\Support\Str::random(10).'@example.com',
+    ]);
+
+    $designation = \App\Models\Designation::create([
+        'match_id' => $match->id,
+        'referee_id' => $referee->id,
+        'role' => 'Arbitro',
+        'assigned_by' => $designatore->id,
+        'assignment_date' => now(),
+        'status' => 'pending',
+    ]);
+
+    if ($attributes !== []) {
+        // forceFill per poter impostare anche attributi non fillable dai
+        // test (es. created_at, per simulare designazioni "vecchie").
+        $designation->forceFill($attributes)->save();
+    }
+
+    return $designation->fresh();
+}

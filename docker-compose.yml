@@ -89,6 +89,25 @@ services:
       redis:
         condition: service_started
 
+  scheduler:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: laravel_scheduler
+    restart: unless-stopped
+    command: sh -c "while true; do php artisan schedule:run --no-interaction; sleep 60; done"
+    volumes:
+      - ./:/var/www/html
+    networks:
+      - laravel
+    depends_on:
+      app:
+        condition: service_started
+      mysql:
+        condition: service_healthy
+      redis:
+        condition: service_started
+
   proxy:
     image: jc21/nginx-proxy-manager:latest
     container_name: nginx_proxy_manager
