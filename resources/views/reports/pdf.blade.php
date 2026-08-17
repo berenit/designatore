@@ -85,7 +85,7 @@
         .role-name { font-size: 10px; color: #374151; }
 
         .date-day  { font-size: 11px; font-weight: bold; color: #374151; white-space: nowrap; }
-        .date-time { font-size: 9.5px; color: #9ca3af; margin-top: 1px; }
+        .date-time { font-size: 9.5px; font-weight: bold; color: #9ca3af; margin-top: 1px; }
 
         .match-name { font-size: 11px; font-weight: bold; color: #111827; }
         .match-meta { font-size: 9px; color: #6b7280; margin-top: 3px; }
