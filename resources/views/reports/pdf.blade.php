@@ -200,7 +200,6 @@
                         </td>
                         <td class="col-ref">
                             <div class="ref-name">{{ $d->referee->name }}</div>
-                            <div class="ref-level">{{ $d->referee->license_level }}</div>
                         </td>
                         <td class="col-role">
                             <div class="role-name">{{ $d->role }}</div>
