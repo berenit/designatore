@@ -1,5 +1,6 @@
 services:
   app:
+    image: designatore-app
     build:
       context: .
       dockerfile: Dockerfile
@@ -71,9 +72,13 @@ services:
       - laravel
 
   queue:
+    image: designatore-app
     build:
       context: .
       dockerfile: Dockerfile
+      args:
+        UID: ${UID:-1000}
+        GID: ${GID:-1000}
     container_name: laravel_queue
     restart: unless-stopped
     command: php artisan queue:work --sleep=3 --tries=3
@@ -90,9 +95,13 @@ services:
         condition: service_started
 
   scheduler:
+    image: designatore-app
     build:
       context: .
       dockerfile: Dockerfile
+      args:
+        UID: ${UID:-1000}
+        GID: ${GID:-1000}
     container_name: laravel_scheduler
     restart: unless-stopped
     command: sh -c "while true; do php artisan schedule:run --no-interaction; sleep 60; done"
