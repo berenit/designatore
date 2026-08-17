@@ -18,7 +18,7 @@
                 <div class="flex items-center gap-8">
                     <a href="{{ url('/') }}" class="flex items-center gap-2 text-indigo-700 font-bold text-lg tracking-tight">
                         <span class="text-2xl">🏉</span>
-                        <span>Designatore</span>
+                        <span>Designazioni Abruzzo Rugby</span>
                     </a>
                     @auth
                     <div class="hidden md:flex items-center gap-1">
