@@ -139,10 +139,13 @@ class RugbyMatch extends Model
         return collect($this->requiredRoles())->diff($activeRoles)->isEmpty();
     }
 
-    /** Vero se esiste almeno una partita non ancora completamente designata. */
+    /** Vero se esiste almeno una partita futura non ancora completamente designata. */
     public static function hasMatchesNeedingDesignation(): bool
     {
-        return static::with('designations')->get()->contains(fn ($m) => ! $m->isFullyDesignated());
+        return static::with('designations')
+            ->where('date_time', '>=', now())
+            ->get()
+            ->contains(fn ($m) => ! $m->isFullyDesignated());
     }
 
     /** Vero se l'evento coinvolge più squadre (Concentramento / Torneo). */
