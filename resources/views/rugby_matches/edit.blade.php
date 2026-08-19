@@ -125,8 +125,8 @@
         <div class="grid grid-cols-2 gap-4">
             <div>
                 <label for="date_time" class="block text-sm font-medium text-gray-700 mb-1">Data e Ora</label>
-                <input id="date_time" type="datetime-local" name="date_time" x-model="dateTime"
-                       @change="resetTeams()" required
+                <input id="date_time" type="datetime-local" name="date_time" x-model.lazy="dateTime"
+                       required
                        class="w-full rounded-lg border-gray-300 shadow-sm text-sm focus:border-indigo-500 focus:ring-indigo-500 @error('date_time') border-red-400 @enderror">
                 @error('date_time')<p class="mt-1 text-xs text-red-600">{{ $message }}</p>@enderror
             </div>
@@ -217,6 +217,15 @@ function matchForm(teams, bookedDates, multiTeamTypes, old) {
             // Nei Concentramenti il Direttore di concentramento è sempre obbligatorio
             this.$watch('type', (value) => {
                 if (value === 'Concentramento') this.directorChecked = true;
+            });
+
+            // Azzera le squadre selezionate solo se cambia il GIORNO (non l'orario):
+            // la disponibilità è calcolata per data, non per orario esatto, quindi un
+            // cambio dell'ora da solo non deve invalidare la selezione già fatta.
+            this.$watch('selectedDate', (value, oldValue) => {
+                if (oldValue !== undefined && value !== oldValue) {
+                    this.resetTeams();
+                }
             });
         },
 
