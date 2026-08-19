@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Mail\MatchCancelledMail;
+use App\Mail\MatchUpdatedMail;
 use App\Models\RugbyMatch;
 use App\Models\Team;
 use App\Models\Venue;
@@ -277,17 +278,25 @@ class RugbyMatchController extends Controller
         }
 
         $wasCancelled = $rugbyMatch->status === 'cancelled';
+        $originalTeamIds = $rugbyMatch->teams->pluck('id')->sort()->values()->all();
 
         $rugbyMatch->update($this->matchAttributes($validated));
 
         if ($rugbyMatch->isMultiTeam()) {
+            $newTeamIds = collect($validated['team_ids'])->map(fn ($id) => (int) $id)->sort()->values()->all();
+            $teamsChanged = $originalTeamIds !== $newTeamIds;
             $rugbyMatch->teams()->sync($validated['team_ids']);
         } else {
+            $teamsChanged = $originalTeamIds !== [];
             $rugbyMatch->teams()->detach();
         }
 
         if (! $wasCancelled && $rugbyMatch->status === 'cancelled') {
             $this->notifyRefereesOfCancellation($rugbyMatch);
+        } elseif ($rugbyMatch->status !== 'cancelled' && ($rugbyMatch->wasChanged() || $teamsChanged)) {
+            // Qualcosa è cambiato davvero (data, campo, squadre, ...): le designazioni attive
+            // vanno riconfermate dagli arbitri con i nuovi dettagli.
+            $this->notifyRefereesOfUpdate($rugbyMatch);
         }
 
         return Redirect::route('rugby-matches.index')
@@ -316,6 +325,28 @@ class RugbyMatchController extends Controller
             Mail::to($designation->referee->email)->send(new MatchCancelledMail($rugbyMatch, $designation));
 
             Log::info('Email di partita annullata inviata all\'arbitro', [
+                'match_id' => $rugbyMatch->id,
+                'designation_id' => $designation->id,
+                'referee_email' => $designation->referee->email,
+            ]);
+        }
+    }
+
+    /**
+     * Riporta a "pending" ogni designazione attiva (non annullata/completata) sulla gara
+     * modificata e notifica via email il relativo arbitro, chiedendo una nuova conferma.
+     */
+    private function notifyRefereesOfUpdate(RugbyMatch $rugbyMatch): void
+    {
+        $rugbyMatch->load(['homeTeam', 'awayTeam', 'teams', 'venue', 'designations.referee']);
+
+        foreach ($rugbyMatch->designations->whereIn('status', ['pending', 'confirmed']) as $designation) {
+            $designation->update(['status' => 'pending']);
+            $designation->setRelation('match', $rugbyMatch);
+
+            Mail::to($designation->referee->email)->send(new MatchUpdatedMail($designation));
+
+            Log::info('Email di modifica partita inviata all\'arbitro, richiesta nuova conferma', [
                 'match_id' => $rugbyMatch->id,
                 'designation_id' => $designation->id,
                 'referee_email' => $designation->referee->email,
