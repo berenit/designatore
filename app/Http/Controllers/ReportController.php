@@ -64,7 +64,7 @@ class ReportController extends Controller
     public function text(Request $request)
     {
         $designations = $this->getDesignations($request);
-        $content = $this->buildText($designations);
+        $content = $this->buildText($designations, $request->date_from, $request->date_to);
 
         return response($content, 200, [
             'Content-Type' => 'text/plain; charset=UTF-8',
@@ -85,7 +85,7 @@ class ReportController extends Controller
         }
 
         $designations = $this->getDesignations($request);
-        $text = $this->buildText($designations);
+        $text = $this->buildText($designations, $request->date_from, $request->date_to);
 
         $endpoint = "https://api.telegram.org/bot{$botToken}/sendMessage";
 
@@ -160,7 +160,7 @@ class ReportController extends Controller
         return implode("\n", $lines);
     }
 
-    private function buildText($designations): string
+    private function buildText($designations, ?string $dateFrom = null, ?string $dateTo = null): string
     {
         $statusEmoji = [
             'pending' => '⏳',
@@ -171,7 +171,7 @@ class ReportController extends Controller
 
         $lines = [];
         $lines[] = '🏉 *DESIGNAZIONI ARBITRALI*';
-        $lines[] = '📅 '.now()->format('d/m/Y H:i');
+        $lines[] = '📅 '.$this->formatDateRange($designations, $dateFrom, $dateTo);
         $lines[] = str_repeat('─', 30);
 
         if ($designations->isEmpty()) {
@@ -205,5 +205,38 @@ class ReportController extends Controller
         }
 
         return implode("\n", $lines);
+    }
+
+    /**
+     * Intervallo di date da mostrare in intestazione: usa i filtri data_from/date_to se
+     * presenti, altrimenti lo ricava dalle date delle partite effettivamente incluse.
+     */
+    private function formatDateRange($designations, ?string $dateFrom, ?string $dateTo): string
+    {
+        if ($dateFrom && $dateTo) {
+            return $dateFrom === $dateTo
+                ? Carbon::parse($dateFrom)->format('d/m/Y')
+                : Carbon::parse($dateFrom)->format('d/m/Y').' – '.Carbon::parse($dateTo)->format('d/m/Y');
+        }
+
+        if ($dateFrom) {
+            return 'Dal '.Carbon::parse($dateFrom)->format('d/m/Y');
+        }
+
+        if ($dateTo) {
+            return 'Fino al '.Carbon::parse($dateTo)->format('d/m/Y');
+        }
+
+        if ($designations->isEmpty()) {
+            return 'Nessuna data selezionata';
+        }
+
+        $dates = $designations->map(fn ($d) => Carbon::parse($d->match->date_time));
+        $min = $dates->min();
+        $max = $dates->max();
+
+        return $min->isSameDay($max)
+            ? $min->format('d/m/Y')
+            : $min->format('d/m/Y').' – '.$max->format('d/m/Y');
     }
 }
