@@ -6,6 +6,7 @@ use App\Models\Designation;
 use Barryvdh\DomPDF\Facade\Pdf;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Http;
 
 class ReportController extends Controller
 {
@@ -68,6 +69,51 @@ class ReportController extends Controller
         return response($content, 200, [
             'Content-Type' => 'text/plain; charset=UTF-8',
             'Content-Disposition' => 'attachment; filename="designazioni_'.now()->format('Ymd_Hi').'.txt"',
+        ]);
+    }
+
+    /** Invia le designazioni filtrate al gruppo Telegram configurato in .env. */
+    public function telegram(Request $request)
+    {
+        $botToken = config('services.telegram.bot_token');
+        $chatId = config('services.telegram.chat_id');
+
+        if (! $botToken || ! $chatId) {
+            return response()->json([
+                'message' => 'Bot Telegram non configurato: imposta TELEGRAM_BOT_TOKEN e TELEGRAM_CHAT_ID nel file .env.',
+            ], 422);
+        }
+
+        $designations = $this->getDesignations($request);
+        $text = $this->buildText($designations);
+
+        $endpoint = "https://api.telegram.org/bot{$botToken}/sendMessage";
+
+        $response = Http::asForm()->post($endpoint, [
+            'chat_id' => $chatId,
+            'text' => $text,
+            'parse_mode' => 'Markdown',
+        ]);
+
+        // Nomi di squadre/campi con caratteri come _ o * possono rompere il parser
+        // Markdown di Telegram: se succede, ritenta in testo semplice pur di recapitare il messaggio.
+        if (! $response->successful()) {
+            $response = Http::asForm()->post($endpoint, [
+                'chat_id' => $chatId,
+                'text' => $text,
+            ]);
+        }
+
+        if (! $response->successful()) {
+            report(new \RuntimeException('Invio Telegram fallito: '.$response->body()));
+
+            return response()->json([
+                'message' => 'Invio a Telegram fallito. Verifica che il token e il chat_id siano corretti e che il bot sia nel gruppo.',
+            ], 502);
+        }
+
+        return response()->json([
+            'message' => 'Designazioni inviate al gruppo Telegram.',
         ]);
     }
 

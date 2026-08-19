@@ -95,6 +95,18 @@
             </div>
             <pre id="text-content" class="bg-gray-50 border border-gray-200 rounded-lg p-3 text-xs text-gray-700 whitespace-pre-wrap overflow-auto max-h-64 font-mono"></pre>
         </div>
+
+        <button onclick="sendTelegram()" id="telegram-button"
+                class="w-full flex items-center gap-3 px-4 py-3 bg-sky-50 border border-sky-200 rounded-lg hover:bg-sky-100 transition group disabled:opacity-50 disabled:cursor-not-allowed">
+            <span class="text-2xl">✈️</span>
+            <div class="text-left">
+                <p class="text-sm font-semibold text-sky-800">Invia a Telegram</p>
+                <p class="text-xs text-sky-500" id="telegram-subtitle">Invia il messaggio al gruppo tramite il Bot</p>
+            </div>
+            <svg class="w-4 h-4 text-sky-400 ml-auto group-hover:translate-x-0.5 transition" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M22 2L11 13M22 2l-7 20-4-9-9-4 20-7z"/>
+            </svg>
+        </button>
     </div>
 
   </div>
@@ -162,6 +174,40 @@ async function copyText() {
         setTimeout(() => badge.classList.add('hidden'), 2500);
     } catch {
         // clipboard not available — show preview only
+    }
+}
+
+async function sendTelegram() {
+    const button = document.getElementById('telegram-button');
+    const subtitle = document.getElementById('telegram-subtitle');
+    const originalSubtitle = subtitle.textContent;
+
+    button.disabled = true;
+    subtitle.textContent = 'Invio in corso...';
+
+    try {
+        const res = await fetch('{{ route("reports.telegram") }}' + params(), {
+            method: 'POST',
+            headers: {
+                'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content,
+                'Accept': 'application/json',
+            },
+        });
+        const data = await res.json();
+
+        subtitle.textContent = data.message ?? (res.ok ? 'Inviato.' : 'Invio fallito.');
+        subtitle.classList.toggle('text-sky-500', res.ok);
+        subtitle.classList.toggle('text-red-600', !res.ok);
+    } catch {
+        subtitle.textContent = 'Invio fallito: errore di rete.';
+        subtitle.classList.add('text-red-600');
+    } finally {
+        button.disabled = false;
+        setTimeout(() => {
+            subtitle.textContent = originalSubtitle;
+            subtitle.classList.remove('text-red-600');
+            subtitle.classList.add('text-sky-500');
+        }, 4000);
     }
 }
 </script>

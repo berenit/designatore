@@ -33,6 +33,7 @@ Route::middleware('auth')->group(function () {
         Route::get('/pdf', [ReportController::class, 'pdf'])->name('pdf');
         Route::get('/markdown', [ReportController::class, 'markdown'])->name('markdown');
         Route::get('/text', [ReportController::class, 'text'])->name('text');
+        Route::post('/telegram', [ReportController::class, 'telegram'])->name('telegram');
     });
 
     Route::get('/profile', [ProfileController::class, 'edit'])->name('profile.edit');
