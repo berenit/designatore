@@ -193,6 +193,24 @@ class DesignationController extends Controller
 
                 if ($match->isMultiTeam()) {
                     // Uno o più arbitri liberi: sincronizza rimuovendo chi non è più selezionato
+                    $removedDesignations = $match->designations()
+                        ->where('role', RugbyMatch::DEFAULT_ROLE)
+                        ->whereNotIn('referee_id', $arbitriIds->all())
+                        ->with(['match.homeTeam', 'match.awayTeam', 'match.teams', 'match.venue', 'referee'])
+                        ->get();
+
+                    foreach ($removedDesignations as $removed) {
+                        if ($removed->status !== 'cancelled') {
+                            Mail::to($removed->referee->email)->send(new DesignationRemovedMail($removed));
+
+                            Log::info('Email di rimozione designazione inviata all\'arbitro deselezionato', [
+                                'designation_id' => $removed->id,
+                                'match_id' => $removed->match_id,
+                                'referee_email' => $removed->referee->email,
+                            ]);
+                        }
+                    }
+
                     $match->designations()
                         ->where('role', RugbyMatch::DEFAULT_ROLE)
                         ->whereNotIn('referee_id', $arbitriIds->all())
