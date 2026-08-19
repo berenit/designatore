@@ -27,6 +27,7 @@ class DatabaseSeeder extends Seeder
         $this->call([
             RefereeSeeder::class,
             TeamSeeder::class,
+            VenueSeeder::class,
         ]);
     }
 }
