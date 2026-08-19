@@ -44,7 +44,7 @@ class TeamSeeder extends Seeder
 
             foreach ($divisions as $division) {
                 Team::create([
-                    'name' => $name.' '.$division,
+                    'name' => $name,
                     'city' => $city,
                     'league_division' => $division,
                     'contact_person' => 'Segreteria '.$name,
