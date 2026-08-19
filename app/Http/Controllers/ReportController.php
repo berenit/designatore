@@ -187,7 +187,7 @@ class ReportController extends Controller
             $lines[] = "{$emoji} *{$d->match->label}*";
             $lines[] = "   🗓 {$date}";
             $lines[] = "   📍 {$d->match->venue_label}";
-            $lines[] = "   👤 {$d->referee->name} ({$d->referee->license_level}) — {$d->role}";
+            $lines[] = "   👤 {$d->referee->name} — {$d->role}";
         }
 
         $lines[] = '';
