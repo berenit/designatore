@@ -79,6 +79,17 @@
             @error('notes')<p class="mt-1 text-xs text-red-600">{{ $message }}</p>@enderror
         </div>
 
+        @error('double_booking')
+            <div class="rounded-lg border border-amber-300 bg-amber-50 p-3">
+                <p class="text-sm text-amber-800">{{ $message }}</p>
+                <label class="mt-2 flex items-center gap-2 text-sm text-amber-800">
+                    <input type="checkbox" name="confirm_double_booking" value="1" checked
+                           class="rounded border-amber-400 text-amber-600 focus:ring-amber-500">
+                    Confermo, salva comunque
+                </label>
+            </div>
+        @enderror
+
         <div class="flex items-center justify-between pt-2">
             <button type="submit"
                     class="inline-flex items-center gap-2 px-5 py-2 bg-indigo-600 text-white text-sm font-medium rounded-lg hover:bg-indigo-700 transition">

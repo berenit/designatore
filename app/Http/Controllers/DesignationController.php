@@ -123,6 +123,30 @@ class DesignationController extends Controller
     }
 
     /**
+     * Arbitri tra quelli indicati già impegnati (stato non "cancelled") su un'ALTRA gara
+     * nella stessa data. Ritorna una mappa [referee_id => nome arbitro].
+     */
+    private function doubleBookedReferees(array $refereeIds, string $date, int $excludeMatchId): array
+    {
+        $refereeIds = array_values(array_unique(array_filter($refereeIds)));
+
+        if (empty($refereeIds)) {
+            return [];
+        }
+
+        return DB::table('designations')
+            ->join('matches', 'matches.id', '=', 'designations.match_id')
+            ->join('referees', 'referees.id', '=', 'designations.referee_id')
+            ->where('designations.status', '!=', 'cancelled')
+            ->where('designations.match_id', '!=', $excludeMatchId)
+            ->whereIn('designations.referee_id', $refereeIds)
+            ->whereDate('matches.date_time', $date)
+            ->distinct()
+            ->pluck('referees.name', 'designations.referee_id')
+            ->all();
+    }
+
+    /**
      * Store a newly created resource in storage.
      */
     public function store(Request $request)
@@ -170,6 +194,20 @@ class DesignationController extends Controller
         if ($match->competition_type === 'Concentramento' && ! $otherAssignments->has('Direttore di concentramento')) {
             return Redirect::back()->withInput()->withErrors([
                 'referees' => 'Nei Concentramenti è obbligatorio assegnare un Direttore di concentramento.',
+            ]);
+        }
+
+        // Un arbitro già impegnato lo stesso giorno su un'altra gara non blocca il salvataggio
+        // (può succedere per eventi mattina/pomeriggio), ma va confermato esplicitamente.
+        $doubleBooked = $this->doubleBookedReferees(
+            $arbitriIds->merge($otherAssignments->values())->all(),
+            $match->date_time->format('Y-m-d'),
+            $match->id
+        );
+
+        if ($doubleBooked && ! $request->boolean('confirm_double_booking')) {
+            return Redirect::back()->withInput()->withErrors([
+                'double_booking' => 'Attenzione: '.implode(', ', $doubleBooked).' risulta/no già impegnato/a in un\'altra gara lo stesso giorno. Conferma per salvare comunque.',
             ]);
         }
 
@@ -381,6 +419,20 @@ class DesignationController extends Controller
 
         if ($errors) {
             return Redirect::back()->withInput()->withErrors($errors);
+        }
+
+        // Come in store(): il doppio impegno lo stesso giorno è solo un avviso da confermare, non un blocco.
+        $targetMatch = RugbyMatch::findOrFail($validated['match_id']);
+        $doubleBooked = $this->doubleBookedReferees(
+            [(int) $validated['referee_id']],
+            $targetMatch->date_time->format('Y-m-d'),
+            $targetMatch->id
+        );
+
+        if ($doubleBooked && ! $request->boolean('confirm_double_booking')) {
+            return Redirect::back()->withInput()->withErrors([
+                'double_booking' => 'Attenzione: '.implode(', ', $doubleBooked).' risulta già impegnato/a in un\'altra gara lo stesso giorno. Conferma per salvare comunque.',
+            ]);
         }
 
         $designation->load(['match.homeTeam', 'match.awayTeam', 'match.teams', 'match.venue', 'referee']);
