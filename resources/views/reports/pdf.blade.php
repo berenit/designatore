@@ -84,8 +84,9 @@
 
         .role-name { font-size: 10px; color: #374151; }
 
-        .date-day  { font-size: 11px; font-weight: bold; color: #374151; white-space: nowrap; }
-        .date-time { font-size: 9.5px; font-weight: bold; color: #374151; margin-top: 1px; }
+        .date-day     { font-size: 11px; font-weight: bold; color: #374151; white-space: nowrap; }
+        .date-weekday { font-size: 9px;  font-weight: bold; color: #dc2626; margin-top: 1px; }
+        .date-time    { font-size: 9.5px; font-weight: bold; color: #374151; margin-top: 1px; }
 
         .match-name { font-size: 11px; font-weight: bold; color: #111827; }
         .match-meta { font-size: 9px; color: #6b7280; margin-top: 3px; }
@@ -189,8 +190,12 @@
                 @foreach ($designations as $d)
                     <tr>
                         <td class="col-date">
-                            <div class="date-day">{{ \Carbon\Carbon::parse($d->match->date_time)->format('d/m/Y') }}</div>
-                            <div class="date-time">{{ \Carbon\Carbon::parse($d->match->date_time)->format('H:i') }}</div>
+                            @php $matchDate = \Carbon\Carbon::parse($d->match->date_time); @endphp
+                            <div class="date-day">{{ $matchDate->format('d/m/Y') }}</div>
+                            @unless ($matchDate->isSunday())
+                                <div class="date-weekday">({{ ucfirst($matchDate->translatedFormat('l')) }})</div>
+                            @endunless
+                            <div class="date-time">{{ $matchDate->format('H:i') }}</div>
                         </td>
                         <td class="col-match">
                             <div class="match-name">{{ $d->match->label }}</div>

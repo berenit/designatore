@@ -122,7 +122,7 @@ class ReportController extends Controller
         $lines = [];
         $lines[] = '# Designazioni Arbitrali';
         $lines[] = '';
-        $lines[] = '_Generato il '.now()->format('d/m/Y alle H:i').'_';
+        $lines[] = '_Generato il '.now()->format('d/m/Y \a\l\l\e H:i').'_';
         $lines[] = '';
 
         if ($designations->isEmpty()) {
@@ -135,7 +135,11 @@ class ReportController extends Controller
         $lines[] = '|------|----------|-------|---------|-------|-------|';
 
         foreach ($designations as $d) {
-            $date = Carbon::parse($d->match->date_time)->format('d/m/Y H:i');
+            $matchDate = Carbon::parse($d->match->date_time);
+            $date = $matchDate->format('d/m/Y H:i');
+            if (! $matchDate->isSunday()) {
+                $date .= ' **('.ucfirst($matchDate->translatedFormat('l')).')**';
+            }
             $match = $d->match->label;
             $venue = $d->match->venue_label;
             $ref = $d->referee->name;
@@ -182,7 +186,11 @@ class ReportController extends Controller
 
         foreach ($designations as $d) {
             $emoji = $statusEmoji[$d->status] ?? '•';
-            $date = Carbon::parse($d->match->date_time)->format('d/m/Y H:i');
+            $matchDate = Carbon::parse($d->match->date_time);
+            $date = $matchDate->format('d/m/Y H:i');
+            if (! $matchDate->isSunday()) {
+                $date .= ' ⚠️ *('.ucfirst($matchDate->translatedFormat('l')).')*';
+            }
             $lines[] = '';
             $lines[] = "{$emoji} *{$d->match->label}*";
             $lines[] = "   🗓 {$date}";
