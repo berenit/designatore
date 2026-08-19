@@ -8,12 +8,14 @@ use App\Models\Designation;
 use App\Models\Referee;
 use App\Models\RugbyMatch;
 use Carbon\Carbon;
+use Illuminate\Database\QueryException;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Facades\Redirect;
 use Illuminate\Validation\Rule;
+use Illuminate\Validation\ValidationException;
 
 class DesignationController extends Controller
 {
@@ -171,24 +173,30 @@ class DesignationController extends Controller
             ]);
         }
 
-        // Nessun arbitro può ricoprire due ruoli/posizioni nella stessa gara
-        // (considera anche le designazioni esistenti sugli altri ruoli non toccati da questo invio)
-        $untouchedOthers = $match->designations()
-            ->where('role', '!=', RugbyMatch::DEFAULT_ROLE)
-            ->whereNotIn('role', $otherAssignments->keys()->all())
-            ->pluck('referee_id', 'role');
-
-        $allIds = $arbitriIds->values()->merge($otherAssignments->values())->merge($untouchedOthers->values());
-
-        if ($allIds->duplicates()->isNotEmpty()) {
-            return Redirect::back()->withInput()->withErrors([
-                'referees' => 'Lo stesso arbitro non può ricoprire due ruoli nella stessa gara.',
-            ]);
-        }
-
         // Creazione ed email atomiche: se un invio fallisce, viene annullato tutto (rollback)
         try {
             $designations = DB::transaction(function () use ($arbitriIds, $otherAssignments, $match, $validated) {
+                // Blocca la riga della gara per serializzare eventuali invii concorrenti dello
+                // stesso form (es. doppio click): senza questo lock, due transazioni potrebbero
+                // superare entrambe il controllo di conflitto qui sotto prima che l'altra committi.
+                RugbyMatch::whereKey($match->id)->lockForUpdate()->first();
+
+                // Nessun arbitro può ricoprire due ruoli/posizioni nella stessa gara
+                // (considera anche le designazioni esistenti sugli altri ruoli non toccati da questo invio)
+                $untouchedOthers = $match->designations()
+                    ->where('role', '!=', RugbyMatch::DEFAULT_ROLE)
+                    ->whereNotIn('role', $otherAssignments->keys()->all())
+                    ->lockForUpdate()
+                    ->pluck('referee_id', 'role');
+
+                $allIds = $arbitriIds->values()->merge($otherAssignments->values())->merge($untouchedOthers->values());
+
+                if ($allIds->duplicates()->isNotEmpty()) {
+                    throw ValidationException::withMessages([
+                        'referees' => 'Lo stesso arbitro non può ricoprire due ruoli nella stessa gara.',
+                    ]);
+                }
+
                 $created = [];
 
                 if ($match->isMultiTeam()) {
@@ -248,6 +256,14 @@ class DesignationController extends Controller
 
                 return $created;
             });
+        } catch (ValidationException $e) {
+            return Redirect::back()->withInput()->withErrors($e->errors());
+        } catch (QueryException $e) {
+            report($e);
+
+            return Redirect::back()->withInput()->withErrors([
+                'referees' => 'Questa designazione è già stata assegnata da un altro invio concorrente. Ricarica la pagina e riprova.',
+            ]);
         } catch (\Throwable $e) {
             report($e);
 
