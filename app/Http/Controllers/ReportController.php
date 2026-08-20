@@ -53,7 +53,7 @@ class ReportController extends Controller
     public function markdown(Request $request)
     {
         $designations = $this->getDesignations($request);
-        $content = $this->buildMarkdown($designations);
+        $content = $this->buildMarkdown($designations, $request->date_from, $request->date_to);
 
         return response($content, 200, [
             'Content-Type' => 'text/markdown; charset=UTF-8',
@@ -117,12 +117,13 @@ class ReportController extends Controller
         ]);
     }
 
-    private function buildMarkdown($designations): string
+    private function buildMarkdown($designations, ?string $dateFrom = null, ?string $dateTo = null): string
     {
         $lines = [];
         $lines[] = '# Designazioni Arbitrali';
         $lines[] = '';
-        $lines[] = '_Generato il '.now()->format('d/m/Y \a\l\l\e H:i').'_';
+        // $lines[] = '_Generato il '.now()->format('d/m/Y \a\l\l\e H:i').'_';
+        $lines[] = $this->formatDateRange($designations, $dateFrom, $dateTo);
         $lines[] = '';
 
         if ($designations->isEmpty()) {
@@ -223,8 +224,8 @@ class ReportController extends Controller
     {
         if ($dateFrom && $dateTo) {
             return $dateFrom === $dateTo
-                ? Carbon::parse($dateFrom)->format('d/m/Y')
-                : Carbon::parse($dateFrom)->format('d/m/Y').' – '.Carbon::parse($dateTo)->format('d/m/Y');
+                ? 'Il ' . Carbon::parse($dateFrom)->format('d/m/Y')
+                : 'Dal ' . Carbon::parse($dateFrom)->format('d/m/Y').' al '.Carbon::parse($dateTo)->format('d/m/Y');
         }
 
         if ($dateFrom) {
@@ -235,6 +236,9 @@ class ReportController extends Controller
             return 'Fino al '.Carbon::parse($dateTo)->format('d/m/Y');
         }
 
+        // pdf/markdown/text/telegram non ereditano i default di index(): se vengono chiamati
+        // direttamente senza date_from/date_to, ricava il range dalle date effettive dei risultati
+        // invece di mostrare un'intestazione vuota o fuorviante.
         if ($designations->isEmpty()) {
             return 'Nessuna data selezionata';
         }
@@ -244,7 +248,7 @@ class ReportController extends Controller
         $max = $dates->max();
 
         return $min->isSameDay($max)
-            ? $min->format('d/m/Y')
-            : $min->format('d/m/Y').' – '.$max->format('d/m/Y');
+            ? 'Dal ' . $min->format('d/m/Y')
+            : 'Dal ' . $min->format('d/m/Y').' al '.$max->format('d/m/Y');
     }
 }
