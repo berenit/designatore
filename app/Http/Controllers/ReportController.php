@@ -224,7 +224,7 @@ class ReportController extends Controller
     {
         if ($dateFrom && $dateTo) {
             return $dateFrom === $dateTo
-                ? 'Il ' . Carbon::parse($dateFrom)->format('d/m/Y')
+                ? 'Del ' . Carbon::parse($dateFrom)->format('d/m/Y')
                 : 'Dal ' . Carbon::parse($dateFrom)->format('d/m/Y').' al '.Carbon::parse($dateTo)->format('d/m/Y');
         }
 
