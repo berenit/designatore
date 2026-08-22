@@ -29,6 +29,20 @@ class Designation extends Model
         'Arbitro', 'Assistente 1', 'Assistente 2', '4° uomo', '5° uomo', 'Direttore di concentramento', 'Osservatore', 'Tutor',
     ];
 
+    /** Etichette italiane per lo stato di una designazione (usate in tutta l'app). */
+    public const STATUS_LABELS = [
+        'pending' => 'In attesa',
+        'confirmed' => 'Accettata',
+        'completed' => 'Completata',
+        'cancelled' => 'Annullata',
+    ];
+
+    /** Etichetta italiana dello stato (per le viste). */
+    public function getStatusLabelAttribute(): string
+    {
+        return self::STATUS_LABELS[$this->status] ?? $this->status;
+    }
+
     // A designation belongs to a match
     public function match()
     {

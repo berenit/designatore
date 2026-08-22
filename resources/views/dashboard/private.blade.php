@@ -14,7 +14,7 @@
             ['label' => 'Squadre',              'value' => $stats['teams'],              'icon' => '🛡️', 'color' => 'blue'],
             ['label' => 'Partite in programma', 'value' => $stats['upcoming_matches'],   'icon' => '📅', 'color' => 'purple'],
             ['label' => 'Designazioni in attesa','value' => $stats['pending_designations'], 'icon' => '⏳', 'color' => 'yellow'],
-            ['label' => 'Designazioni confermate','value' => $stats['confirmed_designations'], 'icon' => '✅', 'color' => 'green'],
+            ['label' => 'Designazioni accettate','value' => $stats['confirmed_designations'], 'icon' => '✅', 'color' => 'green'],
         ];
     @endphp
     @foreach ($cards as $card)
@@ -120,7 +120,7 @@
                             @elseif ($d->status === 'completed') bg-blue-100 text-blue-800
                             @else bg-red-100 text-red-800
                             @endif">
-                            {{ ucfirst($d->status) }}
+                            {{ $d->status_label }}
                         </span>
                     </li>
                 @endforeach

@@ -39,7 +39,7 @@
                         class="w-full rounded-lg border-gray-300 shadow-sm text-sm focus:border-indigo-500 focus:ring-indigo-500">
                     <option value="">Tutti gli stati</option>
                     <option value="pending">In attesa</option>
-                    <option value="confirmed">Confermate</option>
+                    <option value="confirmed">Accettate</option>
                     <option value="completed">Completate</option>
                     <option value="cancelled">Annullate</option>
                 </select>
@@ -116,26 +116,36 @@
         <div class="px-5 py-4 border-b border-gray-100 flex items-center justify-between">
             <h2 class="font-semibold text-gray-900 text-sm">Anteprima ({{ $designations->count() }} risultati)</h2>
         </div>
-        @if ($designations->isEmpty())
+        @if ($matchGroups->isEmpty())
             <div class="px-5 py-8 text-center text-gray-400 text-sm">Nessuna designazione corrispondente ai filtri.</div>
         @else
             <ul class="divide-y divide-gray-100">
-                @foreach ($designations as $d)
-                    <li class="px-5 py-3 flex items-center justify-between gap-3">
-                        <div>
-                            <p class="text-sm font-medium text-gray-900">{{ $d->match->label }}</p>
-                            <p class="text-xs text-gray-400 mt-0.5">
-                                {{ \Carbon\Carbon::parse($d->match->date_time)->format('d/m/Y H:i') }}
-                                · {{ $d->referee->name }}
-                            </p>
+                @foreach ($matchGroups as $group)
+                    @php $match = $group->first()->match; @endphp
+                    <li class="px-5 py-3">
+                        <p class="text-sm font-medium text-gray-900">{{ $match->label }}</p>
+                        <p class="text-xs text-gray-400 mt-0.5 mb-2">
+                            {{ \Carbon\Carbon::parse($match->date_time)->format('d/m/Y H:i') }}
+                            · {{ $match->venue_label }}
+                        </p>
+                        <div class="space-y-1">
+                            @foreach ($group as $d)
+                                @php $isObserver = $d->role === 'Osservatore'; @endphp
+                                <div class="flex items-center justify-between gap-3">
+                                    <span class="text-xs {{ $isObserver ? 'text-amber-700 font-semibold' : 'text-gray-700' }}">
+                                        @if ($isObserver) 🔎 @endif
+                                        {{ $d->referee->name }} <span class="{{ $isObserver ? 'text-amber-500' : 'text-gray-400' }}">— {{ $d->role }}</span>
+                                    </span>
+                                    <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-semibold flex-shrink-0
+                                        @if ($d->status === 'pending')   bg-yellow-100 text-yellow-800
+                                        @elseif ($d->status === 'confirmed') bg-green-100 text-green-800
+                                        @elseif ($d->status === 'completed') bg-blue-100 text-blue-800
+                                        @else bg-red-100 text-red-800 @endif">
+                                        {{ $d->status_label }}
+                                    </span>
+                                </div>
+                            @endforeach
                         </div>
-                        <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-semibold flex-shrink-0
-                            @if ($d->status === 'pending')   bg-yellow-100 text-yellow-800
-                            @elseif ($d->status === 'confirmed') bg-green-100 text-green-800
-                            @elseif ($d->status === 'completed') bg-blue-100 text-blue-800
-                            @else bg-red-100 text-red-800 @endif">
-                            {{ ucfirst($d->status) }}
-                        </span>
                     </li>
                 @endforeach
             </ul>

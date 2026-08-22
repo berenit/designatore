@@ -7,7 +7,7 @@
         <h1 class="text-2xl font-bold text-gray-900 mb-2">Designazione già elaborata</h1>
         <p class="text-gray-500">
             Questa designazione è già in stato
-            <span class="font-semibold">{{ ucfirst($designation->status) }}</span>
+            <span class="font-semibold">{{ $designation->status_label }}</span>
             e non può essere modificata di nuovo tramite questo link.
         </p>
     @elseif ($action === 'confirm')

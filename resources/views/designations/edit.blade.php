@@ -70,7 +70,7 @@
             <select id="status" name="status" required
                     class="w-full rounded-lg border-gray-300 shadow-sm text-sm focus:border-indigo-500 focus:ring-indigo-500 @error('status') border-red-400 @enderror">
                 <option value="pending"   {{ old('status', $designation->status) === 'pending'   ? 'selected' : '' }}>In attesa</option>
-                <option value="confirmed" {{ old('status', $designation->status) === 'confirmed' ? 'selected' : '' }}>Confermata</option>
+                <option value="confirmed" {{ old('status', $designation->status) === 'confirmed' ? 'selected' : '' }}>Accettata</option>
                 <option value="completed" {{ old('status', $designation->status) === 'completed' ? 'selected' : '' }}>Completata</option>
                 <option value="cancelled" {{ old('status', $designation->status) === 'cancelled' ? 'selected' : '' }}>Annullata</option>
             </select>

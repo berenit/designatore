@@ -10,6 +10,9 @@ use Illuminate\Support\Facades\Http;
 
 class ReportController extends Controller
 {
+    /** Ruolo da mettere in evidenza nei report (vedi RugbyMatch::EXTRA_ROLE_OPTIONS['observer']). */
+    private const OBSERVER_ROLE = 'Osservatore';
+
     private function getDesignations(Request $request)
     {
         return Designation::with(['match.homeTeam', 'match.awayTeam', 'match.teams', 'match.venue', 'referee'])
@@ -22,6 +25,24 @@ class ReportController extends Controller
             ->get();
     }
 
+    /**
+     * Raggruppa le designazioni per partita (una sola volta per gara, con tutti gli arbitri e i
+     * rispettivi ruoli), preservando l'ordine cronologico e ordinando i ruoli in modo canonico.
+     */
+    private function groupByMatch($designations)
+    {
+        $roleOrder = Designation::ROLES;
+
+        return $designations
+            ->groupBy('match_id')
+            ->map(fn ($group) => $group->sortBy(function ($d) use ($roleOrder) {
+                $index = array_search($d->role, $roleOrder, true);
+
+                return $index === false ? count($roleOrder) : $index;
+            })->values())
+            ->values();
+    }
+
     public function index(Request $request)
     {
         // Default: prossimo sabato → domenica successiva
@@ -32,16 +53,18 @@ class ReportController extends Controller
         $request->mergeIfMissing(['date_from' => $defaultFrom, 'date_to' => $defaultTo]);
 
         $designations = $this->getDesignations($request);
+        $matchGroups = $this->groupByMatch($designations);
 
-        return view('reports.index', compact('designations', 'defaultFrom', 'defaultTo'));
+        return view('reports.index', compact('designations', 'matchGroups', 'defaultFrom', 'defaultTo'));
     }
 
     public function pdf(Request $request)
     {
         $designations = $this->getDesignations($request);
+        $matchGroups = $this->groupByMatch($designations);
         $generatedAt = now()->format('d/m/Y H:i');
 
-        $pdf = Pdf::loadView('reports.pdf', compact('designations', 'generatedAt'))
+        $pdf = Pdf::loadView('reports.pdf', compact('designations', 'matchGroups', 'generatedAt'))
             ->setPaper('a4', 'portrait')
             ->setOption(['dpi' => 150, 'isHtml5ParserEnabled' => true, 'isRemoteEnabled' => false]);
 
@@ -132,21 +155,23 @@ class ReportController extends Controller
             return implode("\n", $lines);
         }
 
-        $lines[] = '| Data | Incontro | Campo | Arbitro | Ruolo | Stato |';
-        $lines[] = '|------|----------|-------|---------|-------|-------|';
+        $lines[] = '| Data | Incontro | Campo | Arbitri & ruoli |';
+        $lines[] = '|------|----------|-------|------------------|';
 
-        foreach ($designations as $d) {
-            $matchDate = Carbon::parse($d->match->date_time);
+        foreach ($this->groupByMatch($designations) as $group) {
+            $match = $group->first()->match;
+            $matchDate = Carbon::parse($match->date_time);
             $date = $matchDate->format('d/m/Y H:i');
             if (! $matchDate->isSunday()) {
                 $date .= ' **('.ucfirst($matchDate->translatedFormat('l')).')**';
             }
-            $match = $d->match->label;
-            $venue = $d->match->venue_label;
-            $ref = $d->referee->name;
-            $role = $d->role;
-            $status = ucfirst($d->status);
-            $lines[] = "| {$date} | {$match} | {$venue} | {$ref} | {$role} | {$status} |";
+            $venue = $match->venue_label;
+            $refs = $group->map(function ($d) {
+                $line = "**{$d->role}**: {$d->referee->name} ({$this->statusLabel($d->status)})";
+
+                return $d->role === self::OBSERVER_ROLE ? "🔎 {$line}" : $line;
+            })->implode('<br>');
+            $lines[] = "| {$date} | {$match->label} | {$venue} | {$refs} |";
         }
 
         $lines[] = '';
@@ -155,7 +180,7 @@ class ReportController extends Controller
         $lines[] = '## Riepilogo';
         $lines[] = '';
 
-        foreach (['pending' => 'In attesa', 'confirmed' => 'Confermate', 'completed' => 'Completate', 'cancelled' => 'Annullate'] as $key => $label) {
+        foreach (['pending' => 'In attesa', 'confirmed' => 'Accettate', 'completed' => 'Completate', 'cancelled' => 'Annullate'] as $key => $label) {
             $count = $designations->where('status', $key)->count();
             if ($count > 0) {
                 $lines[] = "- **{$label}**: {$count}";
@@ -185,25 +210,32 @@ class ReportController extends Controller
             return implode("\n", $lines);
         }
 
-        foreach ($designations as $d) {
-            $emoji = $statusEmoji[$d->status] ?? '•';
-            $matchDate = Carbon::parse($d->match->date_time);
+        foreach ($this->groupByMatch($designations) as $group) {
+            $match = $group->first()->match;
+            $matchDate = Carbon::parse($match->date_time);
             $date = $matchDate->format('d/m/Y H:i');
             if (! $matchDate->isSunday()) {
                 $date .= ' ⚠️ *('.ucfirst($matchDate->translatedFormat('l')).')*';
             }
             $lines[] = '';
-            $lines[] = "{$emoji} *{$d->match->label}*";
+            $lines[] = "🏟 *{$match->label}*";
             $lines[] = "   🗓 {$date}";
-            $lines[] = "   📍 {$d->match->venue_label}";
-            $lines[] = "   👤 {$d->referee->name} — {$d->role}";
+            $lines[] = "   📍 {$match->venue_label}";
+            foreach ($group as $d) {
+                $emoji = $statusEmoji[$d->status] ?? '•';
+                $line = "{$d->referee->name} — {$d->role}";
+                if ($d->role === self::OBSERVER_ROLE) {
+                    $line = "🔎 *{$line}*";
+                }
+                $lines[] = "   {$emoji} {$line}";
+            }
         }
 
         $lines[] = '';
         $lines[] = str_repeat('─', 30);
 
         $totals = [];
-        foreach (['confirmed' => '✅ Confermate', 'pending' => '⏳ In attesa', 'completed' => '🏁 Completate', 'cancelled' => '❌ Annullate'] as $key => $label) {
+        foreach (['confirmed' => '✅ Accettate', 'pending' => '⏳ In attesa', 'completed' => '🏁 Completate', 'cancelled' => '❌ Annullate'] as $key => $label) {
             $count = $designations->where('status', $key)->count();
             if ($count > 0) {
                 $totals[] = "{$label}: {$count}";
@@ -214,6 +246,12 @@ class ReportController extends Controller
         }
 
         return implode("\n", $lines);
+    }
+
+    /** Etichetta italiana dello stato di una designazione (per Markdown/testo). */
+    private function statusLabel(string $status): string
+    {
+        return Designation::STATUS_LABELS[$status] ?? ucfirst($status);
     }
 
     /**

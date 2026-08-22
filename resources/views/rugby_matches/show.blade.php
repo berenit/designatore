@@ -86,7 +86,7 @@
                                 @elseif ($designation->status === 'pending') bg-yellow-100 text-yellow-800
                                 @else bg-red-100 text-red-800
                                 @endif">
-                                {{ ucfirst($designation->status) }}
+                                {{ $designation->status_label }}
                             </span>
                         </div>
                     @empty

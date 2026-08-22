@@ -77,12 +77,14 @@
         tbody tr:last-child td { border-bottom: none; }
 
         .col-date   { width: 12%; }
-        .col-match  { width: 38%; }
-        .col-ref    { width: 23%; }
-        .col-role   { width: 14%; }
-        .col-status { width: 13%; }
+        .col-match  { width: 33%; }
+        .col-refs   { width: 55%; }
 
-        .role-name { font-size: 10px; color: #374151; }
+        .role-name { font-size: 10px; color: #374151; vertical-align: middle; }
+        .role-observer { font-weight: bold; color: #92400e; }
+
+        .ref-line { margin-bottom: 6px; }
+        .ref-line:last-child { margin-bottom: 0; }
 
         .date-day     { font-size: 11px; font-weight: bold; color: #374151; white-space: nowrap; }
         .date-weekday { font-size: 9px;  font-weight: bold; color: #dc2626; margin-top: 1px; }
@@ -91,11 +93,12 @@
         .match-name { font-size: 11px; font-weight: bold; color: #111827; }
         .match-meta { font-size: 9px; color: #6b7280; margin-top: 3px; }
 
-        .ref-name  { font-size: 11px; color: #374151; }
+        .ref-name  { font-size: 11px; color: #374151; vertical-align: middle; }
         .ref-level { font-size: 9px; color: #9ca3af; margin-top: 2px; }
 
         .badge {
             display: inline-block;
+            vertical-align: middle;
             padding: 3px 9px;
             border-radius: 9999px;
             font-size: 8.5px;
@@ -181,16 +184,14 @@
                 <tr>
                     <th class="col-date">Data</th>
                     <th class="col-match">Incontro</th>
-                    <th class="col-ref">Arbitro</th>
-                    <th class="col-role">Ruolo</th>
-                    <th class="col-status">Stato</th>
+                    <th class="col-refs">Arbitri &amp; ruoli</th>
                 </tr>
             </thead>
             <tbody>
-                @foreach ($designations as $d)
+                @foreach ($matchGroups as $group)
+                    @php $match = $group->first()->match; $matchDate = \Carbon\Carbon::parse($match->date_time); @endphp
                     <tr>
                         <td class="col-date">
-                            @php $matchDate = \Carbon\Carbon::parse($d->match->date_time); @endphp
                             <div class="date-day">{{ $matchDate->format('d/m/Y') }}</div>
                             @unless ($matchDate->isSunday())
                                 <div class="date-weekday">({{ ucfirst($matchDate->translatedFormat('l')) }})</div>
@@ -198,19 +199,20 @@
                             <div class="date-time">{{ $matchDate->format('H:i') }}</div>
                         </td>
                         <td class="col-match">
-                            <div class="match-name">{{ $d->match->label }}</div>
-                            <div class="match-meta">{{ $d->match->venue_label }} &nbsp;·&nbsp; {{ $d->match->competition_type }}@if($d->match->category_label)
-                                    &nbsp;·&nbsp; {{ $d->match->category_label }}
+                            <div class="match-name">{{ $match->label }}</div>
+                            <div class="match-meta">{{ $match->venue_label }} &nbsp;·&nbsp; {{ $match->competition_type }}@if($match->category_label)
+                                    &nbsp;·&nbsp; {{ $match->category_label }}
                                 @endif</div>
                         </td>
-                        <td class="col-ref">
-                            <div class="ref-name">{{ $d->referee->name }}</div>
-                        </td>
-                        <td class="col-role">
-                            <div class="role-name">{{ $d->role }}</div>
-                        </td>
-                        <td class="col-status">
-                            <span class="badge badge-{{ $d->status }}">{{ ucfirst($d->status) }}</span>
+                        <td class="col-refs">
+                            @foreach ($group as $d)
+                                @php $isObserver = $d->role === 'Osservatore'; @endphp
+                                <div class="ref-line">
+                                    <span class="ref-name">{{ $d->referee->name }}</span>
+                                    <span class="role-name @if($isObserver) role-observer @endif">— {{ $d->role }}</span>
+                                    <span class="badge badge-{{ $d->status }}">{{ $d->status_label }}</span>
+                                </div>
+                            @endforeach
                         </td>
                     </tr>
                 @endforeach
@@ -220,7 +222,7 @@
         <div class="summary">
             <div class="summary-title">Riepilogo</div>
             <div class="summary-grid">
-                @foreach (['pending' => 'In attesa', 'confirmed' => 'Confermate', 'completed' => 'Completate', 'cancelled' => 'Annullate'] as $key => $label)
+                @foreach (['pending' => 'In attesa', 'confirmed' => 'Accettate', 'completed' => 'Completate', 'cancelled' => 'Annullate'] as $key => $label)
                     @php $count = $designations->where('status', $key)->count(); @endphp
                     <div class="summary-cell">
                         <div class="summary-num">{{ $count }}</div>

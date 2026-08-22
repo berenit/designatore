@@ -94,7 +94,7 @@
                                             @elseif ($designation->status === 'confirmed') bg-green-100 text-green-800
                                             @elseif ($designation->status === 'completed') bg-blue-100 text-blue-800
                                             @else bg-red-100 text-red-800 @endif">
-                                            {{ ucfirst($designation->status) }}
+                                            {{ $designation->status_label }}
                                         </span>
                                         <span class="inline-flex items-center opacity-0 group-hover:opacity-100 transition">
                                             <a href="{{ route('designations.edit', $designation) }}" title="Modifica"
