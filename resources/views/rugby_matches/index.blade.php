@@ -48,7 +48,7 @@
                             <td class="px-6 py-4">
                                 <span class="text-sm font-semibold text-gray-900">{{ $match->label }}</span>
                                 @if ($match->isMultiTeam())
-                                    <div class="text-xs text-gray-400 mt-0.5">{{ $match->teams->pluck('name')->join(', ') }}</div>
+                                    <div class="text-xs text-gray-400 mt-0.5">{{ $match->participantNames()->join(', ') }}</div>
                                 @endif
                             </td>
                             <td class="px-6 py-4 text-sm text-gray-600">{{ $match->venue_label }}</td>

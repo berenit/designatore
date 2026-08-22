@@ -29,6 +29,8 @@
             'teamIds' => array_map('strval', old('team_ids', $selectedTeamIds->all())),
             'status'  => old('status', $match->status),
             'extraRoles' => old('extra_roles', $selectedExtraKeys),
+            'extraTeamNames' => old('extra_team_names', $extraTeamNames),
+            'requiredReferees' => old('required_referees', $requiredReferees ?? ''),
         ];
     @endphp
 
@@ -119,6 +121,41 @@
             </div>
             @error('team_ids')<p class="mt-1 text-xs text-red-600">{{ $message }}</p>@enderror
             @error('team_ids.*')<p class="mt-1 text-xs text-red-600">{{ $message }}</p>@enderror
+        </div>
+
+        {{-- Squadre esterne (solo Torneo): non in anagrafica, memorizzate solo per questa gara --}}
+        <div x-show="type === 'Torneo'" x-transition>
+            <label class="block text-sm font-medium text-gray-700 mb-1">
+                Squadre esterne <span class="text-gray-400 font-normal">(non in anagrafica)</span>
+            </label>
+            <div class="space-y-2">
+                <template x-for="(name, index) in extraTeamNames" :key="index">
+                    <div class="flex items-center gap-2">
+                        <input type="text" name="extra_team_names[]" x-model="extraTeamNames[index]"
+                               placeholder="Nome squadra"
+                               class="flex-1 w-full rounded-lg border-gray-300 shadow-sm text-sm focus:border-indigo-500 focus:ring-indigo-500">
+                        <button type="button" @click="removeExtraTeam(index)"
+                                class="text-gray-400 hover:text-red-500 px-2" title="Rimuovi squadra">&times;</button>
+                    </div>
+                </template>
+            </div>
+            <button type="button" @click="addExtraTeam()"
+                    class="mt-2 text-sm text-indigo-600 hover:text-indigo-800">+ Aggiungi squadra esterna</button>
+            <p class="mt-1 text-xs text-gray-400">
+                Totale squadre (in anagrafica + esterne): <span x-text="teamIds.length + extraTeamNames.filter(n => n.trim() !== '').length"></span> (min. 3)
+            </p>
+            @error('extra_team_names')<p class="mt-1 text-xs text-red-600">{{ $message }}</p>@enderror
+            @error('extra_team_names.*')<p class="mt-1 text-xs text-red-600">{{ $message }}</p>@enderror
+        </div>
+
+        {{-- Numero arbitri da designare (solo Torneo) --}}
+        <div x-show="type === 'Torneo'" x-transition>
+            <label for="required_referees" class="block text-sm font-medium text-gray-700 mb-1">Arbitri da designare</label>
+            <input id="required_referees" type="number" name="required_referees" x-model="requiredReferees" min="1"
+                   placeholder="Es. 5"
+                   class="w-full rounded-lg border-gray-300 shadow-sm text-sm focus:border-indigo-500 focus:ring-indigo-500 @error('required_referees') border-red-400 @enderror">
+            <p class="mt-1 text-xs text-gray-400">Numero minimo di arbitri richiesti per considerare il torneo completamente designato (default: 1).</p>
+            @error('required_referees')<p class="mt-1 text-xs text-red-600">{{ $message }}</p>@enderror
         </div>
 
         {{-- Data, campo, stato --}}
@@ -212,6 +249,8 @@ function matchForm(teams, bookedDates, multiTeamTypes, old) {
         teamIds:  old.teamIds || [],
         status:   old.status || '',
         directorChecked: (old.extraRoles || []).includes('director'),
+        extraTeamNames: (old.extraTeamNames && old.extraTeamNames.length) ? old.extraTeamNames : [''],
+        requiredReferees: old.requiredReferees || '',
 
         init() {
             // Nei Concentramenti il Direttore di concentramento è sempre obbligatorio
@@ -252,6 +291,15 @@ function matchForm(teams, bookedDates, multiTeamTypes, old) {
             this.homeId = '';
             this.awayId = '';
             this.teamIds = [];
+        },
+
+        addExtraTeam() {
+            this.extraTeamNames.push('');
+        },
+
+        removeExtraTeam(index) {
+            this.extraTeamNames.splice(index, 1);
+            if (this.extraTeamNames.length === 0) this.extraTeamNames.push('');
         },
     }
 }

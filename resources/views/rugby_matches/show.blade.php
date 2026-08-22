@@ -51,7 +51,20 @@
                 <div class="px-6 py-4 grid grid-cols-3 gap-4">
                     <dt class="text-sm font-medium text-gray-500">Squadre</dt>
                     <dd class="text-sm text-gray-900 col-span-2">
-                        {{ $match->teams->pluck('name')->join(', ') ?: '—' }}
+                        {{ $match->participantNames()->join(', ') ?: '—' }}
+                        @if ($match->extraTeamNames())
+                            <span class="text-xs text-gray-400">({{ count($match->extraTeamNames()) }} esterne)</span>
+                        @endif
+                    </dd>
+                </div>
+            @endif
+
+            @if ($match->competition_type === 'Torneo')
+                <div class="px-6 py-4 grid grid-cols-3 gap-4">
+                    <dt class="text-sm font-medium text-gray-500">Arbitri richiesti</dt>
+                    <dd class="text-sm text-gray-900 col-span-2">
+                        {{ $match->designations->where('status', '!=', 'cancelled')->where('role', \App\Models\RugbyMatch::DEFAULT_ROLE)->count() }}
+                        / {{ $match->requiredRefereesCount() }}
                     </dd>
                 </div>
             @endif

@@ -29,6 +29,7 @@
               {{ json_encode($matchAssignments) }},
               {{ json_encode($matchDates) }},
               {{ json_encode($refereeBookings) }},
+              {{ json_encode($matchRequiredReferees) }},
               {{ json_encode($oldState) }}
           )">
         @csrf
@@ -69,7 +70,9 @@
                     </div>
                     <button type="button" @click="addArbitro()"
                             class="mt-2 text-sm text-indigo-600 hover:text-indigo-800">+ Aggiungi arbitro</button>
-                    <p class="mt-2 text-xs text-gray-400">Almeno un arbitro è obbligatorio.</p>
+                    <p class="mt-2 text-xs" :class="arbitriCount < requiredReferees ? 'text-amber-600' : 'text-gray-400'">
+                        Arbitri richiesti: <span x-text="requiredReferees"></span> (selezionati: <span x-text="arbitriCount"></span>)
+                    </p>
                     @error('arbitri')<p class="mt-1 text-xs text-red-600">{{ $message }}</p>@enderror
                 </div>
             </template>
@@ -135,7 +138,7 @@
 </div>
 
 <script>
-function designationForm(matchRoles, matchIsMulti, matchAssignments, matchDates, refereeBookings, old) {
+function designationForm(matchRoles, matchIsMulti, matchAssignments, matchDates, refereeBookings, matchRequiredReferees, old) {
     // Etichette più leggibili per alcuni ruoli interni
     const LABELS = {
         'Assistente 1': 'Giudice di linea 1',
@@ -148,6 +151,7 @@ function designationForm(matchRoles, matchIsMulti, matchAssignments, matchDates,
         matchAssignments,  // { match_id: { roles: { role: referee_id, ... }, arbitri: [referee_id, ...] } }
         matchDates,        // { match_id: 'YYYY-MM-DD' }
         refereeBookings,   // { referee_id: [{ date, match_id }, ...] }
+        matchRequiredReferees, // { match_id: numero minimo di arbitri richiesti }
         matchId: old.matchId || '',
         referees: {},      // { role: referee_id }, ruolo Arbitro incluso solo per le gare singole
         arbitri: [],       // [referee_id, ...], uno o più arbitri liberi per Concentramenti/Tornei
@@ -165,6 +169,14 @@ function designationForm(matchRoles, matchIsMulti, matchAssignments, matchDates,
 
         get isMulti() {
             return !!this.matchIsMulti[this.matchId];
+        },
+
+        get requiredReferees() {
+            return this.matchRequiredReferees[this.matchId] || 1;
+        },
+
+        get arbitriCount() {
+            return this.arbitri.filter((id) => id !== '').length;
         },
 
         get roles() {
@@ -210,6 +222,7 @@ function designationForm(matchRoles, matchIsMulti, matchAssignments, matchDates,
 
             if (this.isMulti) {
                 this.arbitri = (prefill.arbitri || []).map(String);
+                while (this.arbitri.length < this.requiredReferees) this.arbitri.push('');
                 if (this.arbitri.length === 0) this.arbitri = [''];
             }
         },

@@ -69,6 +69,7 @@ class DesignationController extends Controller
         // Mappe per Alpine: ruoli previsti, se la gara è multi-squadra e arbitri già assegnati per ciascuna gara
         $matchRoles = $matches->mapWithKeys(fn ($m) => [$m->id => $m->requiredRoles()]);
         $matchIsMulti = $matches->mapWithKeys(fn ($m) => [$m->id => $m->isMultiTeam()]);
+        $matchRequiredReferees = $matches->mapWithKeys(fn ($m) => [$m->id => $m->requiredRefereesCount()]);
         $matchAssignments = $matches->mapWithKeys(fn ($m) => [
             $m->id => [
                 // Per i ruoli singoli (tutti tranne l'Arbitro); l'Arbitro può ripetersi negli eventi multi-squadra
@@ -90,7 +91,7 @@ class DesignationController extends Controller
             ->map(fn ($rows) => $rows->map(fn ($r) => ['date' => $r->match_date, 'match_id' => $r->match_id])->values());
 
         return view('designations.create', compact(
-            'matches', 'referees', 'preselect', 'matchRoles', 'matchIsMulti', 'matchAssignments', 'matchDates', 'refereeBookings'
+            'matches', 'referees', 'preselect', 'matchRoles', 'matchIsMulti', 'matchAssignments', 'matchDates', 'refereeBookings', 'matchRequiredReferees'
         ));
     }
 

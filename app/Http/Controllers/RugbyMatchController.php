@@ -14,6 +14,7 @@ use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Facades\Redirect;
 use Illuminate\Validation\Rule;
+use Illuminate\Validation\ValidationException;
 
 class RugbyMatchController extends Controller
 {
@@ -55,6 +56,7 @@ class RugbyMatchController extends Controller
     private function validateMatch(Request $request): array
     {
         $isMultiTeam = in_array($request->competition_type, RugbyMatch::MULTI_TEAM_TYPES, true);
+        $isTorneo = $request->competition_type === 'Torneo';
 
         $rules = [
             'date_time' => 'required|date',
@@ -65,7 +67,16 @@ class RugbyMatchController extends Controller
             'extra_roles.*' => [Rule::in(array_keys(RugbyMatch::EXTRA_ROLE_OPTIONS))],
         ];
 
-        if ($isMultiTeam) {
+        if ($isTorneo) {
+            // Nei Tornei le squadre possono essere in anagrafica (team_ids) e/o esterne
+            // (extra_team_names, memorizzate solo per questa gara): serve almeno 3 in totale.
+            $rules['name'] = 'required|string|max:255';
+            $rules['team_ids'] = 'nullable|array';
+            $rules['team_ids.*'] = ['distinct', 'exists:teams,id'];
+            $rules['extra_team_names'] = 'nullable|array';
+            $rules['extra_team_names.*'] = ['distinct', 'string', 'max:255'];
+            $rules['required_referees'] = 'nullable|integer|min:1';
+        } elseif ($isMultiTeam) {
             $rules['name'] = 'required|string|max:255';
             $rules['team_ids'] = 'required|array|min:3';
             $rules['team_ids.*'] = ['distinct', 'exists:teams,id'];
@@ -74,7 +85,19 @@ class RugbyMatchController extends Controller
             $rules['away_team_id'] = ['required', 'exists:teams,id', 'different:home_team_id'];
         }
 
-        return $request->validate($rules);
+        $validated = $request->validate($rules);
+
+        if ($isTorneo) {
+            $totalTeams = count($validated['team_ids'] ?? []) + count(array_filter($validated['extra_team_names'] ?? [], fn ($n) => trim($n) !== ''));
+
+            if ($totalTeams < 3) {
+                throw ValidationException::withMessages([
+                    'team_ids' => 'Servono almeno 3 squadre in totale (in anagrafica o esterne).',
+                ]);
+            }
+        }
+
+        return $validated;
     }
 
     /** Vero se la squadra ha già un impegno (partita o evento) nella data indicata. */
@@ -138,7 +161,7 @@ class RugbyMatchController extends Controller
     private function teamsToCheck(array $validated): array
     {
         if (in_array($validated['competition_type'], RugbyMatch::MULTI_TEAM_TYPES, true)) {
-            return array_map(fn ($id) => ['id' => (int) $id, 'field' => 'team_ids'], $validated['team_ids']);
+            return array_map(fn ($id) => ['id' => (int) $id, 'field' => 'team_ids'], $validated['team_ids'] ?? []);
         }
 
         return [
@@ -188,7 +211,7 @@ class RugbyMatchController extends Controller
         $match = RugbyMatch::create($this->matchAttributes($validated));
 
         if ($match->isMultiTeam()) {
-            $match->teams()->sync($validated['team_ids']);
+            $match->teams()->sync($validated['team_ids'] ?? []);
         }
 
         return Redirect::route('rugby-matches.index')
@@ -199,6 +222,7 @@ class RugbyMatchController extends Controller
     private function matchAttributes(array $validated): array
     {
         $isMultiTeam = in_array($validated['competition_type'], RugbyMatch::MULTI_TEAM_TYPES, true);
+        $isTorneo = $validated['competition_type'] === 'Torneo';
         $extraRoles = $validated['extra_roles'] ?? [];
 
         // Nei Concentramenti (non nei Tornei) il Direttore di concentramento è sempre obbligatorio,
@@ -206,6 +230,11 @@ class RugbyMatchController extends Controller
         if ($validated['competition_type'] === 'Concentramento' && ! in_array('director', $extraRoles, true)) {
             $extraRoles[] = 'director';
         }
+
+        // Nomi delle squadre esterne al Torneo (non in anagrafica): ripulisce righe vuote.
+        $extraTeamNames = $isTorneo
+            ? array_values(array_filter(array_map('trim', $validated['extra_team_names'] ?? []), fn ($n) => $n !== ''))
+            : null;
 
         return [
             'date_time' => $validated['date_time'],
@@ -216,6 +245,8 @@ class RugbyMatchController extends Controller
             'home_team_id' => $isMultiTeam ? null : $validated['home_team_id'],
             'away_team_id' => $isMultiTeam ? null : $validated['away_team_id'],
             'required_roles' => RugbyMatch::rolesFromExtraKeys($extraRoles),
+            'extra_team_names' => $extraTeamNames ?: null,
+            'required_referees' => $isTorneo ? ($validated['required_referees'] ?? null) : null,
         ];
     }
 
@@ -248,6 +279,8 @@ class RugbyMatchController extends Controller
         $extraRoleOptions = RugbyMatch::EXTRA_ROLE_OPTIONS;
         $selectedExtraKeys = $rugbyMatch->selectedExtraKeys();
         $selectedTeamIds = $rugbyMatch->teams->pluck('id')->map(fn ($id) => (string) $id)->values();
+        $extraTeamNames = $rugbyMatch->extraTeamNames();
+        $requiredReferees = $rugbyMatch->required_referees;
 
         // Campionato corrente per preselezionare il filtro delle squadre
         $currentLeague = $rugbyMatch->homeTeam->league_division
@@ -256,7 +289,7 @@ class RugbyMatchController extends Controller
 
         return view('rugby_matches.edit', compact(
             'match', 'teams', 'leagues', 'venues', 'bookedDates', 'competitionTypes', 'multiTeamTypes',
-            'extraRoleOptions', 'selectedExtraKeys', 'selectedTeamIds', 'currentLeague'
+            'extraRoleOptions', 'selectedExtraKeys', 'selectedTeamIds', 'currentLeague', 'extraTeamNames', 'requiredReferees'
         ));
     }
 
@@ -283,9 +316,9 @@ class RugbyMatchController extends Controller
         $rugbyMatch->update($this->matchAttributes($validated));
 
         if ($rugbyMatch->isMultiTeam()) {
-            $newTeamIds = collect($validated['team_ids'])->map(fn ($id) => (int) $id)->sort()->values()->all();
+            $newTeamIds = collect($validated['team_ids'] ?? [])->map(fn ($id) => (int) $id)->sort()->values()->all();
             $teamsChanged = $originalTeamIds !== $newTeamIds;
-            $rugbyMatch->teams()->sync($validated['team_ids']);
+            $rugbyMatch->teams()->sync($validated['team_ids'] ?? []);
         } else {
             $teamsChanged = $originalTeamIds !== [];
             $rugbyMatch->teams()->detach();

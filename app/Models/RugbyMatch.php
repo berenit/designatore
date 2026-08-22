@@ -14,6 +14,8 @@ use Illuminate\Database\Eloquent\Model;
     'competition_type',
     'status',
     'required_roles',
+    'extra_team_names',
+    'required_referees',
 ])]
 class RugbyMatch extends Model
 {
@@ -22,6 +24,7 @@ class RugbyMatch extends Model
     protected $casts = [
         'date_time' => 'datetime',
         'required_roles' => 'array',
+        'extra_team_names' => 'array',
     ];
 
     /** Tutti i tipi di competizione ammessi. */
@@ -132,11 +135,34 @@ class RugbyMatch extends Model
     /** Vero se ogni ruolo previsto ha una designazione attiva (non rifiutata/cancellata). */
     public function isFullyDesignated(): bool
     {
-        $activeRoles = $this->designations
-            ->where('status', '!=', 'cancelled')
-            ->pluck('role');
+        $active = $this->designations->where('status', '!=', 'cancelled');
+        $activeRoles = $active->pluck('role');
 
-        return collect($this->requiredRoles())->diff($activeRoles)->isEmpty();
+        if (! collect($this->requiredRoles())->diff($activeRoles)->isEmpty()) {
+            return false;
+        }
+
+        $arbitriCount = $active->where('role', self::DEFAULT_ROLE)->count();
+
+        return $arbitriCount >= $this->requiredRefereesCount();
+    }
+
+    /** Numero minimo di arbitri richiesti per questa gara (di norma 1, configurabile nei Tornei). */
+    public function requiredRefereesCount(): int
+    {
+        return $this->required_referees ?: 1;
+    }
+
+    /** Nomi delle squadre esterne (non presenti in anagrafica) aggiunte solo per questo Torneo. */
+    public function extraTeamNames(): array
+    {
+        return $this->extra_team_names ?: [];
+    }
+
+    /** Nomi di tutte le squadre partecipanti: quelle in anagrafica più quelle esterne del Torneo. */
+    public function participantNames()
+    {
+        return $this->participatingTeams()->pluck('name')->merge($this->extraTeamNames())->values();
     }
 
     /** Vero se esiste almeno una partita futura non ancora completamente designata. */
@@ -174,6 +200,7 @@ class RugbyMatch extends Model
 
             // Evita di idratare l'intera relazione (e l'N+1) se 'teams' non è già caricata
             $count = $this->relationLoaded('teams') ? $this->teams->count() : $this->teams()->count();
+            $count += count($this->extraTeamNames());
 
             return $this->competition_type.' · '.$count.' squadre';
         }
