@@ -68,6 +68,16 @@ class RugbyMatchController extends Controller
         ];
 
         if ($isTorneo) {
+            // Righe vuote lasciate nel form (es. l'ultimo input "+ Aggiungi squadra esterna"
+            // mai compilato) diventano null per via di ConvertEmptyStringsToNull: le rimuove
+            // prima della validazione, altrimenti la regola 'string' le respinge.
+            $request->merge([
+                'extra_team_names' => array_values(array_filter(
+                    $request->input('extra_team_names', []),
+                    fn ($n) => trim((string) $n) !== ''
+                )),
+            ]);
+
             // Nei Tornei le squadre possono essere in anagrafica (team_ids) e/o esterne
             // (extra_team_names, memorizzate solo per questa gara): serve almeno 3 in totale.
             $rules['name'] = 'required|string|max:255';
