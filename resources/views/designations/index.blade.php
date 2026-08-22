@@ -74,7 +74,7 @@
                 <tbody class="divide-y divide-gray-100">
                     @foreach ($matches as $match)
                         @php $designations = $match->designationsOrdered(); @endphp
-                        <tr class="hover:bg-gray-50 transition {{ $designations->isEmpty() ? 'bg-amber-50/40' : '' }}">
+                        <tr class="hover:bg-gray-50 transition {{ ! $match->isFullyDesignated() ? 'bg-amber-50/40' : '' }}">
                             <td class="px-6 py-4 whitespace-nowrap align-top">
                                 <div class="text-sm font-medium text-gray-900">
                                     {{ \Carbon\Carbon::parse($match->date_time)->format('d/m/Y H:i') }}
@@ -85,7 +85,7 @@
                                 <div class="text-xs text-gray-400 mt-0.5">{{ $match->venue_label }} · {{ $match->competition_type }}</div>
                             </td>
                             <td class="px-6 py-4 align-top">
-                                @forelse ($designations as $designation)
+                                @foreach ($designations as $designation)
                                     <div class="flex items-center gap-2 py-0.5 flex-wrap group">
                                         <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-indigo-100 text-indigo-700">{{ $designation->role }}</span>
                                         <span class="text-sm font-medium text-gray-900">{{ $designation->referee->name }}</span>
@@ -110,9 +110,14 @@
                                             </form>
                                         </span>
                                     </div>
-                                @empty
-                                    <span class="text-amber-600 text-xs font-medium">Da designare</span>
-                                @endforelse
+                                @endforeach
+                                @foreach ($match->missingRoleLabels() as $missingRole)
+                                    <div class="flex items-center gap-2 py-0.5 flex-wrap">
+                                        <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-amber-50 text-amber-700 border border-dashed border-amber-300">
+                                            {{ $missingRole }} (da designare)
+                                        </span>
+                                    </div>
+                                @endforeach
                             </td>
                             <td class="px-6 py-4 whitespace-nowrap text-right align-top">
                                 <a href="{{ route('designations.create', ['match_id' => $match->id]) }}"
@@ -133,7 +138,7 @@
     {{-- Legenda --}}
     <p class="text-xs text-gray-400 mt-3 flex items-center gap-2">
         <span class="inline-block w-3 h-3 rounded-sm bg-amber-50 border border-amber-200"></span>
-        Partite senza arbitro designato
+        Partite con almeno un arbitro/ruolo ancora da designare
     </p>
 @endif
 @endsection

@@ -5,6 +5,7 @@ use App\Http\Controllers\DesignationController;
 use App\Http\Controllers\DesignationResponseController;
 use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\RefereeController;
+use App\Http\Controllers\RefereeUnavailabilityController;
 use App\Http\Controllers\ReportController;
 use App\Http\Controllers\RugbyMatchController;
 use App\Http\Controllers\TeamController;
@@ -23,6 +24,10 @@ Route::middleware('auth')->group(function () {
     Route::get('/dashboard', [DashboardController::class, 'private'])->name('dashboard');
 
     Route::resource('referees', RefereeController::class);
+    Route::post('/referees/{referee}/unavailabilities', [RefereeUnavailabilityController::class, 'store'])
+        ->name('referees.unavailabilities.store');
+    Route::delete('/referees/{referee}/unavailabilities/{unavailability}', [RefereeUnavailabilityController::class, 'destroy'])
+        ->name('referees.unavailabilities.destroy');
     Route::resource('teams', TeamController::class);
     Route::resource('venues', VenueController::class);
     Route::resource('rugby-matches', RugbyMatchController::class);

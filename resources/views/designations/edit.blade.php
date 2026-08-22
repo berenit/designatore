@@ -39,10 +39,15 @@
                 <option value="">Seleziona un arbitro...</option>
                 @foreach($referees as $referee)
                     <option value="{{ $referee->id }}"
-                            @class(['text-red-600 font-medium' => $conflictingRefereeIds->contains($referee->id)])
+                            @class([
+                                'text-gray-400' => $unavailableRefereeIds->contains($referee->id),
+                                'text-red-600 font-medium' => ! $unavailableRefereeIds->contains($referee->id) && $conflictingRefereeIds->contains($referee->id),
+                            ])
+                            @disabled($unavailableRefereeIds->contains($referee->id))
                             {{ old('referee_id', $designation->referee_id) == $referee->id ? 'selected' : '' }}>
                         {{ $referee->name }} — {{ $referee->license_level }}
-                        @if ($conflictingRefereeIds->contains($referee->id)) (già impegnato in questa giornata) @endif
+                        @if ($unavailableRefereeIds->contains($referee->id)) (indisponibile)
+                        @elseif ($conflictingRefereeIds->contains($referee->id)) (già impegnato in questa giornata) @endif
                     </option>
                 @endforeach
             </select>

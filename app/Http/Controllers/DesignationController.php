@@ -90,8 +90,15 @@ class DesignationController extends Controller
             ->groupBy('referee_id')
             ->map(fn ($rows) => $rows->map(fn ($r) => ['date' => $r->match_date, 'match_id' => $r->match_id])->values());
 
+        // Periodi di indisponibilità per arbitro, per disabilitare la selezione lato client
+        $refereeUnavailabilities = DB::table('referee_unavailabilities')
+            ->select('referee_id', 'start_date', 'end_date')
+            ->get()
+            ->groupBy('referee_id')
+            ->map(fn ($rows) => $rows->map(fn ($r) => ['start' => $r->start_date, 'end' => $r->end_date])->values());
+
         return view('designations.create', compact(
-            'matches', 'referees', 'preselect', 'matchRoles', 'matchIsMulti', 'matchAssignments', 'matchDates', 'refereeBookings', 'matchRequiredReferees'
+            'matches', 'referees', 'preselect', 'matchRoles', 'matchIsMulti', 'matchAssignments', 'matchDates', 'refereeBookings', 'matchRequiredReferees', 'refereeUnavailabilities'
         ));
     }
 
@@ -148,6 +155,27 @@ class DesignationController extends Controller
     }
 
     /**
+     * Arbitri tra quelli indicati indisponibili alla data indicata. Ritorna una mappa [referee_id => nome arbitro].
+     */
+    private function unavailableReferees(array $refereeIds, string $date): array
+    {
+        $refereeIds = array_values(array_unique(array_filter($refereeIds)));
+
+        if (empty($refereeIds)) {
+            return [];
+        }
+
+        return DB::table('referee_unavailabilities')
+            ->join('referees', 'referees.id', '=', 'referee_unavailabilities.referee_id')
+            ->whereIn('referee_unavailabilities.referee_id', $refereeIds)
+            ->whereDate('referee_unavailabilities.start_date', '<=', $date)
+            ->whereDate('referee_unavailabilities.end_date', '>=', $date)
+            ->distinct()
+            ->pluck('referees.name', 'referee_unavailabilities.referee_id')
+            ->all();
+    }
+
+    /**
      * Store a newly created resource in storage.
      */
     public function store(Request $request)
@@ -195,6 +223,18 @@ class DesignationController extends Controller
         if ($match->competition_type === 'Concentramento' && ! $otherAssignments->has('Direttore di concentramento')) {
             return Redirect::back()->withInput()->withErrors([
                 'referees' => 'Nei Concentramenti è obbligatorio assegnare un Direttore di concentramento.',
+            ]);
+        }
+
+        // Un arbitro indisponibile in quella data non può essere designato: blocco non aggirabile.
+        $unavailable = $this->unavailableReferees(
+            $arbitriIds->merge($otherAssignments->values())->all(),
+            $match->date_time->format('Y-m-d')
+        );
+
+        if ($unavailable) {
+            return Redirect::back()->withInput()->withErrors([
+                'referees' => implode(', ', $unavailable).' risulta/no indisponibile/i in questa data.',
             ]);
         }
 
@@ -315,14 +355,20 @@ class DesignationController extends Controller
             ->with('success', count($designations).' designazione/i salvata/e con successo. Email di notifica inviate.');
     }
 
-    /** Crea/aggiorna una designazione e invia l'email di notifica al relativo arbitro. */
+    /**
+     * Crea/aggiorna una designazione. Invia l'email di notifica solo se la designazione è nuova
+     * o se l'arbitro assegnato è cambiato: un arbitro già designato (e che magari ha già
+     * confermato/rifiutato) non deve ricevere una nuova email solo perché, nello stesso invio,
+     * è stato aggiunto o sostituito un arbitro su un ruolo diverso della stessa gara.
+     */
     private function saveDesignation(RugbyMatch $match, string $role, int $refereeId, array $validated, array $key): Designation
     {
         $existing = Designation::where($key)->first();
+        $refereeChanged = ! $existing || $existing->referee_id !== $refereeId;
 
         // Se la designazione esisteva già con un arbitro diverso, avvisa quello sostituito
         // prima che venga sovrascritto da updateOrCreate.
-        if ($existing && $existing->referee_id !== $refereeId && $existing->status !== 'cancelled') {
+        if ($existing && $refereeChanged && $existing->status !== 'cancelled') {
             $existing->load(['match.homeTeam', 'match.awayTeam', 'match.teams', 'match.venue', 'referee']);
 
             Mail::to($existing->referee->email)->send(new DesignationRemovedMail($existing));
@@ -334,24 +380,31 @@ class DesignationController extends Controller
             ]);
         }
 
-        $designation = Designation::updateOrCreate($key, [
-            'referee_id' => $refereeId,
-            'assigned_by' => auth()->id(),
-            'assignment_date' => now(),
-            'status' => 'pending',
-            'notes' => $validated['notes'] ?? null,
-        ]);
+        $attributes = ['referee_id' => $refereeId, 'notes' => $validated['notes'] ?? null];
 
-        $designation->load(['match.homeTeam', 'match.awayTeam', 'match.teams', 'match.venue', 'referee']);
+        // Lo stato va reimpostato a "pending" (e l'arbitro ri-notificato) solo per una
+        // designazione nuova o quando l'arbitro cambia: altrimenti si perderebbe una
+        // conferma/rifiuto già dato.
+        if ($refereeChanged) {
+            $attributes['assigned_by'] = auth()->id();
+            $attributes['assignment_date'] = now();
+            $attributes['status'] = 'pending';
+        }
 
-        Mail::to($designation->referee->email)
-            ->send(new DesignationNotificationMail($designation));
+        $designation = Designation::updateOrCreate($key, $attributes);
 
-        Log::info('Email di designazione inviata all\'arbitro', [
-            'designation_id' => $designation->id,
-            'match_id' => $designation->match_id,
-            'referee_email' => $designation->referee->email,
-        ]);
+        if ($refereeChanged) {
+            $designation->load(['match.homeTeam', 'match.awayTeam', 'match.teams', 'match.venue', 'referee']);
+
+            Mail::to($designation->referee->email)
+                ->send(new DesignationNotificationMail($designation));
+
+            Log::info('Email di designazione inviata all\'arbitro', [
+                'designation_id' => $designation->id,
+                'match_id' => $designation->match_id,
+                'referee_email' => $designation->referee->email,
+            ]);
+        }
 
         return $designation;
     }
@@ -395,7 +448,14 @@ class DesignationController extends Controller
             ->pluck('designations.referee_id')
             ->unique();
 
-        return view('designations.edit', compact('designation', 'matches', 'referees', 'roles', 'conflictingRefereeIds'));
+        // Arbitri indisponibili nella data della gara: da mostrare in grigio e non selezionabili
+        $unavailableRefereeIds = DB::table('referee_unavailabilities')
+            ->whereDate('start_date', '<=', $matchDate)
+            ->whereDate('end_date', '>=', $matchDate)
+            ->pluck('referee_id')
+            ->unique();
+
+        return view('designations.edit', compact('designation', 'matches', 'referees', 'roles', 'conflictingRefereeIds', 'unavailableRefereeIds'));
     }
 
     /**
@@ -422,8 +482,21 @@ class DesignationController extends Controller
             return Redirect::back()->withInput()->withErrors($errors);
         }
 
-        // Come in store(): il doppio impegno lo stesso giorno è solo un avviso da confermare, non un blocco.
         $targetMatch = RugbyMatch::findOrFail($validated['match_id']);
+
+        // Come in store(): un arbitro indisponibile in quella data non può essere designato.
+        $unavailable = $this->unavailableReferees(
+            [(int) $validated['referee_id']],
+            $targetMatch->date_time->format('Y-m-d')
+        );
+
+        if ($unavailable) {
+            return Redirect::back()->withInput()->withErrors([
+                'referee_id' => implode(', ', $unavailable).' risulta indisponibile in questa data.',
+            ]);
+        }
+
+        // Come in store(): il doppio impegno lo stesso giorno è solo un avviso da confermare, non un blocco.
         $doubleBooked = $this->doubleBookedReferees(
             [(int) $validated['referee_id']],
             $targetMatch->date_time->format('Y-m-d'),

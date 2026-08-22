@@ -30,6 +30,7 @@
               {{ json_encode($matchDates) }},
               {{ json_encode($refereeBookings) }},
               {{ json_encode($matchRequiredReferees) }},
+              {{ json_encode($refereeUnavailabilities) }},
               {{ json_encode($oldState) }}
           )">
         @csrf
@@ -60,7 +61,7 @@
                                         name="arbitri[]" x-model="arbitri[index]">
                                     <option value="">— nessuno —</option>
                                     @foreach ($referees as $referee)
-                                        <option value="{{ $referee->id }}" :class="conflictClass({{ $referee->id }})">{{ $referee->name }} — {{ $referee->license_level }}</option>
+                                        <option value="{{ $referee->id }}" :class="conflictClass({{ $referee->id }})" :disabled="isUnavailable({{ $referee->id }})" x-text="refereeLabel({{ $referee->id }}, '{{ addslashes($referee->name) }} — {{ addslashes($referee->license_level) }}')"></option>
                                     @endforeach
                                 </select>
                                 <button type="button" @click="removeArbitro(index)"
@@ -87,7 +88,7 @@
                                 name="referees[Arbitro]" x-model="referees['Arbitro']">
                             <option value="">— nessuno —</option>
                             @foreach ($referees as $referee)
-                                <option value="{{ $referee->id }}" :class="conflictClass({{ $referee->id }})">{{ $referee->name }} — {{ $referee->license_level }}</option>
+                                <option value="{{ $referee->id }}" :class="conflictClass({{ $referee->id }})" :disabled="isUnavailable({{ $referee->id }})" x-text="refereeLabel({{ $referee->id }}, '{{ addslashes($referee->name) }} — {{ addslashes($referee->license_level) }}')"></option>
                             @endforeach
                         </select>
                     </div>
@@ -99,7 +100,7 @@
                                 :name="`referees[${role}]`" x-model="referees[role]">
                             <option value="">— nessuno —</option>
                             @foreach ($referees as $referee)
-                                <option value="{{ $referee->id }}" :class="conflictClass({{ $referee->id }})">{{ $referee->name }} — {{ $referee->license_level }}</option>
+                                <option value="{{ $referee->id }}" :class="conflictClass({{ $referee->id }})" :disabled="isUnavailable({{ $referee->id }})" x-text="refereeLabel({{ $referee->id }}, '{{ addslashes($referee->name) }} — {{ addslashes($referee->license_level) }}')"></option>
                             @endforeach
                         </select>
                     </div>
@@ -138,7 +139,7 @@
 </div>
 
 <script>
-function designationForm(matchRoles, matchIsMulti, matchAssignments, matchDates, refereeBookings, matchRequiredReferees, old) {
+function designationForm(matchRoles, matchIsMulti, matchAssignments, matchDates, refereeBookings, matchRequiredReferees, refereeUnavailabilities, old) {
     // Etichette più leggibili per alcuni ruoli interni
     const LABELS = {
         'Assistente 1': 'Giudice di linea 1',
@@ -152,6 +153,7 @@ function designationForm(matchRoles, matchIsMulti, matchAssignments, matchDates,
         matchDates,        // { match_id: 'YYYY-MM-DD' }
         refereeBookings,   // { referee_id: [{ date, match_id }, ...] }
         matchRequiredReferees, // { match_id: numero minimo di arbitri richiesti }
+        refereeUnavailabilities, // { referee_id: [{ start, end }, ...] }
         matchId: old.matchId || '',
         referees: {},      // { role: referee_id }, ruolo Arbitro incluso solo per le gare singole
         arbitri: [],       // [referee_id, ...], uno o più arbitri liberi per Concentramenti/Tornei
@@ -203,7 +205,23 @@ function designationForm(matchRoles, matchIsMulti, matchAssignments, matchDates,
         },
 
         conflictClass(refereeId) {
+            if (this.isUnavailable(refereeId)) return 'text-gray-400';
+
             return this.hasConflict(refereeId) ? 'text-red-600 font-medium' : '';
+        },
+
+        // Vero se l'arbitro è indisponibile nella data della gara selezionata (periodo registrato)
+        isUnavailable(refereeId) {
+            const date = this.matchDates[this.matchId];
+            if (! date) return false;
+
+            const periods = this.refereeUnavailabilities[refereeId] || [];
+
+            return periods.some((p) => date >= p.start && date <= p.end);
+        },
+
+        refereeLabel(refereeId, label) {
+            return this.isUnavailable(refereeId) ? label + ' (indisponibile)' : label;
         },
 
         // Al cambio gara, pre-compila con le designazioni eventualmente già presenti

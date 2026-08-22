@@ -46,4 +46,19 @@ class Referee extends Model
     {
         return $this->hasMany(Designation::class);
     }
+
+    // Periodi di indisponibilità dell'arbitro
+    public function unavailabilities()
+    {
+        return $this->hasMany(RefereeUnavailability::class);
+    }
+
+    /** Vero se l'arbitro è indisponibile nella data indicata (confronto per sola data). */
+    public function isUnavailableOn(\DateTimeInterface $date): bool
+    {
+        $date = \Carbon\Carbon::parse($date)->startOfDay();
+
+        return $this->unavailabilities
+            ->contains(fn ($period) => $date->between($period->start_date, $period->end_date));
+    }
 }

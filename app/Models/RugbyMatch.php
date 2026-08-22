@@ -132,10 +132,16 @@ class RugbyMatch extends Model
         return $this->hasMany(Designation::class, 'match_id');
     }
 
+    /** Designazioni attive, cioè non rifiutate/cancellate. */
+    public function activeDesignations()
+    {
+        return $this->designations->where('status', '!=', 'cancelled');
+    }
+
     /** Vero se ogni ruolo previsto ha una designazione attiva (non rifiutata/cancellata). */
     public function isFullyDesignated(): bool
     {
-        $active = $this->designations->where('status', '!=', 'cancelled');
+        $active = $this->activeDesignations();
         $activeRoles = $active->pluck('role');
 
         if (! collect($this->requiredRoles())->diff($activeRoles)->isEmpty()) {
@@ -145,6 +151,24 @@ class RugbyMatch extends Model
         $arbitriCount = $active->where('role', self::DEFAULT_ROLE)->count();
 
         return $arbitriCount >= $this->requiredRefereesCount();
+    }
+
+    /**
+     * Ruoli ancora da designare: gli Arbitri mancanti rispetto al numero richiesto
+     * (uno o più negli eventi multi-squadra) più gli altri ruoli previsti senza designazione attiva.
+     */
+    public function missingRoleLabels(): array
+    {
+        $active = $this->activeDesignations();
+
+        $arbitriMissing = max(0, $this->requiredRefereesCount() - $active->where('role', self::DEFAULT_ROLE)->count());
+
+        $otherMissing = collect($this->requiredRoles())
+            ->reject(fn ($role) => $role === self::DEFAULT_ROLE)
+            ->diff($active->pluck('role'))
+            ->values();
+
+        return array_merge(array_fill(0, $arbitriMissing, self::DEFAULT_ROLE), $otherMissing->all());
     }
 
     /** Numero minimo di arbitri richiesti per questa gara (di norma 1, configurabile nei Tornei). */

@@ -84,6 +84,8 @@ class RefereeController extends Controller
      */
     public function edit(Referee $referee)
     {
+        $referee->load(['unavailabilities' => fn ($q) => $q->orderBy('start_date')]);
+
         return view('referees.edit', compact('referee'));
     }
 
