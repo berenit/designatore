@@ -72,7 +72,7 @@
                class="inline-flex items-center gap-2 px-4 py-2 bg-indigo-600 text-white text-sm font-medium rounded-lg hover:bg-indigo-700 transition">
                 Modifica
             </a>
-            <form action="{{ route('designations.destroy', $designation) }}" method="POST" onsubmit="return confirm('Eliminare questa designazione?')">
+            <form action="{{ route('designations.destroy', $designation) }}" method="POST" x-data @submit.prevent="$store.confirmModal.ask('Eliminare questa designazione?', $el)">
                 @csrf @method('DELETE')
                 <button type="submit"
                         class="inline-flex items-center gap-2 px-4 py-2 bg-white border border-red-300 text-red-600 text-sm font-medium rounded-lg hover:bg-red-50 transition">

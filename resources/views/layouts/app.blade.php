@@ -178,5 +178,30 @@
         {{ $slot ?? '' }}
     </main>
 
+    {{-- Modale di conferma condivisa, usata al posto del confirm() nativo per le azioni di eliminazione --}}
+    <div x-data
+         x-show="$store.confirmModal.open"
+         x-cloak
+         x-transition.opacity
+         class="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4"
+         @keydown.escape.window="$store.confirmModal.cancel()">
+        <div @click.outside="$store.confirmModal.cancel()"
+             x-show="$store.confirmModal.open"
+             x-transition
+             class="bg-white rounded-xl shadow-xl max-w-sm w-full p-6">
+            <p class="text-sm text-gray-700 mb-6" x-text="$store.confirmModal.message"></p>
+            <div class="flex justify-end gap-3">
+                <button type="button" @click="$store.confirmModal.cancel()"
+                        class="px-4 py-2 text-sm font-medium text-gray-600 hover:text-gray-900 rounded-lg hover:bg-gray-50 transition">
+                    Annulla
+                </button>
+                <button type="button" @click="$store.confirmModal.confirm()"
+                        class="px-4 py-2 bg-red-600 text-white text-sm font-medium rounded-lg hover:bg-red-700 transition">
+                    Elimina
+                </button>
+            </div>
+        </div>
+    </div>
+
 </body>
 </html>

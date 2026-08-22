@@ -123,7 +123,7 @@
                 @foreach ($designations as $d)
                     <li class="px-5 py-3 flex items-center justify-between gap-3">
                         <div>
-                            <p class="text-sm font-medium text-gray-900">{{ $d->match->homeTeam->name }} vs {{ $d->match->awayTeam->name }}</p>
+                            <p class="text-sm font-medium text-gray-900">{{ $d->match->label }}</p>
                             <p class="text-xs text-gray-400 mt-0.5">
                                 {{ \Carbon\Carbon::parse($d->match->date_time)->format('d/m/Y H:i') }}
                                 · {{ $d->referee->name }}

@@ -59,7 +59,7 @@
                                        class="inline-flex items-center justify-center w-8 h-8 text-gray-500 hover:text-gray-700 hover:bg-gray-100 rounded-md transition">
                                         <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z"/></svg>
                                     </a>
-                                    <form action="{{ route('venues.destroy', $venue) }}" method="POST" onsubmit="return confirm('Eliminare questo campo?')" class="contents">
+                                    <form action="{{ route('venues.destroy', $venue) }}" method="POST" x-data class="contents" @submit.prevent="$store.confirmModal.ask('Eliminare questo campo?', $el)">
                                         @csrf @method('DELETE')
                                         <button type="submit" title="Elimina"
                                                 class="inline-flex items-center justify-center w-8 h-8 text-red-400 hover:text-red-600 hover:bg-red-50 rounded-md transition">
