@@ -6,7 +6,9 @@ use App\Models\Designation;
 use App\Models\Referee;
 use App\Models\RugbyMatch;
 use App\Models\Team;
+use Carbon\Carbon;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 
 class DashboardController extends Controller
 {
@@ -65,6 +67,34 @@ class DashboardController extends Controller
 
         $hasMatchesToDesignate = RugbyMatch::hasMatchesNeedingDesignation();
 
-        return view('dashboard.private', compact('stats', 'recentDesignations', 'upcomingMatches', 'hasMatchesToDesignate'));
+        // Stagione sportiva: da luglio dell'anno in corso (o precedente, se siamo tra gennaio e giugno) a giugno successivo
+        $seasonStartYear = now()->month >= 7 ? now()->year : now()->year - 1;
+        $seasonStart = Carbon::create($seasonStartYear, 7, 1)->startOfDay();
+        $seasonEnd = Carbon::create($seasonStartYear + 1, 6, 30)->endOfDay();
+        $seasonLabel = $seasonStartYear.'/'.($seasonStartYear + 1);
+
+        // Partite distinte per cui ciascun arbitro è stato designato nella stagione (whereDate: confronto
+        // per sola data, più affidabile in SQLite di un confronto diretto su date_time)
+        $seasonMatchesByReferee = DB::table('designations')
+            ->join('matches', 'matches.id', '=', 'designations.match_id')
+            ->where('designations.status', '!=', 'cancelled')
+            ->whereDate('matches.date_time', '>=', $seasonStart->toDateString())
+            ->whereDate('matches.date_time', '<=', $seasonEnd->toDateString())
+            ->select('designations.referee_id', 'designations.match_id')
+            ->get()
+            ->groupBy('referee_id')
+            ->map(fn ($rows) => $rows->pluck('match_id')->unique()->count());
+
+        $refereeSeasonCounts = Referee::orderBy('name')->get()
+            ->map(fn ($referee) => [
+                'referee' => $referee,
+                'count' => $seasonMatchesByReferee->get($referee->id, 0),
+            ])
+            ->sortByDesc('count')
+            ->values();
+
+        return view('dashboard.private', compact(
+            'stats', 'recentDesignations', 'upcomingMatches', 'hasMatchesToDesignate', 'refereeSeasonCounts', 'seasonLabel'
+        ));
     }
 }

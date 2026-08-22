@@ -127,5 +127,30 @@
             </ul>
         @endif
     </div>
+
+    {{-- Designazioni per arbitro nella stagione --}}
+    <div class="bg-white rounded-xl border border-gray-200 shadow-sm overflow-hidden lg:col-span-2">
+        <div class="px-5 py-4 border-b border-gray-100 flex items-center justify-between">
+            <h2 class="font-semibold text-gray-900">Designazioni per arbitro — Stagione {{ $seasonLabel }}</h2>
+            <a href="{{ route('referees.index') }}" class="text-xs text-indigo-600 hover:text-indigo-800">Vedi arbitri →</a>
+        </div>
+        @if ($refereeSeasonCounts->isEmpty())
+            <div class="px-5 py-8 text-center text-gray-400 text-sm">Nessun arbitro registrato</div>
+        @else
+            <ul class="divide-y divide-gray-100 max-h-96 overflow-y-auto">
+                @foreach ($refereeSeasonCounts as $entry)
+                    <li class="px-5 py-2.5 flex items-center justify-between gap-3 hover:bg-gray-50 transition">
+                        <a href="{{ route('referees.show', $entry['referee']) }}" class="text-sm text-gray-900 hover:text-indigo-700">
+                            {{ $entry['referee']->name }}
+                        </a>
+                        <span class="flex-shrink-0 inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold
+                            {{ $entry['count'] > 0 ? 'bg-indigo-100 text-indigo-700' : 'bg-gray-100 text-gray-400' }}">
+                            {{ $entry['count'] }} {{ $entry['count'] === 1 ? 'partita' : 'partite' }}
+                        </span>
+                    </li>
+                @endforeach
+            </ul>
+        @endif
+    </div>
 </div>
 @endsection
