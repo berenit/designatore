@@ -35,6 +35,7 @@ chown -R laravel:laravel /var/www/html/vendor /var/www/html/public/build
 # /proc/self/fd/2); i worker vengono eseguiti come laravel via www.conf.
 # Per qualsiasi altro comando (es. queue:work) passiamo invece a laravel.
 if [ "$1" = "php-fpm" ]; then
+    su-exec laravel php artisan migrate --force --isolated --no-interaction
     exec docker-php-entrypoint "$@"
 fi
 
