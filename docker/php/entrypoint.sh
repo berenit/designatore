@@ -31,6 +31,11 @@ fi
 
 chown -R laravel:laravel /var/www/html/vendor /var/www/html/public/build
 
+# storage/ e bootstrap/cache/ sono nel bind mount: sul VPS possono appartenere
+# a un utente/UID diverso da "laravel" (es. root, o chi ha fatto il git clone),
+# impedendo la scrittura di log, cache e sessioni.
+chown -R laravel:laravel /var/www/html/storage /var/www/html/bootstrap/cache
+
 # Il master di php-fpm deve restare root (scrive il proprio error_log su
 # /proc/self/fd/2); i worker vengono eseguiti come laravel via www.conf.
 # Per qualsiasi altro comando (es. queue:work) passiamo invece a laravel.
