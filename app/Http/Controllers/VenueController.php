@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\Venue;
+use Illuminate\Database\QueryException;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Redirect;
 
@@ -85,7 +86,12 @@ class VenueController extends Controller
      */
     public function destroy(Venue $venue)
     {
-        $venue->delete();
+        try {
+            $venue->delete();
+        } catch (QueryException $e) {
+            return Redirect::route('venues.index')
+                ->with('error', 'Impossibile eliminare il campo: è utilizzato in una o più partite.');
+        }
 
         return Redirect::route('venues.index')
             ->with('success', 'Campo eliminato.');

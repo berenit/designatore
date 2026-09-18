@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\Team;
+use Illuminate\Database\QueryException;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Redirect;
 
@@ -95,7 +96,12 @@ class TeamController extends Controller
      */
     public function destroy(Team $team)
     {
-        $team->delete();
+        try {
+            $team->delete();
+        } catch (QueryException $e) {
+            return Redirect::route('teams.index')
+                ->with('error', 'Impossibile eliminare la squadra: è utilizzata in una o più partite.');
+        }
 
         return Redirect::route('teams.index')
             ->with('success', 'Squadra eliminata.');

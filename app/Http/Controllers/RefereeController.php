@@ -113,6 +113,13 @@ class RefereeController extends Controller
      */
     public function destroy(Referee $referee)
     {
+        $designationsCount = $referee->designations()->count();
+
+        if ($designationsCount > 0) {
+            return Redirect::route('referees.index')
+                ->with('error', "Impossibile eliminare l'arbitro: ha {$designationsCount} designazione/i associata/e (anche storiche). Rimuovile prima di eliminarlo.");
+        }
+
         $referee->delete();
 
         return Redirect::route('referees.index')

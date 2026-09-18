@@ -90,12 +90,18 @@ class DesignationController extends Controller
             ->groupBy('referee_id')
             ->map(fn ($rows) => $rows->map(fn ($r) => ['date' => $r->match_date, 'match_id' => $r->match_id])->values());
 
-        // Periodi di indisponibilità per arbitro, per disabilitare la selezione lato client
+        // Periodi di indisponibilità per arbitro, per disabilitare la selezione lato client.
+        // Normalizzati a 'Y-m-d' (il driver può restituire start_date/end_date con l'orario,
+        // es. "00:00:00"): senza normalizzazione il confronto stringa con matchDates (solo
+        // data) in JS fallisce sempre e l'opzione non risulta mai disabilitata.
         $refereeUnavailabilities = DB::table('referee_unavailabilities')
             ->select('referee_id', 'start_date', 'end_date')
             ->get()
             ->groupBy('referee_id')
-            ->map(fn ($rows) => $rows->map(fn ($r) => ['start' => $r->start_date, 'end' => $r->end_date])->values());
+            ->map(fn ($rows) => $rows->map(fn ($r) => [
+                'start' => Carbon::parse($r->start_date)->format('Y-m-d'),
+                'end' => Carbon::parse($r->end_date)->format('Y-m-d'),
+            ])->values());
 
         return view('designations.create', compact(
             'matches', 'referees', 'preselect', 'matchRoles', 'matchIsMulti', 'matchAssignments', 'matchDates', 'refereeBookings', 'matchRequiredReferees', 'refereeUnavailabilities'
