@@ -219,6 +219,9 @@ class ReportController extends Controller
             }
             $lines[] = '';
             $lines[] = "🏟 *{$match->label}*";
+            if ($match->category_label) {
+                $lines[] = "   🏆 {$match->category_label}";
+            }
             $lines[] = "   🗓 {$date}";
             $lines[] = "   📍 {$match->venue_label}";
             foreach ($group as $d) {
@@ -262,8 +265,8 @@ class ReportController extends Controller
     {
         if ($dateFrom && $dateTo) {
             return $dateFrom === $dateTo
-                ? 'Del ' . Carbon::parse($dateFrom)->format('d/m/Y')
-                : 'Dal ' . Carbon::parse($dateFrom)->format('d/m/Y').' al '.Carbon::parse($dateTo)->format('d/m/Y');
+                ? 'Del '.Carbon::parse($dateFrom)->format('d/m/Y')
+                : 'Dal '.Carbon::parse($dateFrom)->format('d/m/Y').' al '.Carbon::parse($dateTo)->format('d/m/Y');
         }
 
         if ($dateFrom) {
@@ -286,7 +289,7 @@ class ReportController extends Controller
         $max = $dates->max();
 
         return $min->isSameDay($max)
-            ? 'Dal ' . $min->format('d/m/Y')
-            : 'Dal ' . $min->format('d/m/Y').' al '.$max->format('d/m/Y');
+            ? 'Dal '.$min->format('d/m/Y')
+            : 'Dal '.$min->format('d/m/Y').' al '.$max->format('d/m/Y');
     }
 }
