@@ -9,6 +9,12 @@ use Illuminate\Validation\Rule;
 
 class RefereeController extends Controller
 {
+    private const LICENSE_NUMBER_MESSAGES = [
+        'license_number.required' => 'Il numero di tessera è obbligatorio.',
+        'license_number.regex' => 'Il numero di tessera deve contenere da 1 a 10 cifre.',
+        'license_number.unique' => 'Questo numero di tessera è già assegnato a un altro arbitro.',
+    ];
+
     /**
      * Display a listing of the resource.
      */
@@ -60,10 +66,11 @@ class RefereeController extends Controller
         $validated = $request->validate([
             'name' => 'required|string|max:255',
             'email' => 'required|email|max:255|unique:referees',
+            'license_number' => ['required', 'regex:/^\d{1,10}$/', 'unique:referees'],
             'phone' => 'nullable|string|max:20',
             'license_level' => ['required', Rule::in(Referee::CATEGORIES)],
             'availability_status' => ['required', Rule::in(array_keys(Referee::AVAILABILITY_LABELS))],
-        ]);
+        ], self::LICENSE_NUMBER_MESSAGES);
 
         Referee::create($validated);
 
@@ -97,10 +104,11 @@ class RefereeController extends Controller
         $validated = $request->validate([
             'name' => 'required|string|max:255',
             'email' => ['required', 'email', 'max:255', Rule::unique('referees')->ignore($referee->id)],
+            'license_number' => ['required', 'regex:/^\d{1,10}$/', Rule::unique('referees')->ignore($referee->id)],
             'phone' => 'nullable|string|max:20',
             'license_level' => ['required', Rule::in(Referee::CATEGORIES)],
             'availability_status' => ['required', Rule::in(array_keys(Referee::AVAILABILITY_LABELS))],
-        ]);
+        ], self::LICENSE_NUMBER_MESSAGES);
 
         $referee->update($validated);
 

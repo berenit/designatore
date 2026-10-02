@@ -32,6 +32,14 @@
         </div>
 
         <div>
+            <label for="license_number" class="block text-sm font-medium text-gray-700 mb-1">Numero tessera</label>
+            <input id="license_number" type="text" name="license_number" value="{{ old('license_number', $referee->license_number) }}" required
+                   inputmode="numeric" pattern="\d{1,10}" maxlength="10" title="Da 1 a 10 cifre"
+                   class="w-full rounded-lg border-gray-300 shadow-sm text-sm focus:border-indigo-500 focus:ring-indigo-500 @error('license_number') border-red-400 @enderror">
+            @error('license_number')<p class="mt-1 text-xs text-red-600">{{ $message }}</p>@enderror
+        </div>
+
+        <div>
             <label for="phone" class="block text-sm font-medium text-gray-700 mb-1">Telefono <span class="text-gray-400">(opzionale)</span></label>
             <input id="phone" type="tel" name="phone" value="{{ old('phone', $referee->phone) }}"
                    class="w-full rounded-lg border-gray-300 shadow-sm text-sm focus:border-indigo-500 focus:ring-indigo-500">

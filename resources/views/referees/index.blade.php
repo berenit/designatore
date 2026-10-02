@@ -48,6 +48,7 @@
                                 </svg>
                             </a>
                         </th>
+                        <th class="px-6 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Tessera</th>
                         <th class="px-6 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Email</th>
                         <th class="px-6 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Telefono</th>
                         <th class="px-6 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">
@@ -69,6 +70,7 @@
                             <td class="px-6 py-4">
                                 <span class="text-sm font-semibold text-gray-900">{{ $referee->name }}</span>
                             </td>
+                            <td class="px-6 py-4 text-sm text-gray-600 tabular-nums">{{ $referee->license_number ?? '—' }}</td>
                             <td class="px-6 py-4 text-sm text-gray-600">{{ $referee->email }}</td>
                             <td class="px-6 py-4 text-sm text-gray-500">{{ $referee->phone ?? '—' }}</td>
                             <td class="px-6 py-4">

@@ -2,12 +2,14 @@
 
 namespace App\Models;
 
+use Carbon\Carbon;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Model;
 
 #[Fillable([
     'name',
     'email',
+    'license_number',
     'phone',
     'license_level',
     'availability_status',
@@ -56,7 +58,7 @@ class Referee extends Model
     /** Vero se l'arbitro è indisponibile nella data indicata (confronto per sola data). */
     public function isUnavailableOn(\DateTimeInterface $date): bool
     {
-        $date = \Carbon\Carbon::parse($date)->startOfDay();
+        $date = Carbon::parse($date)->startOfDay();
 
         return $this->unavailabilities
             ->contains(fn ($period) => $date->between($period->start_date, $period->end_date));

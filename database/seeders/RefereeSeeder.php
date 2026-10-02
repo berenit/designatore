@@ -37,12 +37,13 @@ class RefereeSeeder extends Seeder
             ['Alessio Silvano Colamarino', 'Sulmona', 'Regionale', 'Capo Sezione Sulmona'],
         ];
 
-        foreach ($referees as [$name, $city, $category, $role]) {
+        foreach ($referees as $i => [$name, $city, $category, $role]) {
             $slug = Str::slug($name, '.');
 
             Referee::create([
                 'name' => $name,
                 'email' => $slug.'@arbitri-abruzzo.example',
+                'license_number' => (string) (100001 + $i),
                 'phone' => null,
                 'license_level' => $category,
                 'availability_status' => 'available',
