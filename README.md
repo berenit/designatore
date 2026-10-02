@@ -191,6 +191,50 @@ Il servizio `proxy` (Nginx Proxy Manager) espone le porte 80, 443 e 81 (pannello
 
 Le porte esposte da Nginx Proxy Manager sono configurabili in `.env.docker` (`PROXY_HTTP_PORT`, `PROXY_HTTPS_PORT`, `PROXY_ADMIN_PORT`); i suoi dati (configurazione e certificati) sono persistiti nei volumi `proxy_data` e `proxy_letsencrypt`.
 
+### Backup e ripristino del database MySQL
+
+I dati MySQL sono persistiti nel volume Docker `mysql_data`. Esegui sempre un backup **prima di ogni aggiornamento che include nuove migration** (`git pull` + `php artisan migrate`).
+
+I comandi seguenti vanno lanciati dalla cartella del progetto sul server e usano le credenziali già impostate nel container `mysql` (`MYSQL_USER`, `MYSQL_PASSWORD`, `MYSQL_DATABASE`), quindi la password non compare nella riga di comando né nella history della shell.
+
+**Backup** (dump compresso con data e ora nel nome, salvato fuori dalla cartella del progetto):
+
+```bash
+mkdir -p ~/backups
+docker compose exec -T mysql sh -c 'exec mysqldump --single-transaction --no-tablespaces -u"$MYSQL_USER" -p"$MYSQL_PASSWORD" "$MYSQL_DATABASE"' \
+  | gzip > ~/backups/designatore-$(date +%F_%H%M).sql.gz
+```
+
+- `-T` evita l'allocazione di un TTY, necessario per redirigere correttamente l'output su file.
+- `--single-transaction` produce un dump consistente senza bloccare le tabelle, quindi l'app può restare online durante il backup.
+- `--no-tablespaces` evita l'errore sui privilegi `PROCESS`, che l'utente applicativo non possiede.
+
+Verifica che il file non sia vuoto e che il dump sia completo (l'ultima riga deve contenere `Dump completed`):
+
+```bash
+ls -lh ~/backups/
+gunzip -c ~/backups/designatore-AAAA-MM-GG_HHMM.sql.gz | tail -n 1
+```
+
+**Ripristino** (⚠️ sovrascrive le tabelle presenti nel database con il contenuto del dump):
+
+```bash
+gunzip -c ~/backups/designatore-AAAA-MM-GG_HHMM.sql.gz \
+  | docker compose exec -T mysql sh -c 'exec mysql -u"$MYSQL_USER" -p"$MYSQL_PASSWORD" "$MYSQL_DATABASE"'
+```
+
+Conviene fermare `app`, `queue` e `scheduler` durante il ripristino (`docker compose stop app queue scheduler`, poi `docker compose start app queue scheduler`) per evitare scritture concorrenti.
+
+**Backup automatico (opzionale)** — esempio di crontab sull'host (`crontab -e`) che esegue un backup ogni notte alle 3:00 e cancella quelli più vecchi di 30 giorni (sostituisci `/percorso/designatore` con la cartella del progetto; in crontab il carattere `%` va scritto come `\%`):
+
+```cron
+0 3 * * * cd /percorso/designatore && docker compose exec -T mysql sh -c 'exec mysqldump --single-transaction --no-tablespaces -u"$MYSQL_USER" -p"$MYSQL_PASSWORD" "$MYSQL_DATABASE"' | gzip > $HOME/backups/designatore-$(date +\%F_\%H\%M).sql.gz && find $HOME/backups -name 'designatore-*.sql.gz' -mtime +30 -delete
+```
+
+> Un backup che resta solo sul server non protegge da un guasto del server stesso: copia periodicamente i dump anche altrove (es. `scp`/`rsync` verso un'altra macchina o uno storage esterno).
+
+### Arresto
+
 Per fermare i container:
 
 ```bash
