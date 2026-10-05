@@ -127,6 +127,7 @@
                         <p class="text-xs text-gray-400 mt-0.5 mb-2">
                             {{ \Carbon\Carbon::parse($match->date_time)->format('d/m/Y H:i') }}
                             · {{ $match->venue_label }}
+                            · Comitato {{ $match->committee }}
                         </p>
                         <div class="space-y-1">
                             @foreach ($group as $d)

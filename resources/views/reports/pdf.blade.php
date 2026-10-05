@@ -200,7 +200,7 @@
                         </td>
                         <td class="col-match">
                             <div class="match-name">{{ $match->label }}</div>
-                            <div class="match-meta">{{ $match->venue_label }} &nbsp;·&nbsp; {{ $match->competition_type }}@if($match->category_label)
+                            <div class="match-meta">{{ $match->venue_label }} &nbsp;·&nbsp; Comitato {{ $match->committee }} &nbsp;·&nbsp; {{ $match->competition_type }}@if($match->category_label)
                                     &nbsp;·&nbsp; {{ $match->category_label }}
                                 @endif</div>
                         </td>

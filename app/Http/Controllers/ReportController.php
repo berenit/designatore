@@ -155,8 +155,8 @@ class ReportController extends Controller
             return implode("\n", $lines);
         }
 
-        $lines[] = '| Data | Incontro | Campo | Arbitri & ruoli |';
-        $lines[] = '|------|----------|-------|------------------|';
+        $lines[] = '| Data | Incontro | Comitato | Campo | Arbitri & ruoli |';
+        $lines[] = '|------|----------|----------|-------|------------------|';
 
         foreach ($this->groupByMatch($designations) as $group) {
             $match = $group->first()->match;
@@ -171,7 +171,7 @@ class ReportController extends Controller
 
                 return $d->role === self::OBSERVER_ROLE ? "🔎 {$line}" : $line;
             })->implode('<br>');
-            $lines[] = "| {$date} | {$match->label} | {$venue} | {$refs} |";
+            $lines[] = "| {$date} | {$match->label} | {$match->committee} | {$venue} | {$refs} |";
         }
 
         $lines[] = '';
@@ -222,6 +222,7 @@ class ReportController extends Controller
             if ($match->category_label) {
                 $lines[] = "   🏆 {$match->category_label}";
             }
+            $lines[] = "   🗺 Comitato {$match->committee}";
             $lines[] = "   🗓 {$date}";
             $lines[] = "   📍 {$match->venue_label}";
             foreach ($group as $d) {
