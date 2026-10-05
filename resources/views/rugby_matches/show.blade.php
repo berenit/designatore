@@ -47,6 +47,11 @@
         </div>
 
         <dl class="divide-y divide-gray-100">
+            <div class="px-6 py-4 grid grid-cols-3 gap-4">
+                <dt class="text-sm font-medium text-gray-500">Comitato</dt>
+                <dd class="text-sm text-gray-900 col-span-2">{{ $match->committee }}</dd>
+            </div>
+
             @if ($match->isMultiTeam())
                 <div class="px-6 py-4 grid grid-cols-3 gap-4">
                     <dt class="text-sm font-medium text-gray-500">Squadre</dt>

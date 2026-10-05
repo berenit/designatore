@@ -64,6 +64,7 @@
                                     @endif">
                                     {{ $match->competition_type }}
                                 </span>
+                                <div class="text-xs text-gray-400 mt-0.5">{{ $match->committee }}</div>
                             </td>
                             <td class="px-6 py-4">
                                 <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold

@@ -12,6 +12,7 @@ use Illuminate\Database\Eloquent\Model;
     'home_team_id',
     'away_team_id',
     'competition_type',
+    'committee',
     'status',
     'required_roles',
     'extra_team_names',
@@ -31,6 +32,11 @@ class RugbyMatch extends Model
     public const COMPETITION_TYPES = [
         'Campionato', 'Coppa', 'Amichevole', 'Internazionale', 'Concentramento', 'Torneo',
     ];
+
+    /** Comitati regionali di competenza territoriale (il primo è il default). */
+    public const COMMITTEES = ['Abruzzo', 'Lazio'];
+
+    public const DEFAULT_COMMITTEE = 'Abruzzo';
 
     /** Tipi che coinvolgono 3+ squadre (gestiti via pivot match_team). */
     public const MULTI_TEAM_TYPES = ['Concentramento', 'Torneo'];

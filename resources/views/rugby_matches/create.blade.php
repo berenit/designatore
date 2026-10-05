@@ -57,6 +57,18 @@
             @error('competition_type')<p class="mt-1 text-xs text-red-600">{{ $message }}</p>@enderror
         </div>
 
+        {{-- Comitato regionale di competenza territoriale --}}
+        <div>
+            <label for="committee" class="block text-sm font-medium text-gray-700 mb-1">Comitato</label>
+            <select id="committee" name="committee" required
+                    class="w-full rounded-lg border-gray-300 shadow-sm text-sm focus:border-indigo-500 focus:ring-indigo-500 @error('committee') border-red-400 @enderror">
+                @foreach ($committees as $c)
+                    <option value="{{ $c }}" @selected(old('committee', \App\Models\RugbyMatch::DEFAULT_COMMITTEE) === $c)>{{ $c }}</option>
+                @endforeach
+            </select>
+            @error('committee')<p class="mt-1 text-xs text-red-600">{{ $message }}</p>@enderror
+        </div>
+
         {{-- Nome evento (solo Concentramento / Torneo) --}}
         <div x-show="isMulti" x-transition>
             <label for="name" class="block text-sm font-medium text-gray-700 mb-1">Nome evento</label>

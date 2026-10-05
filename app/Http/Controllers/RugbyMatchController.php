@@ -46,9 +46,10 @@ class RugbyMatchController extends Controller
         $competitionTypes = RugbyMatch::COMPETITION_TYPES;
         $multiTeamTypes = RugbyMatch::MULTI_TEAM_TYPES;
         $extraRoleOptions = RugbyMatch::EXTRA_ROLE_OPTIONS;
+        $committees = RugbyMatch::COMMITTEES;
 
         return view('rugby_matches.create', compact(
-            'teams', 'leagues', 'venues', 'defaultDate', 'bookedDates', 'competitionTypes', 'multiTeamTypes', 'extraRoleOptions'
+            'teams', 'leagues', 'venues', 'defaultDate', 'bookedDates', 'competitionTypes', 'multiTeamTypes', 'extraRoleOptions', 'committees'
         ));
     }
 
@@ -62,6 +63,7 @@ class RugbyMatchController extends Controller
             'date_time' => 'required|date',
             'venue_id' => 'required|exists:venues,id',
             'competition_type' => ['required', Rule::in(RugbyMatch::COMPETITION_TYPES)],
+            'committee' => ['nullable', Rule::in(RugbyMatch::COMMITTEES)],
             'status' => ['required', Rule::in(['scheduled', 'postponed', 'cancelled', 'completed'])],
             'extra_roles' => 'nullable|array',
             'extra_roles.*' => [Rule::in(array_keys(RugbyMatch::EXTRA_ROLE_OPTIONS))],
@@ -218,7 +220,7 @@ class RugbyMatchController extends Controller
             return Redirect::back()->withInput()->withErrors($errors);
         }
 
-        $match = RugbyMatch::create($this->matchAttributes($validated));
+        $match = RugbyMatch::create($this->matchAttributes($validated) + ['committee' => RugbyMatch::DEFAULT_COMMITTEE]);
 
         if ($match->isMultiTeam()) {
             $match->teams()->sync($validated['team_ids'] ?? []);
@@ -246,7 +248,7 @@ class RugbyMatchController extends Controller
             ? array_values(array_filter(array_map('trim', $validated['extra_team_names'] ?? []), fn ($n) => $n !== ''))
             : null;
 
-        return [
+        $attributes = [
             'date_time' => $validated['date_time'],
             'venue_id' => $validated['venue_id'],
             'competition_type' => $validated['competition_type'],
@@ -258,6 +260,13 @@ class RugbyMatchController extends Controller
             'extra_team_names' => $extraTeamNames ?: null,
             'required_referees' => $isTorneo ? ($validated['required_referees'] ?? null) : null,
         ];
+
+        // Comitato: se non inviato, in creazione vale il default e in modifica resta quello attuale.
+        if (! empty($validated['committee'])) {
+            $attributes['committee'] = $validated['committee'];
+        }
+
+        return $attributes;
     }
 
     /**
@@ -291,6 +300,7 @@ class RugbyMatchController extends Controller
         $selectedTeamIds = $rugbyMatch->teams->pluck('id')->map(fn ($id) => (string) $id)->values();
         $extraTeamNames = $rugbyMatch->extraTeamNames();
         $requiredReferees = $rugbyMatch->required_referees;
+        $committees = RugbyMatch::COMMITTEES;
 
         // Campionato corrente per preselezionare il filtro delle squadre
         $currentLeague = $rugbyMatch->homeTeam->league_division
@@ -299,7 +309,7 @@ class RugbyMatchController extends Controller
 
         return view('rugby_matches.edit', compact(
             'match', 'teams', 'leagues', 'venues', 'bookedDates', 'competitionTypes', 'multiTeamTypes',
-            'extraRoleOptions', 'selectedExtraKeys', 'selectedTeamIds', 'currentLeague', 'extraTeamNames', 'requiredReferees'
+            'extraRoleOptions', 'selectedExtraKeys', 'selectedTeamIds', 'currentLeague', 'extraTeamNames', 'requiredReferees', 'committees'
         ));
     }
 
