@@ -16,9 +16,18 @@ class DashboardController extends Controller
     {
         $category = $request->query('category');
 
+        // Solo le partite della settimana corrente (lunedì–domenica)
+        $weekStart = now()->startOfWeek(Carbon::MONDAY)->startOfDay();
+        $weekEnd = $weekStart->copy()->endOfWeek(Carbon::SUNDAY)->endOfDay();
+
+        // Ai visitatori non autenticati il nome dell'arbitro è mostrato solo dal giovedì in poi
+        $showRefereeNames = $request->user() !== null
+            || now()->greaterThanOrEqualTo($weekStart->copy()->next(Carbon::THURSDAY));
+
         $upcomingMatches = RugbyMatch::with(['homeTeam', 'awayTeam', 'teams', 'venue', 'designations.referee'])
             ->where('status', 'scheduled')
-            ->where('date_time', '>=', now())
+            ->whereDate('date_time', '>=', $weekStart->toDateString())
+            ->whereDate('date_time', '<=', $weekEnd->toDateString())
             ->when($category, function ($query, $category) {
                 $query->where(function ($q) use ($category) {
                     $q->whereHas('homeTeam', fn ($t) => $t->where('league_division', $category))
@@ -27,7 +36,6 @@ class DashboardController extends Controller
                 });
             })
             ->orderBy('date_time')
-            ->limit(20)
             ->get();
 
         $categories = Team::whereNotNull('league_division')
@@ -35,7 +43,7 @@ class DashboardController extends Controller
             ->orderBy('league_division')
             ->pluck('league_division');
 
-        return view('dashboard.public', compact('upcomingMatches', 'categories', 'category'));
+        return view('dashboard.public', compact('upcomingMatches', 'categories', 'category', 'weekStart', 'weekEnd', 'showRefereeNames'));
     }
 
     public function private()

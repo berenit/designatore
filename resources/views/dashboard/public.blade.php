@@ -2,8 +2,10 @@
 
 @section('content')
 <div class="mb-8">
-    <h1 class="text-2xl font-bold text-gray-900">Prossime Partite</h1>
-    <p class="text-gray-500 mt-1 text-sm">Designazioni arbitrali in programma</p>
+    <h1 class="text-2xl font-bold text-gray-900">Partite della Settimana</h1>
+    <p class="text-gray-500 mt-1 text-sm">
+        Designazioni arbitrali dal {{ $weekStart->format('d/m/Y') }} al {{ $weekEnd->format('d/m/Y') }}
+    </p>
 </div>
 
 @if ($categories->isNotEmpty())
@@ -24,12 +26,12 @@
 @if ($upcomingMatches->isEmpty())
     <div class="bg-white rounded-xl border border-gray-200 shadow-sm py-16 text-center">
         <div class="text-5xl mb-4">📅</div>
-        <h3 class="text-lg font-semibold text-gray-700">Nessuna partita in programma</h3>
+        <h3 class="text-lg font-semibold text-gray-700">Nessuna partita in programma questa settimana</h3>
         <p class="text-gray-400 text-sm mt-1">
             @if ($category)
-                Nessuna partita in programma per la categoria «{{ $category }}».
+                Nessuna partita in programma questa settimana per la categoria «{{ $category }}».
             @else
-                Le prossime partite appariranno qui.
+                Le partite della settimana appariranno qui.
             @endif
         </p>
     </div>
@@ -79,7 +81,9 @@
                             <svg class="w-4 h-4 text-indigo-400 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"/>
                             </svg>
-                            @if ($designation->status === 'confirmed')
+                            @if (! $showRefereeNames)
+                                <span class="text-gray-400 italic">Arbitro visibile da giovedì</span>
+                            @elseif ($designation->status === 'confirmed')
                                 <span class="text-indigo-700 font-medium">{{ $designation->referee->name }}</span>
                             @else
                                 <span class="text-gray-400 italic">In attesa di conferma</span>
