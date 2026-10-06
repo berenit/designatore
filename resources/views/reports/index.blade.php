@@ -15,7 +15,8 @@
     {{-- Filtri --}}
     <div class="bg-white rounded-xl border border-gray-200 shadow-sm p-6">
         <h2 class="text-sm font-semibold text-gray-700 mb-4">Filtri (opzionali)</h2>
-        <form id="report-form" class="space-y-4">
+        <form id="report-form" class="space-y-4"
+              onsubmit="event.preventDefault(); window.location.href = '{{ route('reports.index') }}' + params();">
             <div>
                 <label class="block text-sm font-medium text-gray-700 mb-2">Data partita</label>
                 <div class="flex items-center gap-2">
@@ -38,12 +39,56 @@
                 <select name="status" id="status"
                         class="w-full rounded-lg border-gray-300 shadow-sm text-sm focus:border-indigo-500 focus:ring-indigo-500">
                     <option value="">Tutti gli stati</option>
-                    <option value="pending">In attesa</option>
-                    <option value="confirmed">Accettate</option>
-                    <option value="completed">Completate</option>
-                    <option value="cancelled">Annullate</option>
+                    <option value="pending" @selected(request('status') === 'pending')>In attesa</option>
+                    <option value="confirmed" @selected(request('status') === 'confirmed')>Accettate</option>
+                    <option value="completed" @selected(request('status') === 'completed')>Completate</option>
+                    <option value="cancelled" @selected(request('status') === 'cancelled')>Annullate</option>
                 </select>
             </div>
+            <div>
+                <div class="flex items-center justify-between mb-2">
+                    <label class="block text-sm font-medium text-gray-700">Comitato</label>
+                    <span class="text-xs space-x-2">
+                        <button type="button" onclick="toggleAll('committees', true)" class="text-indigo-600 hover:text-indigo-800">Tutti</button>
+                        <button type="button" onclick="toggleAll('committees', false)" class="text-gray-500 hover:text-gray-700">Nessuno</button>
+                    </span>
+                </div>
+                <div class="flex flex-wrap gap-x-4 gap-y-2">
+                    @foreach ($committees as $committee)
+                        <label class="inline-flex items-center gap-2 text-sm text-gray-700">
+                            <input type="checkbox" name="committees[]" value="{{ $committee }}"
+                                   @checked(in_array($committee, $selectedCommittees, true))
+                                   class="rounded border-gray-300 text-indigo-600 focus:ring-indigo-500">
+                            {{ $committee }}
+                        </label>
+                    @endforeach
+                </div>
+            </div>
+            @if ($categories->isNotEmpty())
+                <div>
+                    <div class="flex items-center justify-between mb-2">
+                        <label class="block text-sm font-medium text-gray-700">Categoria</label>
+                        <span class="text-xs space-x-2">
+                            <button type="button" onclick="toggleAll('categories', true)" class="text-indigo-600 hover:text-indigo-800">Tutte</button>
+                            <button type="button" onclick="toggleAll('categories', false)" class="text-gray-500 hover:text-gray-700">Nessuna</button>
+                        </span>
+                    </div>
+                    <div class="flex flex-wrap gap-x-4 gap-y-2">
+                        @foreach ($categories as $category)
+                            <label class="inline-flex items-center gap-2 text-sm text-gray-700">
+                                <input type="checkbox" name="categories[]" value="{{ $category }}"
+                                       @checked(in_array($category, $selectedCategories, true))
+                                       class="rounded border-gray-300 text-indigo-600 focus:ring-indigo-500">
+                                {{ $category }}
+                            </label>
+                        @endforeach
+                    </div>
+                </div>
+            @endif
+            <button type="submit"
+                    class="w-full px-4 py-2 bg-indigo-600 text-white text-sm font-medium rounded-lg hover:bg-indigo-700 transition">
+                Aggiorna anteprima
+            </button>
         </form>
     </div>
 
@@ -163,7 +208,19 @@ function params() {
         const v = f.querySelector(`[name="${k}"]`).value;
         if (v) p.set(k, v);
     });
+    // Filtri multipli: se sono selezionati tutti (o nessuno) non si filtra
+    ['committees','categories'].forEach(k => {
+        const boxes = [...f.querySelectorAll(`[name="${k}[]"]`)];
+        const checked = boxes.filter(b => b.checked);
+        if (checked.length && checked.length < boxes.length) {
+            checked.forEach(b => p.append(`${k}[]`, b.value));
+        }
+    });
     return p.toString() ? '?' + p.toString() : '';
+}
+
+function toggleAll(key, checked) {
+    document.querySelectorAll(`#report-form [name="${key}[]"]`).forEach(b => b.checked = checked);
 }
 
 function download(format) {

@@ -3,6 +3,8 @@
 namespace App\Http\Controllers;
 
 use App\Models\Designation;
+use App\Models\RugbyMatch;
+use App\Models\Team;
 use Barryvdh\DomPDF\Facade\Pdf;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
@@ -15,14 +17,35 @@ class ReportController extends Controller
 
     private function getDesignations(Request $request)
     {
+        $committees = $this->selectedValues($request, 'committees');
+        $categories = $this->selectedValues($request, 'categories');
+
         return Designation::with(['match.homeTeam', 'match.awayTeam', 'match.teams', 'match.venue', 'referee'])
             ->join('matches', 'matches.id', '=', 'designations.match_id')
             ->when($request->status, fn ($q) => $q->where('designations.status', $request->status))
+            ->when($committees, fn ($q) => $q->whereIn('matches.committee', $committees))
+            // Categoria desunta dalle squadre: casa/ospite per le gare singole, pivot per Concentramenti/Tornei
+            ->when($categories, fn ($q) => $q->whereHas('match', function ($m) use ($categories) {
+                $m->where(function ($w) use ($categories) {
+                    $w->whereHas('homeTeam', fn ($t) => $t->whereIn('league_division', $categories))
+                        ->orWhereHas('awayTeam', fn ($t) => $t->whereIn('league_division', $categories))
+                        ->orWhereHas('teams', fn ($t) => $t->whereIn('league_division', $categories));
+                });
+            }))
             ->when($request->date_from, fn ($q) => $q->whereDate('matches.date_time', '>=', $request->date_from))
             ->when($request->date_to, fn ($q) => $q->whereDate('matches.date_time', '<=', $request->date_to))
             ->orderBy('matches.date_time', 'asc')
             ->select('designations.*')
             ->get();
+    }
+
+    /** Valori selezionati di un filtro a scelta multipla (vuoto = nessun filtro, cioè tutti). */
+    private function selectedValues(Request $request, string $key): array
+    {
+        return collect((array) $request->input($key, []))
+            ->filter(fn ($v) => is_string($v) && $v !== '')
+            ->values()
+            ->all();
     }
 
     /**
@@ -55,7 +78,20 @@ class ReportController extends Controller
         $designations = $this->getDesignations($request);
         $matchGroups = $this->groupByMatch($designations);
 
-        return view('reports.index', compact('designations', 'matchGroups', 'defaultFrom', 'defaultTo'));
+        $committees = RugbyMatch::COMMITTEES;
+        $categories = Team::whereNotNull('league_division')
+            ->distinct()
+            ->orderBy('league_division')
+            ->pluck('league_division');
+
+        // Nessuna selezione = tutti i comitati / tutte le categorie
+        $selectedCommittees = $this->selectedValues($request, 'committees') ?: $committees;
+        $selectedCategories = $this->selectedValues($request, 'categories') ?: $categories->all();
+
+        return view('reports.index', compact(
+            'designations', 'matchGroups', 'defaultFrom', 'defaultTo',
+            'committees', 'categories', 'selectedCommittees', 'selectedCategories'
+        ));
     }
 
     public function pdf(Request $request)
