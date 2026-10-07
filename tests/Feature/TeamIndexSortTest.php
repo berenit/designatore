@@ -21,3 +21,14 @@ test('teams sorted by category follow the configured category order', function (
         ->assertOk()
         ->assertViewHas('teams', fn ($teams) => $teams->pluck('league_division')->all() === array_reverse($expected));
 });
+
+test('teams sorted by category ignore case and extra spaces in the stored value', function () {
+    foreach (['U14', 'serie b ', 'Serie A'] as $division) {
+        Team::create(['name' => 'Squadra '.$division, 'city' => 'Roma', 'league_division' => $division]);
+    }
+
+    $this->actingAs(User::factory()->create())
+        ->get(route('teams.index', ['sort' => 'league_division']))
+        ->assertOk()
+        ->assertViewHas('teams', fn ($teams) => $teams->pluck('league_division')->all() === ['Serie A', 'serie b ', 'U14']);
+});

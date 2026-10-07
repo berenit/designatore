@@ -103,3 +103,13 @@ test('public dashboard category filter follows the configured order', function (
             'Serie A', 'Serie B', 'Serie C', 'U18 Elite', 'U18', 'U16', 'U14', 'Promozione',
         ]);
 });
+
+test('category order ignores case and extra spaces in the stored value', function () {
+    foreach (['U14', 'serie b ', 'Serie A', 'U18'] as $division) {
+        createScheduledMatch($division);
+    }
+
+    $this->get(route('home'))
+        ->assertOk()
+        ->assertViewHas('categories', fn ($categories) => $categories->all() === ['Serie A', 'serie b ', 'U18', 'U14']);
+});

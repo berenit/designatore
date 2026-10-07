@@ -23,14 +23,27 @@ class Team extends Model
     /** Categorie (league_division) distinte presenti in anagrafica, nell'ordine di CATEGORY_ORDER. */
     public static function orderedCategories(): Collection
     {
-        $categories = static::whereNotNull('league_division')
+        // Restituisce i valori così come salvati (servono per filtrare), ordinati per posizione in CATEGORY_ORDER
+        return static::whereNotNull('league_division')
             ->distinct()
             ->orderBy('league_division')
-            ->pluck('league_division');
+            ->pluck('league_division')
+            ->sortBy(fn ($category) => self::categoryRank($category))
+            ->values();
+    }
 
-        $known = collect(self::CATEGORY_ORDER)->intersect($categories);
+    /** Posizione della categoria in CATEGORY_ORDER, ignorando maiuscole e spazi superflui (non elencate = in coda). */
+    public static function categoryRank(?string $category): int
+    {
+        $order = array_map(self::normalizeCategory(...), self::CATEGORY_ORDER);
+        $index = array_search(self::normalizeCategory((string) $category), $order, true);
 
-        return $known->merge($categories->diff($known))->values();
+        return $index === false ? count($order) : $index;
+    }
+
+    private static function normalizeCategory(string $category): string
+    {
+        return mb_strtolower(trim(preg_replace('/[\s\x{00A0}]+/u', ' ', $category)));
     }
 
     /** Ordina per categoria secondo CATEGORY_ORDER (le non elencate dopo, in ordine alfabetico). */
@@ -39,9 +52,10 @@ class Team extends Model
         $direction = $direction === 'desc' ? 'desc' : 'asc';
         $cases = collect(self::CATEGORY_ORDER)->keys()->map(fn ($i) => "WHEN ? THEN {$i}")->implode(' ');
         $fallback = count(self::CATEGORY_ORDER);
+        $bindings = array_map(self::normalizeCategory(...), self::CATEGORY_ORDER);
 
         return $query
-            ->orderByRaw("CASE league_division {$cases} ELSE {$fallback} END {$direction}", self::CATEGORY_ORDER)
+            ->orderByRaw("CASE LOWER(TRIM(league_division)) {$cases} ELSE {$fallback} END {$direction}", $bindings)
             ->orderBy('league_division', $direction);
     }
 
