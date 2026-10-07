@@ -21,7 +21,11 @@ class TeamController extends Controller
         $leagues = Team::orderedCategories();
 
         $teams = Team::when($league, fn ($q) => $q->where('league_division', $league))
-            ->orderBy($sort, $dir)
+            ->when(
+                $sort === 'league_division',
+                fn ($q) => $q->orderByCategory($dir)->orderBy('name'),
+                fn ($q) => $q->orderBy($sort, $dir)
+            )
             ->get();
 
         return view('teams.index', compact('teams', 'leagues', 'sort', 'dir', 'league'));
