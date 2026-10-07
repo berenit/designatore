@@ -91,3 +91,15 @@ test('authenticated users always see the referee name', function () {
         ->assertOk()
         ->assertSee('Mario Rossi');
 });
+
+test('public dashboard category filter follows the configured order', function () {
+    foreach (['U14', 'Serie C', 'U18', 'Promozione', 'Serie A', 'U18 Elite', 'U16', 'Serie B'] as $division) {
+        createScheduledMatch($division);
+    }
+
+    $this->get(route('home'))
+        ->assertOk()
+        ->assertViewHas('categories', fn ($categories) => $categories->all() === [
+            'Serie A', 'Serie B', 'Serie C', 'U18 Elite', 'U18', 'U16', 'U14', 'Promozione',
+        ]);
+});

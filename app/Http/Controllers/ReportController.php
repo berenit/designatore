@@ -79,10 +79,7 @@ class ReportController extends Controller
         $matchGroups = $this->groupByMatch($designations);
 
         $committees = RugbyMatch::COMMITTEES;
-        $categories = Team::whereNotNull('league_division')
-            ->distinct()
-            ->orderBy('league_division')
-            ->pluck('league_division');
+        $categories = Team::orderedCategories();
 
         // Nessuna selezione = tutti i comitati / tutte le categorie
         $selectedCommittees = $this->selectedValues($request, 'committees') ?: $committees;

@@ -38,10 +38,7 @@ class DashboardController extends Controller
             ->orderBy('date_time')
             ->get();
 
-        $categories = Team::whereNotNull('league_division')
-            ->distinct()
-            ->orderBy('league_division')
-            ->pluck('league_division');
+        $categories = Team::orderedCategories();
 
         return view('dashboard.public', compact('upcomingMatches', 'categories', 'category', 'weekStart', 'weekEnd', 'showRefereeNames'));
     }

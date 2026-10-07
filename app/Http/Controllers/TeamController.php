@@ -18,7 +18,7 @@ class TeamController extends Controller
         $dir = $request->dir === 'desc' ? 'desc' : 'asc';
         $league = $request->filter_league;
 
-        $leagues = Team::distinct()->orderBy('league_division')->pluck('league_division');
+        $leagues = Team::orderedCategories();
 
         $teams = Team::when($league, fn ($q) => $q->where('league_division', $league))
             ->orderBy($sort, $dir)
