@@ -67,6 +67,7 @@
                     <tr class="bg-gray-50">
                         <th class="px-6 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Data & Ora</th>
                         <th class="px-6 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Incontro</th>
+                        <th class="px-6 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Categoria</th>
                         <th class="px-6 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Arbitri &amp; ruoli</th>
                         <th class="px-6 py-3 text-right text-xs font-semibold text-gray-500 uppercase tracking-wider">Azioni</th>
                     </tr>
@@ -83,6 +84,9 @@
                             <td class="px-6 py-4 align-top">
                                 <div class="text-sm font-semibold text-gray-900">{{ $match->label }}</div>
                                 <div class="text-xs text-gray-400 mt-0.5">{{ $match->venue_label }} · {{ $match->competition_type }}</div>
+                            </td>
+                            <td class="px-6 py-4 align-top text-sm text-gray-700">
+                                {{ $match->category_label ?? '—' }}
                             </td>
                             <td class="px-6 py-4 align-top">
                                 @foreach ($designations as $designation)
