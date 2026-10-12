@@ -10,7 +10,19 @@
 <div class="grid grid-cols-2 lg:grid-cols-3 gap-4 mb-8">
     @php
         $cards = [
-            ['label' => 'Arbitri disponibili', 'value' => $stats['available_referees'] . ' / ' . $stats['referees'],   'icon' => '👤', 'color' => 'indigo'],
+            [
+                'label' => 'Arbitri disponibili questo fine settimana',
+                'value' => $stats['available_referees'] . ' / ' . $stats['referees'],
+                'icon' => '👤',
+                'color' => 'indigo',
+                // Chi è indisponibile solo sabato o solo domenica è contato, ma va segnalato
+                'note' => $partiallyAvailableReferees
+                    ? '⚠️ di cui ' . count($partiallyAvailableReferees) . (count($partiallyAvailableReferees) === 1 ? ' disponibile' : ' disponibili') . ' solo sabato o solo domenica'
+                    : null,
+                'note_title' => collect($partiallyAvailableReferees)
+                    ->map(fn ($r) => $r['name'] . ': indisponibile ' . $r['days'])
+                    ->implode("\n"),
+            ],
             ['label' => 'Squadre',              'value' => $stats['teams'],              'icon' => '🛡️', 'color' => 'blue'],
             ['label' => 'Partite in programma questa settimana', 'value' => $stats['upcoming_matches'],   'icon' => '📅', 'color' => 'purple'],
             ['label' => 'Designazioni in attesa questa settimana', 'value' => $stats['pending_designations'], 'icon' => '⏳', 'color' => 'yellow'],
@@ -23,6 +35,9 @@
             <div>
                 <p class="text-2xl font-bold text-gray-900">{{ $card['value'] }}</p>
                 <p class="text-sm text-gray-500">{{ $card['label'] }}</p>
+                @if (! empty($card['note']))
+                    <p class="text-xs text-amber-700 mt-0.5 cursor-help" title="{{ $card['note_title'] }}">{{ $card['note'] }}</p>
+                @endif
             </div>
         </div>
     @endforeach

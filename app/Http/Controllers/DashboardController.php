@@ -39,9 +39,11 @@ class DashboardController extends Controller
 
     public function private(Request $request)
     {
+        [$availableReferees, $partiallyAvailableReferees] = $this->weekRefereeAvailability();
+
         $stats = [
             'referees' => Referee::count(),
-            'available_referees' => Referee::where('availability_status', 'available')->count(),
+            'available_referees' => $availableReferees,
             'teams' => Team::count(),
             // Solo la settimana corrente (lunedì–domenica), escluse le partite già giocate
             'upcoming_matches' => RugbyMatch::where('status', 'scheduled')->inWeek(now())->where('date_time', '>=', now())->count(),
@@ -103,7 +105,50 @@ class DashboardController extends Controller
             ->values();
 
         return view('dashboard.private', compact(
-            'stats', 'recentDesignations', 'upcomingMatches', 'hasMatchesToDesignate', 'refereeSeasonCounts', 'seasonLabel', 'seasonRoles'
+            'stats', 'recentDesignations', 'upcomingMatches', 'hasMatchesToDesignate', 'refereeSeasonCounts', 'seasonLabel', 'seasonRoles', 'partiallyAvailableReferees'
         ));
+    }
+
+    /**
+     * Disponibilità degli arbitri nella settimana corrente (lunedì–domenica), pensata per le gare del
+     * fine settimana: tra chi ha stato "Disponibile", non conta chi è indisponibile sia sabato sia
+     * domenica (quindi anche chi lo è tutta la settimana). Ritorna il numero e l'elenco di chi è
+     * indisponibile solo sabato o solo domenica (nome + giorni di indisponibilità), da segnalare a parte.
+     * L'indisponibilità nei soli giorni feriali non incide.
+     */
+    private function weekRefereeAvailability(): array
+    {
+        $weekStart = now()->startOfWeek(Carbon::MONDAY)->startOfDay();
+        $weekDays = collect(range(0, 6))->map(fn ($i) => $weekStart->copy()->addDays($i));
+
+        $referees = Referee::where('availability_status', 'available')
+            ->with(['unavailabilities' => fn ($q) => $q
+                ->whereDate('start_date', '<=', $weekDays->last()->toDateString())
+                ->whereDate('end_date', '>=', $weekStart->toDateString())])
+            ->orderBy('name')
+            ->get();
+
+        $available = 0;
+        $partial = [];
+
+        foreach ($referees as $referee) {
+            $daysOff = $weekDays->filter(fn ($day) => $referee->isUnavailableOn($day));
+            $weekendDaysOff = $daysOff->filter(fn ($day) => $day->isWeekend())->count();
+
+            if ($weekendDaysOff === 2) {
+                continue;
+            }
+
+            $available++;
+
+            if ($weekendDaysOff === 1) {
+                $partial[] = [
+                    'name' => $referee->name,
+                    'days' => $daysOff->map(fn ($day) => $day->locale('it')->isoFormat('ddd D'))->implode(', '),
+                ];
+            }
+        }
+
+        return [$available, $partial];
     }
 }

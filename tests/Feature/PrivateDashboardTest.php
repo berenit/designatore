@@ -1,11 +1,13 @@
 <?php
 
 use App\Models\Designation;
+use App\Models\Referee;
 use App\Models\RugbyMatch;
 use App\Models\Team;
 use App\Models\User;
 use App\Models\Venue;
 use Illuminate\Support\Carbon;
+use Illuminate\Support\Str;
 
 function dashboardMatch(Carbon $dateTime): RugbyMatch
 {
@@ -113,4 +115,47 @@ test('the season count per referee can include other roles or all of them', func
     $this->actingAs($user)
         ->get(route('dashboard', ['season_roles' => Designation::ROLES]))
         ->assertSee('(tutti i ruoli)');
+});
+
+test('available referees this week exclude those away all weekend and flag those away only one weekend day', function () {
+    // Mercoledì 14 della settimana lunedì 12 – domenica 18
+    $this->travelTo(Carbon::parse('2026-10-14 12:00'));
+
+    $make = fn (string $name, ?array $period = null, string $status = 'available') => tap(
+        Referee::create(['name' => $name, 'email' => Str::slug($name).'@example.com', 'availability_status' => $status]),
+        fn ($r) => $period && $r->unavailabilities()->create(['start_date' => $period[0], 'end_date' => $period[1]])
+    );
+
+    $make('Sempre Libero');                                        // conta
+    $make('Feriale Bianchi', ['2026-10-13', '2026-10-15']);          // conta: solo giorni feriali, nessuna nota
+    $make('Sabato Rossi', ['2026-10-16', '2026-10-17']);             // conta, segnalato: solo sabato nel weekend
+    $make('Domenica Verdi', ['2026-10-18', '2026-10-25']);           // conta, segnalato: solo domenica
+    $make('Weekend Neri', ['2026-10-17', '2026-10-18']);             // non conta: sabato e domenica
+    $make('Via Tutta Settimana', ['2026-10-10', '2026-10-20']);      // non conta
+    $make('Non Disponibile', null, 'unavailable');                 // non conta
+
+    $this->actingAs(User::factory()->create())
+        ->get(route('dashboard'))
+        ->assertOk()
+        ->assertViewHas('stats', fn ($stats) => $stats['available_referees'] === 4 && $stats['referees'] === 7)
+        ->assertViewHas('partiallyAvailableReferees', fn ($partial) => $partial === [
+            ['name' => 'Domenica Verdi', 'days' => 'dom 18'],
+            ['name' => 'Sabato Rossi', 'days' => 'ven 16, sab 17'],
+        ])
+        ->assertSee('Arbitri disponibili questo fine settimana')
+        ->assertSee('di cui 2 disponibili solo sabato o solo domenica')
+        ->assertSee('Sabato Rossi: indisponibile ven 16, sab 17');
+});
+
+test('no weekend note when nobody is away on a single weekend day', function () {
+    $this->travelTo(Carbon::parse('2026-10-14 12:00'));
+
+    $weekdays = Referee::create(['name' => 'Feriale', 'email' => 'feriale@example.com', 'availability_status' => 'available']);
+    $weekdays->unavailabilities()->create(['start_date' => '2026-10-12', 'end_date' => '2026-10-16']);
+
+    $this->actingAs(User::factory()->create())
+        ->get(route('dashboard'))
+        ->assertOk()
+        ->assertViewHas('stats', fn ($stats) => $stats['available_referees'] === 1)
+        ->assertDontSee('solo sabato o solo domenica');
 });
