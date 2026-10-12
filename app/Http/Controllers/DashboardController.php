@@ -37,7 +37,7 @@ class DashboardController extends Controller
         return view('dashboard.public', compact('upcomingMatches', 'categories', 'category', 'weekStart', 'weekEnd', 'showRefereeNames'));
     }
 
-    public function private()
+    public function private(Request $request)
     {
         $stats = [
             'referees' => Referee::count(),
@@ -77,11 +77,16 @@ class DashboardController extends Controller
         $seasonEnd = Carbon::create($seasonStartYear + 1, 6, 30)->endOfDay();
         $seasonLabel = $seasonStartYear.'/'.($seasonStartYear + 1);
 
-        // Partite distinte per cui ciascun arbitro è stato designato nella stagione (whereDate: confronto
-        // per sola data, più affidabile in SQLite di un confronto diretto su date_time)
+        // Ruoli da considerare nelle statistiche di stagione (nessuna selezione valida = solo Arbitro)
+        $seasonRoles = array_values(array_intersect(Designation::ROLES, (array) $request->input('season_roles', [])))
+            ?: [RugbyMatch::DEFAULT_ROLE];
+
+        // Partite distinte per cui ciascun arbitro è stato designato nella stagione con uno dei ruoli scelti
+        // (whereDate: confronto per sola data, più affidabile in SQLite di un confronto diretto su date_time)
         $seasonMatchesByReferee = DB::table('designations')
             ->join('matches', 'matches.id', '=', 'designations.match_id')
             ->where('designations.status', '!=', 'cancelled')
+            ->whereIn('designations.role', $seasonRoles)
             ->whereDate('matches.date_time', '>=', $seasonStart->toDateString())
             ->whereDate('matches.date_time', '<=', $seasonEnd->toDateString())
             ->select('designations.referee_id', 'designations.match_id')
@@ -98,7 +103,7 @@ class DashboardController extends Controller
             ->values();
 
         return view('dashboard.private', compact(
-            'stats', 'recentDesignations', 'upcomingMatches', 'hasMatchesToDesignate', 'refereeSeasonCounts', 'seasonLabel'
+            'stats', 'recentDesignations', 'upcomingMatches', 'hasMatchesToDesignate', 'refereeSeasonCounts', 'seasonLabel', 'seasonRoles'
         ));
     }
 }

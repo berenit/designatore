@@ -1,5 +1,6 @@
 <?php
 
+use App\Models\Designation;
 use App\Models\RugbyMatch;
 use App\Models\Team;
 use App\Models\User;
@@ -73,4 +74,43 @@ test('the latest designations box lists only designations for this week\'s match
         ->assertSee('Ultime designazioni della settimana')
         // Categoria della partita sia in Prossime partite sia in Ultime designazioni
         ->assertSeeInOrder(['Prossime partite', ' · Serie A', 'Ultime designazioni della settimana', ' · Serie A']);
+});
+
+test('the season count per referee only considers designations with the Arbitro role', function () {
+    $user = User::factory()->create();
+    $asReferee = createDesignation($user);
+    $referee = $asReferee->referee;
+
+    // Stesso arbitro su un'altra partita, ma come Assistente 1: non conta
+    $other = createDesignation($user, ['role' => 'Assistente 1']);
+    $other->update(['referee_id' => $referee->id]);
+
+    $this->actingAs($user)
+        ->get(route('dashboard'))
+        ->assertOk()
+        ->assertViewHas('refereeSeasonCounts', fn ($counts) => $counts->firstWhere('referee.id', $referee->id)['count'] === 1)
+        ->assertSee('(Arbitro)');
+});
+
+test('the season count per referee can include other roles or all of them', function () {
+    $user = User::factory()->create();
+    $asReferee = createDesignation($user);
+    $referee = $asReferee->referee;
+
+    $asAssistant = createDesignation($user, ['role' => 'Assistente 1']);
+    $asAssistant->update(['referee_id' => $referee->id]);
+    $asTutor = createDesignation($user, ['role' => 'Tutor']);
+    $asTutor->update(['referee_id' => $referee->id]);
+
+    $countFor = fn (array $query) => $this->actingAs($user)->get(route('dashboard', $query))->assertOk()
+        ->viewData('refereeSeasonCounts')->firstWhere('referee.id', $referee->id)['count'];
+
+    expect($countFor(['season_roles' => ['Assistente 1']]))->toBe(1)
+        ->and($countFor(['season_roles' => ['Arbitro', 'Assistente 1']]))->toBe(2)
+        ->and($countFor(['season_roles' => Designation::ROLES]))->toBe(3)
+        ->and($countFor(['season_roles' => ['Ruolo inventato']]))->toBe(1); // selezione non valida = solo Arbitro
+
+    $this->actingAs($user)
+        ->get(route('dashboard', ['season_roles' => Designation::ROLES]))
+        ->assertSee('(tutti i ruoli)');
 });

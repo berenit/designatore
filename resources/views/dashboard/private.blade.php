@@ -129,11 +129,36 @@
     </div>
 
     {{-- Designazioni per arbitro nella stagione --}}
-    <div class="bg-white rounded-xl border border-gray-200 shadow-sm overflow-hidden lg:col-span-2">
+    @php
+        $allRoles = \App\Models\Designation::ROLES;
+        $rolesSummary = count($seasonRoles) === count($allRoles) ? 'tutti i ruoli' : implode(', ', $seasonRoles);
+    @endphp
+    <div id="stagione" class="bg-white rounded-xl border border-gray-200 shadow-sm overflow-hidden lg:col-span-2">
         <div class="px-5 py-4 border-b border-gray-100 flex items-center justify-between">
-            <h2 class="font-semibold text-gray-900">Designazioni per arbitro — Stagione {{ $seasonLabel }}</h2>
+            <h2 class="font-semibold text-gray-900">Designazioni per arbitro — Stagione {{ $seasonLabel }} <span class="text-xs font-normal text-gray-400">({{ $rolesSummary }})</span></h2>
             <a href="{{ route('referees.index') }}" class="text-xs text-indigo-600 hover:text-indigo-800">Vedi arbitri →</a>
         </div>
+
+        {{-- Ruoli da conteggiare: la selezione ricarica la pagina (nessun ruolo = solo Arbitro) --}}
+        <form method="GET" action="{{ route('dashboard') }}#stagione" class="px-5 py-3 border-b border-gray-100 bg-gray-50">
+            <div class="flex items-center justify-between mb-2">
+                <span class="text-xs font-semibold text-gray-500 uppercase tracking-wider">Ruoli</span>
+                <span class="text-xs space-x-2">
+                    <a href="{{ route('dashboard', ['season_roles' => $allRoles]) }}#stagione" class="text-indigo-600 hover:text-indigo-800">Tutti</a>
+                    <a href="{{ route('dashboard') }}#stagione" class="text-gray-500 hover:text-gray-700">Solo Arbitro</a>
+                </span>
+            </div>
+            <div class="flex flex-wrap gap-x-4 gap-y-2">
+                @foreach ($allRoles as $role)
+                    <label class="inline-flex items-center gap-2 text-sm text-gray-700">
+                        <input type="checkbox" name="season_roles[]" value="{{ $role }}" onchange="this.form.submit()"
+                               @checked(in_array($role, $seasonRoles, true))
+                               class="rounded border-gray-300 text-indigo-600 focus:ring-indigo-500">
+                        {{ $role }}
+                    </label>
+                @endforeach
+            </div>
+        </form>
         @if ($refereeSeasonCounts->isEmpty())
             <div class="px-5 py-8 text-center text-gray-400 text-sm">Nessun arbitro registrato</div>
         @else
