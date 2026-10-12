@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Mail\MatchCancelledMail;
 use App\Mail\MatchUpdatedMail;
+use App\Models\Designation;
 use App\Models\RugbyMatch;
 use App\Models\Team;
 use App\Models\Venue;
@@ -411,7 +412,8 @@ class RugbyMatchController extends Controller
         $rugbyMatch->load(['homeTeam', 'awayTeam', 'teams', 'venue', 'designations.referee']);
 
         foreach ($rugbyMatch->designations->whereIn('status', ['pending', 'confirmed']) as $designation) {
-            $designation->update(['status' => 'pending']);
+            // Serve una nuova conferma: i solleciti ripartono quando l'email viene davvero inviata
+            $designation->update(['status' => 'pending'] + Designation::CONFIRMATION_RESET);
             $designation->setRelation('match', $rugbyMatch);
 
             PendingMails::add($designation->referee->email, new MatchUpdatedMail($designation));

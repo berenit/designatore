@@ -398,6 +398,8 @@ class DesignationController extends Controller
             $attributes['assigned_by'] = auth()->id();
             $attributes['assignment_date'] = now();
             $attributes['status'] = 'pending';
+            // I solleciti ripartono solo quando l'email al nuovo arbitro viene davvero inviata
+            $attributes += Designation::CONFIRMATION_RESET;
         }
 
         $designation = Designation::updateOrCreate($key, $attributes);
@@ -532,7 +534,8 @@ class DesignationController extends Controller
             ]);
         }
 
-        $designation->update($validated);
+        // Con un nuovo arbitro i solleciti ripartono solo quando la sua email viene davvero inviata
+        $designation->update($refereeChanged ? $validated + Designation::CONFIRMATION_RESET : $validated);
 
         // Il nuovo arbitro va notificato come una designazione nuova
         if ($refereeChanged) {

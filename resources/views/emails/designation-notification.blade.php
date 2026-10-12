@@ -3,6 +3,10 @@
 
 Ciao **{{ $designation->referee->name }}**,
 
+@if($reminderLabel)
+**{{ $reminderLabel === 'ULTIMO SOLLECITO' ? 'Ultimo sollecito' : 'Sollecito' }}:** non abbiamo ancora ricevuto la tua risposta.
+
+@endif
 sei stato designato per il seguente incontro di rugby:
 
 <x-mail::table>

@@ -2,6 +2,8 @@
 
 namespace App\Support;
 
+use App\Mail\RequestsConfirmation;
+use App\Models\Designation;
 use Illuminate\Mail\Mailable;
 use Illuminate\Support\Facades\Crypt;
 use Illuminate\Support\Facades\DB;
@@ -55,7 +57,14 @@ class PendingMails
         $sent = 0;
 
         while ($entry = session(self::SESSION_KEY, [])[0] ?? null) {
-            Mail::to($entry['to'])->send(unserialize(Crypt::decryptString($entry['payload'])));
+            $mail = unserialize(Crypt::decryptString($entry['payload']));
+            Mail::to($entry['to'])->send($mail);
+
+            // Una richiesta di conferma partita davvero avvia il ciclo dei solleciti
+            if ($mail instanceof RequestsConfirmation) {
+                $designation = $mail->confirmationDesignation();
+                Designation::markConfirmationRequested($designation->id, $designation->referee_id);
+            }
 
             session()->put(self::SESSION_KEY, array_slice(session(self::SESSION_KEY), 1));
             $sent++;

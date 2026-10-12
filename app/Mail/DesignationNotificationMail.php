@@ -9,7 +9,7 @@ use Illuminate\Mail\Mailables\Content;
 use Illuminate\Mail\Mailables\Envelope;
 use Illuminate\Support\Facades\URL;
 
-class DesignationNotificationMail extends Mailable
+class DesignationNotificationMail extends Mailable implements RequestsConfirmation
 {
     // Niente SerializesModels: l'email viene serializzata per intero mentre attende conferma
     // (vedi PendingMails), anche quando la designazione/partita nel frattempo viene eliminata.
@@ -19,7 +19,8 @@ class DesignationNotificationMail extends Mailable
 
     public string $declineUrl;
 
-    public function __construct(public Designation $designation)
+    /** $reminderLabel: prefisso dell'oggetto per i solleciti ("SOLLECITO 1", ..., "ULTIMO SOLLECITO"); null per il primo invio. */
+    public function __construct(public Designation $designation, public ?string $reminderLabel = null)
     {
         $this->acceptUrl = URL::signedRoute('designations.respond', [
             'designation' => $designation->id,
@@ -31,10 +32,15 @@ class DesignationNotificationMail extends Mailable
         ]);
     }
 
+    public function confirmationDesignation(): Designation
+    {
+        return $this->designation;
+    }
+
     public function envelope(): Envelope
     {
         return new Envelope(
-            subject: "Designazione arbitrale — {$this->designation->match->label}",
+            subject: ($this->reminderLabel ? "{$this->reminderLabel}: " : '')."Designazione arbitrale — {$this->designation->match->label}",
         );
     }
 

@@ -9,7 +9,7 @@ use Illuminate\Mail\Mailables\Content;
 use Illuminate\Mail\Mailables\Envelope;
 use Illuminate\Support\Facades\URL;
 
-class MatchUpdatedMail extends Mailable
+class MatchUpdatedMail extends Mailable implements RequestsConfirmation
 {
     // Niente SerializesModels: l'email viene serializzata per intero mentre attende conferma
     // (vedi PendingMails), anche quando la designazione/partita nel frattempo viene eliminata.
@@ -29,6 +29,11 @@ class MatchUpdatedMail extends Mailable
             'designation' => $designation->id,
             'action' => 'decline',
         ]);
+    }
+
+    public function confirmationDesignation(): Designation
+    {
+        return $this->designation;
     }
 
     public function envelope(): Envelope
