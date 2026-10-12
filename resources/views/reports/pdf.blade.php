@@ -76,9 +76,10 @@
 
         tbody tr:last-child td { border-bottom: none; }
 
+        /* Incontro largo abbastanza da stare in due righe (nome gara + campo/comitato/competizione/categoria) */
         .col-date   { width: 12%; }
-        .col-match  { width: 33%; }
-        .col-refs   { width: 55%; }
+        .col-match  { width: 46%; }
+        .col-refs   { width: 42%; }
 
         .role-name { font-size: 10px; color: #374151; vertical-align: middle; }
         .role-observer { font-weight: bold; color: #92400e; }
