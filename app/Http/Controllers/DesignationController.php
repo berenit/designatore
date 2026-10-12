@@ -7,6 +7,7 @@ use App\Mail\DesignationRemovedMail;
 use App\Models\Designation;
 use App\Models\Referee;
 use App\Models\RugbyMatch;
+use App\Models\Team;
 use Carbon\Carbon;
 use Illuminate\Database\QueryException;
 use Illuminate\Http\Request;
@@ -31,21 +32,23 @@ class DesignationController extends Controller
         )->startOfWeek(Carbon::MONDAY)->startOfDay();
 
         $weekEnd = $weekStart->copy()->endOfWeek(Carbon::SUNDAY)->endOfDay();
+        $category = $request->query('category');
 
         // Tutte le partite della settimana (qualunque stato), con le designazioni se esistono
-        // whereDate confronta solo la parte data, più affidabile in SQLite
         $matches = RugbyMatch::with(['homeTeam', 'awayTeam', 'teams', 'venue', 'designations.referee'])
-            ->whereDate('date_time', '>=', $weekStart->toDateString())
-            ->whereDate('date_time', '<=', $weekEnd->toDateString())
+            ->inWeek($weekStart)
+            ->when($category, fn ($query, $category) => $query->inCategory($category))
             ->orderBy('date_time')
             ->get();
+
+        $categories = Team::orderedCategories();
 
         $prevWeek = $weekStart->copy()->subWeek()->format('Y-m-d');
         $nextWeek = $weekStart->copy()->addWeek()->format('Y-m-d');
 
         $hasMatchesToDesignate = RugbyMatch::hasMatchesNeedingDesignation();
 
-        return view('designations.index', compact('matches', 'weekStart', 'weekEnd', 'prevWeek', 'nextWeek', 'hasMatchesToDesignate'));
+        return view('designations.index', compact('matches', 'weekStart', 'weekEnd', 'prevWeek', 'nextWeek', 'hasMatchesToDesignate', 'categories', 'category'));
     }
 
     /**

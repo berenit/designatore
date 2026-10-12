@@ -27,7 +27,7 @@ beforeEach(fn () => Mail::fake());
 test('a new match stores the selected committee', function () {
     $this->actingAs(User::factory()->create())
         ->post(route('rugby-matches.store'), committeeMatchPayload(['committee' => 'Lazio']))
-        ->assertRedirect(route('rugby-matches.index'));
+        ->assertRedirect(route('rugby-matches.index', ['week' => now()->addWeek()->toDateString()]));
 
     expect(RugbyMatch::first()->committee)->toBe('Lazio');
 });
@@ -35,7 +35,7 @@ test('a new match stores the selected committee', function () {
 test('a new match defaults to Abruzzo when no committee is sent', function () {
     $this->actingAs(User::factory()->create())
         ->post(route('rugby-matches.store'), committeeMatchPayload())
-        ->assertRedirect(route('rugby-matches.index'));
+        ->assertRedirect(route('rugby-matches.index', ['week' => now()->addWeek()->toDateString()]));
 
     expect(RugbyMatch::first()->committee)->toBe('Abruzzo');
 });
@@ -58,7 +58,7 @@ test('updating a match without committee keeps the current one', function () {
     unset($payload['committee']);
     $this->actingAs($user)
         ->put(route('rugby-matches.update', $match), array_merge($payload, ['status' => 'postponed']))
-        ->assertRedirect(route('rugby-matches.index'));
+        ->assertRedirect(route('rugby-matches.index', ['week' => now()->addWeek()->toDateString()]));
 
     expect($match->fresh()->committee)->toBe('Lazio');
 });

@@ -21,11 +21,28 @@ class RugbyMatchController extends Controller
     /**
      * Display a listing of the resource.
      */
-    public function index()
+    public function index(Request $request)
     {
-        $matches = RugbyMatch::with(['homeTeam', 'awayTeam', 'teams', 'venue'])->orderBy('date_time')->get();
+        // Settimana di riferimento: lunedì–domenica (default = settimana corrente), come per le designazioni
+        $weekStart = ($request->week
+            ? Carbon::parse($request->week)
+            : now()
+        )->startOfWeek(Carbon::MONDAY)->startOfDay();
 
-        return view('rugby_matches.index', compact('matches'));
+        $weekEnd = $weekStart->copy()->endOfWeek(Carbon::SUNDAY)->endOfDay();
+        $category = $request->query('category');
+
+        $matches = RugbyMatch::with(['homeTeam', 'awayTeam', 'teams', 'venue'])
+            ->inWeek($weekStart)
+            ->when($category, fn ($query, $category) => $query->inCategory($category))
+            ->orderBy('date_time')
+            ->get();
+
+        $prevWeek = $weekStart->copy()->subWeek()->format('Y-m-d');
+        $nextWeek = $weekStart->copy()->addWeek()->format('Y-m-d');
+        $categories = Team::orderedCategories();
+
+        return view('rugby_matches.index', compact('matches', 'weekStart', 'weekEnd', 'prevWeek', 'nextWeek', 'categories', 'category'));
     }
 
     /**
@@ -226,7 +243,7 @@ class RugbyMatchController extends Controller
             $match->teams()->sync($validated['team_ids'] ?? []);
         }
 
-        return Redirect::route('rugby-matches.index')
+        return Redirect::route('rugby-matches.index', ['week' => $match->date_time->toDateString()])
             ->with('success', 'Partita programmata con successo.');
     }
 
@@ -352,7 +369,7 @@ class RugbyMatchController extends Controller
             $this->notifyRefereesOfUpdate($rugbyMatch);
         }
 
-        return Redirect::route('rugby-matches.index')
+        return Redirect::route('rugby-matches.index', ['week' => $rugbyMatch->date_time->toDateString()])
             ->with('success', 'Partita aggiornata con successo.');
     }
 

@@ -28,13 +28,7 @@ class DashboardController extends Controller
             ->where('status', 'scheduled')
             ->whereDate('date_time', '>=', $weekStart->toDateString())
             ->whereDate('date_time', '<=', $weekEnd->toDateString())
-            ->when($category, function ($query, $category) {
-                $query->where(function ($q) use ($category) {
-                    $q->whereHas('homeTeam', fn ($t) => $t->where('league_division', $category))
-                        ->orWhereHas('awayTeam', fn ($t) => $t->where('league_division', $category))
-                        ->orWhereHas('teams', fn ($t) => $t->where('league_division', $category));
-                });
-            })
+            ->when($category, fn ($query, $category) => $query->inCategory($category))
             ->orderBy('date_time')
             ->get();
 

@@ -4,7 +4,10 @@
 <div class="flex items-center justify-between mb-6">
     <div>
         <h1 class="text-2xl font-bold text-gray-900">Partite</h1>
-        <p class="text-sm text-gray-500 mt-1">{{ $matches->count() }} {{ $matches->count() === 1 ? 'partita' : 'partite' }} programmate</p>
+        <p class="text-sm text-gray-500 mt-1">
+            {{ $weekStart->locale('it')->isoFormat('D MMMM') }} – {{ $weekEnd->locale('it')->isoFormat('D MMMM YYYY') }}
+            · {{ $matches->count() }} {{ $matches->count() === 1 ? 'partita' : 'partite' }}
+        </p>
     </div>
     <a href="{{ route('rugby-matches.create') }}"
        class="inline-flex items-center gap-2 px-4 py-2 bg-indigo-600 text-white text-sm font-medium rounded-lg hover:bg-indigo-700 transition shadow-sm">
@@ -15,11 +18,20 @@
     </a>
 </div>
 
+<x-week-category-filter route="rugby-matches.index" :week-start="$weekStart" :prev-week="$prevWeek" :next-week="$nextWeek"
+                        :categories="$categories" :category="$category" />
+
 @if ($matches->isEmpty())
     <div class="bg-white rounded-xl border border-gray-200 shadow-sm py-16 text-center">
         <div class="text-5xl mb-4">📅</div>
-        <h3 class="text-lg font-semibold text-gray-700">Nessuna partita programmata</h3>
-        <p class="text-gray-500 text-sm mt-1 mb-6">Aggiungi la prima partita per iniziare le designazioni.</p>
+        <h3 class="text-lg font-semibold text-gray-700">Nessuna partita questa settimana</h3>
+        <p class="text-gray-500 text-sm mt-1 mb-6">
+            @if ($category)
+                Nessuna partita della categoria «{{ $category }}» in questa settimana.
+            @else
+                Naviga nelle settimane o programma una nuova partita.
+            @endif
+        </p>
         <a href="{{ route('rugby-matches.create') }}"
            class="inline-flex items-center gap-2 px-4 py-2 bg-indigo-600 text-white text-sm font-medium rounded-lg hover:bg-indigo-700 transition">
             Programma Partita
@@ -33,6 +45,7 @@
                     <tr class="bg-gray-50">
                         <th class="px-6 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Data & Ora</th>
                         <th class="px-6 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Incontro</th>
+                        <th class="px-6 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Categoria</th>
                         <th class="px-6 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Campo</th>
                         <th class="px-6 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Competizione</th>
                         <th class="px-6 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Stato</th>
@@ -51,6 +64,7 @@
                                     <div class="text-xs text-gray-400 mt-0.5">{{ $match->participantNames()->join(', ') }}</div>
                                 @endif
                             </td>
+                            <td class="px-6 py-4 text-sm text-gray-700">{{ $match->category_label ?? '—' }}</td>
                             <td class="px-6 py-4 text-sm text-gray-600">{{ $match->venue_label }}</td>
                             <td class="px-6 py-4">
                                 <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold

@@ -27,37 +27,20 @@
     @endif
 </div>
 
-{{-- Navigazione settimana --}}
-<div class="flex items-center gap-3 mb-6">
-    <a href="{{ route('designations.index', ['week' => $prevWeek]) }}"
-       class="inline-flex items-center gap-1 px-3 py-1.5 text-sm text-gray-600 bg-white border border-gray-200 rounded-lg hover:bg-gray-50 shadow-sm transition">
-        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"/>
-        </svg>
-        Settimana precedente
-    </a>
-
-    @unless($weekStart->isSameWeek(now()))
-        <a href="{{ route('designations.index') }}"
-           class="text-sm text-indigo-600 hover:text-indigo-800 font-medium px-3 py-1.5">
-            Questa settimana
-        </a>
-    @endunless
-
-    <a href="{{ route('designations.index', ['week' => $nextWeek]) }}"
-       class="inline-flex items-center gap-1 px-3 py-1.5 text-sm text-gray-600 bg-white border border-gray-200 rounded-lg hover:bg-gray-50 shadow-sm transition ml-auto">
-        Settimana successiva
-        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/>
-        </svg>
-    </a>
-</div>
+<x-week-category-filter route="designations.index" :week-start="$weekStart" :prev-week="$prevWeek" :next-week="$nextWeek"
+                        :categories="$categories" :category="$category" />
 
 @if ($matches->isEmpty())
     <div class="bg-white rounded-xl border border-gray-200 shadow-sm py-16 text-center">
         <div class="text-5xl mb-4">📅</div>
         <h3 class="text-lg font-semibold text-gray-700">Nessuna partita questa settimana</h3>
-        <p class="text-gray-400 text-sm mt-1">Naviga nelle settimane o aggiungi nuove partite.</p>
+        <p class="text-gray-400 text-sm mt-1">
+            @if ($category)
+                Nessuna partita della categoria «{{ $category }}» in questa settimana.
+            @else
+                Naviga nelle settimane o aggiungi nuove partite.
+            @endif
+        </p>
     </div>
 @else
     <div class="bg-white rounded-xl border border-gray-200 shadow-sm overflow-hidden">

@@ -54,7 +54,7 @@ test('cancelling a match notifies referees with active designations', function (
             'home_team_id' => $match->home_team_id,
             'away_team_id' => $match->away_team_id,
         ])
-        ->assertRedirect(route('rugby-matches.index'));
+        ->assertRedirect(route('rugby-matches.index', ['week' => $match->date_time->toDateString()]));
 
     Mail::assertSent(MatchCancelledMail::class, 1);
     Mail::assertSent(MatchCancelledMail::class, fn ($mail) => $mail->designation->id === $active->id

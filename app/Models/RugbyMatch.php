@@ -2,7 +2,9 @@
 
 namespace App\Models;
 
+use Carbon\Carbon;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
 
 #[Fillable([
@@ -54,6 +56,26 @@ class RugbyMatch extends Model
         'observer' => ['label' => 'Osservatore', 'roles' => ['Osservatore']],
         'tutor' => ['label' => 'Tutor', 'roles' => ['Tutor']],
     ];
+
+    /** Gare della settimana (lunedì–domenica) che contiene $weekStart; whereDate perché in SQLite il confronto datetime/data è inaffidabile. */
+    public function scopeInWeek(Builder $query, Carbon $weekStart): Builder
+    {
+        $weekStart = $weekStart->copy()->startOfWeek(Carbon::MONDAY);
+
+        return $query
+            ->whereDate('date_time', '>=', $weekStart->toDateString())
+            ->whereDate('date_time', '<=', $weekStart->copy()->endOfWeek(Carbon::SUNDAY)->toDateString());
+    }
+
+    /** Gare di una categoria, desunta dalle squadre: casa/ospite per le gare singole, pivot per Concentramenti/Tornei. */
+    public function scopeInCategory(Builder $query, string $category): Builder
+    {
+        return $query->where(function ($q) use ($category) {
+            $q->whereHas('homeTeam', fn ($t) => $t->where('league_division', $category))
+                ->orWhereHas('awayTeam', fn ($t) => $t->where('league_division', $category))
+                ->orWhereHas('teams', fn ($t) => $t->where('league_division', $category));
+        });
+    }
 
     /** Ruolo sempre previsto su ogni gara. */
     public const DEFAULT_ROLE = 'Arbitro';
