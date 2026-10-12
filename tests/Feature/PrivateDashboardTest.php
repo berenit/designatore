@@ -159,3 +159,44 @@ test('no weekend note when nobody is away on a single weekend day', function () 
         ->assertViewHas('stats', fn ($stats) => $stats['available_referees'] === 1)
         ->assertDontSee('solo sabato o solo domenica');
 });
+
+test('the dashboard lists referees unavailable this week with their dates', function () {
+    $this->travelTo(Carbon::parse('2026-10-14 12:00')); // settimana lunedì 12 – domenica 18
+
+    Referee::create(['name' => 'Sempre Libero', 'email' => 'libero3@example.com', 'availability_status' => 'available']);
+
+    $weekend = Referee::create(['name' => 'Weekend Neri', 'email' => 'weekend@example.com', 'availability_status' => 'available']);
+    $weekend->unavailabilities()->create(['start_date' => '2026-10-17', 'end_date' => '2026-10-20']);
+
+    $sunday = Referee::create(['name' => 'Domenica Verdi', 'email' => 'domenica@example.com', 'availability_status' => 'available']);
+    $sunday->unavailabilities()->create(['start_date' => '2026-10-18', 'end_date' => '2026-10-18']);
+
+    $weekday = Referee::create(['name' => 'Feriale Bianchi', 'email' => 'feriale2@example.com', 'availability_status' => 'available']);
+    $weekday->unavailabilities()->create(['start_date' => '2026-10-13', 'end_date' => '2026-10-14']);
+
+    $nextWeek = Referee::create(['name' => 'Prossima Settimana', 'email' => 'prossima@example.com', 'availability_status' => 'available']);
+    $nextWeek->unavailabilities()->create(['start_date' => '2026-10-19', 'end_date' => '2026-10-25']);
+
+    Referee::create(['name' => 'Stato Indisponibile', 'email' => 'stato@example.com', 'availability_status' => 'unavailable']);
+
+    $response = $this->actingAs(User::factory()->create())->get(route('dashboard'))->assertOk();
+
+    expect($response->viewData('unavailableReferees')->pluck('referee.name')->all())
+        ->toBe(['Domenica Verdi', 'Feriale Bianchi', 'Weekend Neri', 'Stato Indisponibile']);
+
+    $response->assertDontSee('Questa settimana:')->assertSeeInOrder([
+        'Arbitri indisponibili questa settimana',
+        'Domenica Verdi', 'Indisponibile il 18/10/2026', 'Indisponibile domenica',
+        'Feriale Bianchi', 'Indisponibile dal 13/10/2026 al 14/10/2026', 'Solo giorni feriali',
+        'Weekend Neri', 'Indisponibile dal 17/10/2026 al 20/10/2026', 'Indisponibile nel fine settimana',
+        'Stato Indisponibile', 'Non disponibile (stato in anagrafica)',
+    ]);
+});
+
+test('the available referees card links to the unavailable referees list', function () {
+    $this->actingAs(User::factory()->create())
+        ->get(route('dashboard'))
+        ->assertOk()
+        ->assertSee('href="#arbitri-indisponibili"', false)
+        ->assertSee('id="arbitri-indisponibili"', false);
+});

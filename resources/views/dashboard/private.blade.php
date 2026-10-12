@@ -15,6 +15,8 @@
                 'value' => $stats['available_referees'] . ' / ' . $stats['referees'],
                 'icon' => '👤',
                 'color' => 'indigo',
+                // Porta all'elenco degli arbitri indisponibili in fondo alla pagina
+                'href' => '#arbitri-indisponibili',
                 // Chi è indisponibile solo sabato o solo domenica è contato, ma va segnalato
                 'note' => $partiallyAvailableReferees
                     ? '⚠️ di cui ' . count($partiallyAvailableReferees) . (count($partiallyAvailableReferees) === 1 ? ' disponibile' : ' disponibili') . ' solo sabato o solo domenica'
@@ -30,7 +32,9 @@
         ];
     @endphp
     @foreach ($cards as $card)
-        <div class="bg-white rounded-xl border border-gray-200 shadow-sm p-5 flex items-center gap-4">
+        @php $tag = empty($card['href']) ? 'div' : 'a'; @endphp
+        <{{ $tag }} @if ($tag === 'a') href="{{ $card['href'] }}" @endif
+            class="bg-white rounded-xl border border-gray-200 shadow-sm p-5 flex items-center gap-4 {{ $tag === 'a' ? 'hover:bg-gray-50 transition' : '' }}">
             <div class="text-3xl">{{ $card['icon'] }}</div>
             <div>
                 <p class="text-2xl font-bold text-gray-900">{{ $card['value'] }}</p>
@@ -39,7 +43,7 @@
                     <p class="text-xs text-amber-700 mt-0.5 cursor-help" title="{{ $card['note_title'] }}">{{ $card['note'] }}</p>
                 @endif
             </div>
-        </div>
+        </{{ $tag }}>
     @endforeach
 
     @php $missing = $stats['matches_without_designation']; @endphp
@@ -187,6 +191,42 @@
                             {{ $entry['count'] > 0 ? 'bg-indigo-100 text-indigo-700' : 'bg-gray-100 text-gray-400' }}">
                             {{ $entry['count'] }} {{ $entry['count'] === 1 ? 'partita' : 'partite' }}
                         </span>
+                    </li>
+                @endforeach
+            </ul>
+        @endif
+    </div>
+
+    {{-- Arbitri indisponibili nella settimana corrente (destinazione del riquadro "Arbitri disponibili") --}}
+    <div id="arbitri-indisponibili" class="scroll-mt-6 bg-white rounded-xl border border-gray-200 shadow-sm overflow-hidden lg:col-span-2">
+        <div class="px-5 py-4 border-b border-gray-100 flex items-center justify-between">
+            <h2 class="font-semibold text-gray-900">Arbitri indisponibili questa settimana</h2>
+            <a href="{{ route('referees.index') }}" class="text-xs text-indigo-600 hover:text-indigo-800">Vedi arbitri →</a>
+        </div>
+        @if ($unavailableReferees->isEmpty())
+            <div class="px-5 py-8 text-center text-gray-400 text-sm">Nessun arbitro indisponibile questa settimana</div>
+        @else
+            <ul class="divide-y divide-gray-100">
+                @foreach ($unavailableReferees as $entry)
+                    <li class="px-5 py-3 flex items-start justify-between gap-3 hover:bg-gray-50 transition">
+                        <div>
+                            <a href="{{ route('referees.show', $entry['referee']) }}" class="text-sm font-medium text-gray-900 hover:text-indigo-700">
+                                {{ $entry['referee']->name }}
+                            </a>
+                            @if ($entry['periods'])
+                                <p class="text-xs text-gray-500 mt-0.5">Indisponibile {{ implode(' e ', $entry['periods']) }}</p>
+                            @endif
+                        </div>
+                        @if ($entry['weekend'])
+                            <span class="flex-shrink-0 inline-flex items-center px-2 py-0.5 rounded-full text-xs font-semibold
+                                {{ $entry['periods'] && $entry['weekend'] !== 'Indisponibile nel fine settimana' ? 'bg-amber-100 text-amber-800' : 'bg-red-100 text-red-700' }}">
+                                {{ $entry['weekend'] }}
+                            </span>
+                        @else
+                            <span class="flex-shrink-0 inline-flex items-center px-2 py-0.5 rounded-full text-xs font-semibold bg-gray-100 text-gray-600">
+                                Solo giorni feriali
+                            </span>
+                        @endif
                     </li>
                 @endforeach
             </ul>

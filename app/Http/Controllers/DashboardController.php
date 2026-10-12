@@ -8,6 +8,7 @@ use App\Models\RugbyMatch;
 use App\Models\Team;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
+use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
 
 class DashboardController extends Controller
@@ -40,6 +41,7 @@ class DashboardController extends Controller
     public function private(Request $request)
     {
         [$availableReferees, $partiallyAvailableReferees] = $this->weekRefereeAvailability();
+        $unavailableReferees = $this->weekUnavailableReferees();
 
         $stats = [
             'referees' => Referee::count(),
@@ -105,7 +107,7 @@ class DashboardController extends Controller
             ->values();
 
         return view('dashboard.private', compact(
-            'stats', 'recentDesignations', 'upcomingMatches', 'hasMatchesToDesignate', 'refereeSeasonCounts', 'seasonLabel', 'seasonRoles', 'partiallyAvailableReferees'
+            'stats', 'recentDesignations', 'upcomingMatches', 'hasMatchesToDesignate', 'refereeSeasonCounts', 'seasonLabel', 'seasonRoles', 'partiallyAvailableReferees', 'unavailableReferees'
         ));
     }
 
@@ -150,5 +152,56 @@ class DashboardController extends Controller
         }
 
         return [$available, $partial];
+    }
+
+    /**
+     * Arbitri indisponibili in almeno un giorno della settimana corrente (lunedì–domenica), con i periodi
+     * di indisponibilità e l'effetto sul fine settimana. In coda chi ha stato generale
+     * "Non disponibile" in anagrafica (senza date).
+     */
+    private function weekUnavailableReferees(): Collection
+    {
+        $weekStart = now()->startOfWeek(Carbon::MONDAY)->startOfDay();
+        $weekDays = collect(range(0, 6))->map(fn ($i) => $weekStart->copy()->addDays($i));
+
+        $withPeriods = Referee::whereHas('unavailabilities', fn ($q) => $q
+            ->whereDate('start_date', '<=', $weekDays->last()->toDateString())
+            ->whereDate('end_date', '>=', $weekStart->toDateString()))
+            ->with(['unavailabilities' => fn ($q) => $q
+                ->whereDate('start_date', '<=', $weekDays->last()->toDateString())
+                ->whereDate('end_date', '>=', $weekStart->toDateString())
+                ->orderBy('start_date')])
+            ->orderBy('name')
+            ->get()
+            ->map(function ($referee) use ($weekDays) {
+                $daysOff = $weekDays->filter(fn ($day) => $referee->isUnavailableOn($day));
+                $saturday = $daysOff->contains(fn ($day) => $day->isSaturday());
+                $sunday = $daysOff->contains(fn ($day) => $day->isSunday());
+
+                return [
+                    'referee' => $referee,
+                    'periods' => $referee->unavailabilities->map(fn ($p) => $p->start_date->isSameDay($p->end_date)
+                        ? 'il '.$p->start_date->format('d/m/Y')
+                        : 'dal '.$p->start_date->format('d/m/Y').' al '.$p->end_date->format('d/m/Y'))->all(),
+                    'weekend' => match (true) {
+                        $saturday && $sunday => 'Indisponibile nel fine settimana',
+                        $saturday => 'Indisponibile sabato',
+                        $sunday => 'Indisponibile domenica',
+                        default => null,
+                    },
+                ];
+            });
+
+        $byStatus = Referee::where('availability_status', 'unavailable')
+            ->whereNotIn('id', $withPeriods->pluck('referee.id'))
+            ->orderBy('name')
+            ->get()
+            ->map(fn ($referee) => [
+                'referee' => $referee,
+                'periods' => [],
+                'weekend' => 'Non disponibile (stato in anagrafica)',
+            ]);
+
+        return $withPeriods->concat($byStatus)->values();
     }
 }
