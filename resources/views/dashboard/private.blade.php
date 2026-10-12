@@ -12,9 +12,9 @@
         $cards = [
             ['label' => 'Arbitri disponibili', 'value' => $stats['available_referees'] . ' / ' . $stats['referees'],   'icon' => '👤', 'color' => 'indigo'],
             ['label' => 'Squadre',              'value' => $stats['teams'],              'icon' => '🛡️', 'color' => 'blue'],
-            ['label' => 'Partite in programma', 'value' => $stats['upcoming_matches'],   'icon' => '📅', 'color' => 'purple'],
-            ['label' => 'Designazioni in attesa','value' => $stats['pending_designations'], 'icon' => '⏳', 'color' => 'yellow'],
-            ['label' => 'Designazioni accettate','value' => $stats['confirmed_designations'], 'icon' => '✅', 'color' => 'green'],
+            ['label' => 'Partite in programma questa settimana', 'value' => $stats['upcoming_matches'],   'icon' => '📅', 'color' => 'purple'],
+            ['label' => 'Designazioni in attesa questa settimana', 'value' => $stats['pending_designations'], 'icon' => '⏳', 'color' => 'yellow'],
+            ['label' => 'Designazioni accettate questa settimana', 'value' => $stats['confirmed_designations'], 'icon' => '✅', 'color' => 'green'],
         ];
     @endphp
     @foreach ($cards as $card)
@@ -34,7 +34,7 @@
         <div class="text-3xl">{{ $missing > 0 ? '🚨' : '✅' }}</div>
         <div>
             <p class="text-2xl font-bold {{ $missing > 0 ? 'text-red-700' : 'text-gray-900' }}">{{ $missing }}</p>
-            <p class="text-sm {{ $missing > 0 ? 'text-red-600' : 'text-gray-500' }}">Partite senza designazione</p>
+            <p class="text-sm {{ $missing > 0 ? 'text-red-600' : 'text-gray-500' }}">Partite della settimana senza designazione</p>
         </div>
     </a>
 
@@ -77,7 +77,7 @@
                                 {{ $match->label }}
                             </p>
                             <p class="text-xs text-gray-400 mt-0.5">
-                                {{ \Carbon\Carbon::parse($match->date_time)->format('d/m/Y H:i') }} — {{ $match->venue_label }}
+                                {{ \Carbon\Carbon::parse($match->date_time)->format('d/m/Y H:i') }} — {{ $match->venue_label }}@if ($match->category_label) · {{ $match->category_label }}@endif
                             </p>
                         </div>
                         @if ($match->designations->isNotEmpty())
@@ -99,11 +99,11 @@
     {{-- Ultime designazioni --}}
     <div class="bg-white rounded-xl border border-gray-200 shadow-sm overflow-hidden">
         <div class="px-5 py-4 border-b border-gray-100 flex items-center justify-between">
-            <h2 class="font-semibold text-gray-900">Ultime designazioni</h2>
+            <h2 class="font-semibold text-gray-900">Ultime designazioni della settimana</h2>
             <a href="{{ route('designations.index') }}" class="text-xs text-indigo-600 hover:text-indigo-800">Vedi tutte →</a>
         </div>
         @if ($recentDesignations->isEmpty())
-            <div class="px-5 py-8 text-center text-gray-400 text-sm">Nessuna designazione ancora</div>
+            <div class="px-5 py-8 text-center text-gray-400 text-sm">Nessuna designazione per le partite di questa settimana</div>
         @else
             <ul class="divide-y divide-gray-100">
                 @foreach ($recentDesignations as $d)
@@ -111,7 +111,7 @@
                         <div>
                             <p class="text-sm font-medium text-gray-900">{{ $d->referee->name }} <span class="text-xs font-normal text-gray-400">· {{ $d->role }}</span></p>
                             <p class="text-xs text-gray-400 mt-0.5">
-                                {{ $d->match->label }}
+                                {{ $d->match->label }}@if ($d->match->category_label) · {{ $d->match->category_label }}@endif
                             </p>
                         </div>
                         <span class="flex-shrink-0 inline-flex items-center px-2 py-0.5 rounded-full text-xs font-semibold

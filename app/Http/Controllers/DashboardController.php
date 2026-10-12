@@ -43,16 +43,21 @@ class DashboardController extends Controller
             'referees' => Referee::count(),
             'available_referees' => Referee::where('availability_status', 'available')->count(),
             'teams' => Team::count(),
-            'upcoming_matches' => RugbyMatch::where('status', 'scheduled')->where('date_time', '>=', now())->count(),
-            'pending_designations' => Designation::where('status', 'pending')->count(),
-            'confirmed_designations' => Designation::where('status', 'confirmed')->count(),
+            // Solo la settimana corrente (lunedì–domenica), escluse le partite già giocate
+            'upcoming_matches' => RugbyMatch::where('status', 'scheduled')->inWeek(now())->where('date_time', '>=', now())->count(),
+            // Designazioni delle partite della settimana corrente (lunedì–domenica)
+            'pending_designations' => Designation::where('status', 'pending')->whereHas('match', fn ($q) => $q->inWeek(now()))->count(),
+            'confirmed_designations' => Designation::where('status', 'confirmed')->whereHas('match', fn ($q) => $q->inWeek(now()))->count(),
+            // Solo la settimana corrente (lunedì–domenica), escluse le partite già giocate
             'matches_without_designation' => RugbyMatch::where('status', 'scheduled')
+                ->inWeek(now())
                 ->where('date_time', '>=', now())
                 ->whereDoesntHave('designations')
                 ->count(),
         ];
 
         $recentDesignations = Designation::with(['match.homeTeam', 'match.awayTeam', 'match.teams', 'match.venue', 'referee'])
+            ->whereHas('match', fn ($q) => $q->inWeek(now()))
             ->orderByDesc('created_at')
             ->limit(10)
             ->get();
