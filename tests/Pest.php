@@ -1,6 +1,14 @@
 <?php
 
+use App\Models\Designation;
+use App\Models\Referee;
+use App\Models\RugbyMatch;
+use App\Models\Team;
+use App\Models\User;
+use App\Models\Venue;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\Mail;
+use Illuminate\Support\Str;
 use Tests\TestCase;
 
 /*
@@ -49,13 +57,13 @@ function something()
     // ..
 }
 
-function createDesignation(\App\Models\User $designatore, array $attributes = []): \App\Models\Designation
+function createDesignation(User $designatore, array $attributes = []): Designation
 {
-    $venue = \App\Models\Venue::create(['name' => 'Stadio Test', 'city' => 'Roma', 'address' => 'Via Test 1']);
-    $home = \App\Models\Team::create(['name' => 'Casa', 'city' => 'Roma', 'league_division' => 'Serie A']);
-    $away = \App\Models\Team::create(['name' => 'Ospiti', 'city' => 'Milano', 'league_division' => 'Serie A']);
+    $venue = Venue::create(['name' => 'Stadio Test', 'city' => 'Roma', 'address' => 'Via Test 1']);
+    $home = Team::create(['name' => 'Casa', 'city' => 'Roma', 'league_division' => 'Serie A']);
+    $away = Team::create(['name' => 'Ospiti', 'city' => 'Milano', 'league_division' => 'Serie A']);
 
-    $match = \App\Models\RugbyMatch::create([
+    $match = RugbyMatch::create([
         'date_time' => now()->addWeek(),
         'venue_id' => $venue->id,
         'home_team_id' => $home->id,
@@ -64,12 +72,12 @@ function createDesignation(\App\Models\User $designatore, array $attributes = []
         'status' => 'scheduled',
     ]);
 
-    $referee = \App\Models\Referee::create([
+    $referee = Referee::create([
         'name' => 'Mario Rossi',
-        'email' => 'referee-'.\Illuminate\Support\Str::random(10).'@example.com',
+        'email' => 'referee-'.Str::random(10).'@example.com',
     ]);
 
-    $designation = \App\Models\Designation::create([
+    $designation = Designation::create([
         'match_id' => $match->id,
         'referee_id' => $referee->id,
         'role' => 'Arbitro',
@@ -85,4 +93,12 @@ function createDesignation(\App\Models\User $designatore, array $attributes = []
     }
 
     return $designation->fresh();
+}
+
+/** Verifica che la modifica non abbia inviato nulla e conferma l'invio delle email rimaste in attesa. */
+function sendPendingMails(TestCase $test): void
+{
+    Mail::assertNothingSent();
+
+    $test->post(route('pending-mails.send'))->assertRedirect();
 }

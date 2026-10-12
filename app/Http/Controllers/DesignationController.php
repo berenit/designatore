@@ -8,12 +8,12 @@ use App\Models\Designation;
 use App\Models\Referee;
 use App\Models\RugbyMatch;
 use App\Models\Team;
+use App\Support\PendingMails;
 use Carbon\Carbon;
 use Illuminate\Database\QueryException;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
-use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Facades\Redirect;
 use Illuminate\Validation\Rule;
 use Illuminate\Validation\ValidationException;
@@ -261,7 +261,7 @@ class DesignationController extends Controller
             ]);
         }
 
-        // Creazione ed email atomiche: se un invio fallisce, viene annullato tutto (rollback)
+        // Creazione atomica: le email vengono messe in attesa di conferma solo se la transazione va a buon fine
         try {
             $designations = DB::transaction(function () use ($arbitriIds, $otherAssignments, $match, $validated) {
                 // Blocca la riga della gara per serializzare eventuali invii concorrenti dello
@@ -297,9 +297,9 @@ class DesignationController extends Controller
 
                     foreach ($removedDesignations as $removed) {
                         if ($removed->status !== 'cancelled') {
-                            Mail::to($removed->referee->email)->send(new DesignationRemovedMail($removed));
+                            PendingMails::add($removed->referee->email, new DesignationRemovedMail($removed));
 
-                            Log::info('Email di rimozione designazione inviata all\'arbitro deselezionato', [
+                            Log::info('Email di rimozione designazione in attesa di conferma per l\'arbitro deselezionato', [
                                 'designation_id' => $removed->id,
                                 'match_id' => $removed->match_id,
                                 'referee_email' => $removed->referee->email,
@@ -356,12 +356,12 @@ class DesignationController extends Controller
             report($e);
 
             return Redirect::back()->withInput()->withErrors([
-                'email' => 'Impossibile inviare le email di notifica: le designazioni non sono state salvate. Riprova.',
+                'email' => 'Impossibile salvare le designazioni. Riprova.',
             ]);
         }
 
         return Redirect::route('designations.index')
-            ->with('success', count($designations).' designazione/i salvata/e con successo. Email di notifica inviate.');
+            ->with('success', count($designations).' designazione/i salvata/e con successo.');
     }
 
     /**
@@ -380,9 +380,9 @@ class DesignationController extends Controller
         if ($existing && $refereeChanged && $existing->status !== 'cancelled') {
             $existing->load(['match.homeTeam', 'match.awayTeam', 'match.teams', 'match.venue', 'referee']);
 
-            Mail::to($existing->referee->email)->send(new DesignationRemovedMail($existing));
+            PendingMails::add($existing->referee->email, new DesignationRemovedMail($existing));
 
-            Log::info('Email di rimozione designazione inviata all\'arbitro sostituito', [
+            Log::info('Email di rimozione designazione in attesa di conferma per l\'arbitro sostituito', [
                 'designation_id' => $existing->id,
                 'match_id' => $existing->match_id,
                 'referee_email' => $existing->referee->email,
@@ -405,10 +405,9 @@ class DesignationController extends Controller
         if ($refereeChanged) {
             $designation->load(['match.homeTeam', 'match.awayTeam', 'match.teams', 'match.venue', 'referee']);
 
-            Mail::to($designation->referee->email)
-                ->send(new DesignationNotificationMail($designation));
+            PendingMails::add($designation->referee->email, new DesignationNotificationMail($designation));
 
-            Log::info('Email di designazione inviata all\'arbitro', [
+            Log::info('Email di designazione in attesa di conferma per l\'arbitro', [
                 'designation_id' => $designation->id,
                 'match_id' => $designation->match_id,
                 'referee_email' => $designation->referee->email,
@@ -524,9 +523,9 @@ class DesignationController extends Controller
         // Se cambia l'arbitro, avvisa quello sostituito che la designazione non è più sua
         // (stesso avviso usato quando una designazione viene rimossa)
         if ($refereeChanged && $designation->status !== 'cancelled') {
-            Mail::to($designation->referee->email)->send(new DesignationRemovedMail($designation));
+            PendingMails::add($designation->referee->email, new DesignationRemovedMail($designation));
 
-            Log::info('Email di rimozione designazione inviata all\'arbitro sostituito', [
+            Log::info('Email di rimozione designazione in attesa di conferma per l\'arbitro sostituito', [
                 'designation_id' => $designation->id,
                 'match_id' => $designation->match_id,
                 'referee_email' => $designation->referee->email,
@@ -539,9 +538,9 @@ class DesignationController extends Controller
         if ($refereeChanged) {
             $designation->load(['match.homeTeam', 'match.awayTeam', 'match.teams', 'match.venue', 'referee']);
 
-            Mail::to($designation->referee->email)->send(new DesignationNotificationMail($designation));
+            PendingMails::add($designation->referee->email, new DesignationNotificationMail($designation));
 
-            Log::info('Email di designazione inviata al nuovo arbitro', [
+            Log::info('Email di designazione in attesa di conferma per il nuovo arbitro', [
                 'designation_id' => $designation->id,
                 'match_id' => $designation->match_id,
                 'referee_email' => $designation->referee->email,
@@ -549,7 +548,7 @@ class DesignationController extends Controller
         }
 
         return Redirect::route('designations.index')
-            ->with('success', 'Designazione aggiornata con successo.'.($refereeChanged ? ' Email di notifica inviate.' : ''));
+            ->with('success', 'Designazione aggiornata con successo.');
     }
 
     /**
@@ -561,9 +560,9 @@ class DesignationController extends Controller
 
         // Se l'arbitro ha già rifiutato, è già informato: evita di notificarlo di nuovo.
         if ($designation->status !== 'cancelled') {
-            Mail::to($designation->referee->email)->send(new DesignationRemovedMail($designation));
+            PendingMails::add($designation->referee->email, new DesignationRemovedMail($designation));
 
-            Log::info('Email di rimozione designazione inviata all\'arbitro', [
+            Log::info('Email di rimozione designazione in attesa di conferma per l\'arbitro', [
                 'designation_id' => $designation->id,
                 'match_id' => $designation->match_id,
                 'referee_email' => $designation->referee->email,

@@ -3,6 +3,7 @@
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\DesignationController;
 use App\Http\Controllers\DesignationResponseController;
+use App\Http\Controllers\PendingMailController;
 use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\RefereeController;
 use App\Http\Controllers\RefereeUnavailabilityController;
@@ -32,6 +33,9 @@ Route::middleware('auth')->group(function () {
     Route::resource('venues', VenueController::class);
     Route::resource('rugby-matches', RugbyMatchController::class);
     Route::resource('designations', DesignationController::class);
+
+    Route::post('/pending-mails/send', [PendingMailController::class, 'send'])->name('pending-mails.send');
+    Route::post('/pending-mails/discard', [PendingMailController::class, 'discard'])->name('pending-mails.discard');
 
     Route::prefix('reports')->name('reports.')->group(function () {
         Route::get('/', [ReportController::class, 'index'])->name('index');

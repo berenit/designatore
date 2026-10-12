@@ -8,11 +8,12 @@ use Illuminate\Bus\Queueable;
 use Illuminate\Mail\Mailable;
 use Illuminate\Mail\Mailables\Content;
 use Illuminate\Mail\Mailables\Envelope;
-use Illuminate\Queue\SerializesModels;
 
 class MatchCancelledMail extends Mailable
 {
-    use Queueable, SerializesModels;
+    // Niente SerializesModels: l'email viene serializzata per intero mentre attende conferma
+    // (vedi PendingMails), anche quando la designazione/partita nel frattempo viene eliminata.
+    use Queueable;
 
     public function __construct(public RugbyMatch $match, public Designation $designation)
     {

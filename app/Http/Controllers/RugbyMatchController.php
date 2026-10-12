@@ -7,11 +7,11 @@ use App\Mail\MatchUpdatedMail;
 use App\Models\RugbyMatch;
 use App\Models\Team;
 use App\Models\Venue;
+use App\Support\PendingMails;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
-use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Facades\Redirect;
 use Illuminate\Validation\Rule;
 use Illuminate\Validation\ValidationException;
@@ -386,15 +386,15 @@ class RugbyMatchController extends Controller
             ->with('success', 'Partita eliminata.');
     }
 
-    /** Notifica via email ogni arbitro con una designazione ancora attiva sulla gara annullata/eliminata. */
+    /** Prepara l'email (in attesa di conferma) per ogni arbitro con una designazione ancora attiva sulla gara annullata/eliminata. */
     private function notifyRefereesOfCancellation(RugbyMatch $rugbyMatch): void
     {
         $rugbyMatch->load(['homeTeam', 'awayTeam', 'teams', 'venue', 'designations.referee']);
 
         foreach ($rugbyMatch->designations->where('status', '!=', 'cancelled') as $designation) {
-            Mail::to($designation->referee->email)->send(new MatchCancelledMail($rugbyMatch, $designation));
+            PendingMails::add($designation->referee->email, new MatchCancelledMail($rugbyMatch, $designation));
 
-            Log::info('Email di partita annullata inviata all\'arbitro', [
+            Log::info('Email di partita annullata in attesa di conferma per l\'arbitro', [
                 'match_id' => $rugbyMatch->id,
                 'designation_id' => $designation->id,
                 'referee_email' => $designation->referee->email,
@@ -404,7 +404,7 @@ class RugbyMatchController extends Controller
 
     /**
      * Riporta a "pending" ogni designazione attiva (non annullata/completata) sulla gara
-     * modificata e notifica via email il relativo arbitro, chiedendo una nuova conferma.
+     * modificata e prepara l'email (in attesa di conferma) per il relativo arbitro, chiedendo una nuova conferma.
      */
     private function notifyRefereesOfUpdate(RugbyMatch $rugbyMatch): void
     {
@@ -414,9 +414,9 @@ class RugbyMatchController extends Controller
             $designation->update(['status' => 'pending']);
             $designation->setRelation('match', $rugbyMatch);
 
-            Mail::to($designation->referee->email)->send(new MatchUpdatedMail($designation));
+            PendingMails::add($designation->referee->email, new MatchUpdatedMail($designation));
 
-            Log::info('Email di modifica partita inviata all\'arbitro, richiesta nuova conferma', [
+            Log::info('Email di modifica partita in attesa di conferma per l\'arbitro, richiesta nuova conferma', [
                 'match_id' => $rugbyMatch->id,
                 'designation_id' => $designation->id,
                 'referee_email' => $designation->referee->email,

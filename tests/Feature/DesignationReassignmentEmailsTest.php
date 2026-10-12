@@ -27,6 +27,8 @@ test('changing the assigned referee notifies the old one and the new one', funct
         ])
         ->assertRedirect(route('designations.index'));
 
+    sendPendingMails($this);
+
     Mail::assertSent(DesignationRemovedMail::class, fn ($mail) => $mail->designation->id === $designation->id
         && $mail->hasTo($oldReferee->email)
     );
@@ -53,6 +55,8 @@ test('keeping the same referee on update does not send any email', function () {
         ])
         ->assertRedirect(route('designations.index'));
 
+    sendPendingMails($this);
+
     Mail::assertNotSent(DesignationRemovedMail::class);
     Mail::assertNotSent(DesignationNotificationMail::class);
 });
@@ -76,6 +80,8 @@ test('reassigning the referee via the match designation form notifies the old on
             'referees' => ['Arbitro' => $newReferee->id],
         ])
         ->assertRedirect(route('designations.index'));
+
+    sendPendingMails($this);
 
     Mail::assertSent(DesignationRemovedMail::class, fn ($mail) => $mail->designation->id === $designation->id
         && $mail->hasTo($oldReferee->email)
@@ -102,6 +108,8 @@ test('resubmitting the match designation form with the same referee does not sen
         ])
         ->assertRedirect(route('designations.index'));
 
+    sendPendingMails($this);
+
     Mail::assertNotSent(DesignationRemovedMail::class);
 });
 
@@ -125,6 +133,8 @@ test('reassigning an already cancelled designation does not notify the old refer
             'status' => 'pending',
         ])
         ->assertRedirect(route('designations.index'));
+
+    sendPendingMails($this);
 
     Mail::assertNotSent(DesignationRemovedMail::class, fn ($mail) => $mail->hasTo($oldReferee->email));
 

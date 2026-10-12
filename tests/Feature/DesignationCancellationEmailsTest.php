@@ -15,6 +15,8 @@ test('deleting a designation notifies the referee', function () {
         ->delete(route('designations.destroy', $designation))
         ->assertRedirect(route('designations.index'));
 
+    sendPendingMails($this);
+
     Mail::assertSent(DesignationRemovedMail::class, fn ($mail) => $mail->designation->id === $designation->id
         && $mail->hasTo($designation->referee->email)
     );
@@ -29,6 +31,8 @@ test('deleting an already declined designation does not notify the referee again
     $this->actingAs($user)
         ->delete(route('designations.destroy', $designation))
         ->assertRedirect(route('designations.index'));
+
+    sendPendingMails($this);
 
     Mail::assertNotSent(DesignationRemovedMail::class);
 });
@@ -56,6 +60,8 @@ test('cancelling a match notifies referees with active designations', function (
         ])
         ->assertRedirect(route('rugby-matches.index', ['week' => $match->date_time->toDateString()]));
 
+    sendPendingMails($this);
+
     Mail::assertSent(MatchCancelledMail::class, 1);
     Mail::assertSent(MatchCancelledMail::class, fn ($mail) => $mail->designation->id === $active->id
         && $mail->hasTo($active->referee->email)
@@ -72,6 +78,8 @@ test('deleting a match notifies referees with active designations', function () 
     $this->actingAs($user)
         ->delete(route('rugby-matches.destroy', $match))
         ->assertRedirect(route('rugby-matches.index'));
+
+    sendPendingMails($this);
 
     Mail::assertSent(MatchCancelledMail::class, fn ($mail) => $mail->designation->id === $designation->id
         && $mail->hasTo($designation->referee->email)

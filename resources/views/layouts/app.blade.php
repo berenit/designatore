@@ -178,6 +178,47 @@
         {{ $slot ?? '' }}
     </main>
 
+    {{-- Email generate dalle ultime modifiche: restano in attesa finché il designatore non sceglie se inviarle o annullarle --}}
+    @auth
+        @php $pendingMails = \App\Support\PendingMails::all(); @endphp
+        @if ($pendingMails)
+            <div class="fixed inset-0 z-40 flex items-center justify-center bg-black/40 p-4" role="dialog" aria-modal="true" aria-labelledby="pending-mails-title">
+                <div class="bg-white rounded-xl shadow-xl max-w-lg w-full p-6">
+                    <h2 id="pending-mails-title" class="text-lg font-semibold text-gray-900">
+                        {{ count($pendingMails) === 1 ? 'Inviare questa email?' : 'Inviare queste '.count($pendingMails).' email?' }}
+                    </h2>
+                    <p class="text-sm text-gray-500 mt-1">Le modifiche sono già state salvate. Scegli se avvisare gli arbitri via email.</p>
+
+                    <ul class="mt-4 max-h-72 overflow-y-auto divide-y divide-gray-100 border border-gray-100 rounded-lg">
+                        @foreach ($pendingMails as $mail)
+                            <li class="px-3 py-2">
+                                <div class="text-sm font-medium text-gray-900">{{ $mail['subject'] }}</div>
+                                <div class="text-xs text-gray-500">a {{ $mail['to'] }}</div>
+                            </li>
+                        @endforeach
+                    </ul>
+
+                    <div class="flex justify-end gap-3 mt-6">
+                        <form action="{{ route('pending-mails.discard') }}" method="POST">
+                            @csrf
+                            <button type="submit"
+                                    class="px-4 py-2 text-sm font-medium text-gray-600 hover:text-gray-900 rounded-lg hover:bg-gray-50 transition">
+                                Non inviare
+                            </button>
+                        </form>
+                        <form action="{{ route('pending-mails.send') }}" method="POST">
+                            @csrf
+                            <button type="submit"
+                                    class="px-4 py-2 bg-indigo-600 text-white text-sm font-medium rounded-lg hover:bg-indigo-700 transition">
+                                Invia email
+                            </button>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        @endif
+    @endauth
+
     {{-- Modale di conferma condivisa, usata al posto del confirm() nativo per le azioni di eliminazione --}}
     <div x-data
          x-show="$store.confirmModal.open"
