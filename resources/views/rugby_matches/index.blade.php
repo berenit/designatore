@@ -47,8 +47,8 @@
                         <th class="px-6 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Incontro</th>
                         <th class="px-6 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Categoria</th>
                         <th class="px-6 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Campo</th>
+                        <th class="px-6 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Comitato</th>
                         <th class="px-6 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Competizione</th>
-                        <th class="px-6 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Stato</th>
                         <th class="px-6 py-3 text-right text-xs font-semibold text-gray-500 uppercase tracking-wider">Azioni</th>
                     </tr>
                 </thead>
@@ -66,6 +66,7 @@
                             </td>
                             <td class="px-6 py-4 text-sm text-gray-700">{{ $match->category_label ?? '—' }}</td>
                             <td class="px-6 py-4 text-sm text-gray-600">{{ $match->venue_label }}</td>
+                            <td class="px-6 py-4 text-sm text-gray-600">{{ $match->committee ?? '—' }}</td>
                             <td class="px-6 py-4">
                                 <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold
                                     @if ($match->competition_type === 'Internazionale') bg-blue-100 text-blue-800
@@ -77,17 +78,6 @@
                                     @else bg-gray-100 text-gray-700
                                     @endif">
                                     {{ $match->competition_type }}
-                                </span>
-                                <div class="text-xs text-gray-400 mt-0.5">{{ $match->committee }}</div>
-                            </td>
-                            <td class="px-6 py-4">
-                                <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold
-                                    @if ($match->status === 'scheduled') bg-blue-100 text-blue-800
-                                    @elseif ($match->status === 'postponed') bg-yellow-100 text-yellow-800
-                                    @elseif ($match->status === 'cancelled') bg-red-100 text-red-800
-                                    @else bg-green-100 text-green-800
-                                    @endif">
-                                    {{ ucfirst($match->status) }}
                                 </span>
                             </td>
                             <td class="px-6 py-4 whitespace-nowrap text-right">

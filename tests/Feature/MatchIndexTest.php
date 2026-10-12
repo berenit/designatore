@@ -66,3 +66,15 @@ test('designations index filters by category', function () {
         ->assertSee('Casa Senior')
         ->assertDontSee('Casa Giovani');
 });
+
+test('matches index shows the committee in its own column and no status column', function () {
+    indexMatch('Casa Comitato', 'Ospiti Comitato', 'Serie A', now()->startOfWeek()->addDays(2)->setTime(15, 0))
+        ->update(['committee' => 'Lazio']);
+
+    $this->actingAs(User::factory()->create())
+        ->get(route('rugby-matches.index'))
+        ->assertOk()
+        ->assertSeeInOrder(['Data & Ora', 'Incontro', 'Categoria', 'Campo', 'Comitato', 'Competizione', 'Azioni'])
+        ->assertSeeInOrder(['Casa Comitato', 'Serie A', 'Stadio Test', 'Lazio', 'Campionato'])
+        ->assertDontSee('>Stato<', false);
+});
