@@ -20,6 +20,7 @@ class Referee extends Model
      * Categorie arbitrali previste.
      */
     public const CATEGORIES = [
+        'Derogato',
         'Regionale',
         'Nazionale serie B',
         'Nazionale serie A',

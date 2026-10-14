@@ -24,6 +24,15 @@ test('un arbitro viene creato con il numero di tessera', function () {
     expect(Referee::first()->license_number)->toBe('0012345678');
 });
 
+test('un arbitro può essere creato con la categoria Derogato', function () {
+    $this->actingAs(User::factory()->create())
+        ->post(route('referees.store'), refereePayload(['license_level' => 'Derogato']))
+        ->assertSessionHasNoErrors()
+        ->assertRedirect(route('referees.index'));
+
+    expect(Referee::first()->license_level)->toBe('Derogato');
+});
+
 test('il numero di tessera è obbligatorio e deve avere da 1 a 10 cifre', function (string $value) {
     $this->actingAs(User::factory()->create())
         ->post(route('referees.store'), refereePayload(['license_number' => $value]))
