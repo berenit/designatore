@@ -67,7 +67,7 @@ test('guests do not see the referee name before thursday', function () {
     $this->get(route('home'))
         ->assertOk()
         ->assertDontSee('Mario Rossi')
-        ->assertSee('Arbitro visibile da giovedì');
+        ->assertSee('Designazione visibile da giovedì');
 });
 
 test('guests see the referee name from thursday', function () {
