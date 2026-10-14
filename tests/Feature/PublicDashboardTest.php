@@ -67,7 +67,8 @@ test('guests do not see the referee name before thursday', function () {
     $this->get(route('home'))
         ->assertOk()
         ->assertDontSee('Mario Rossi')
-        ->assertSee('Designazione visibile da giovedì');
+        ->assertSee('Designazioni visibili dal giovedì')
+        ->assertDontSee('· Arbitro', false);
 });
 
 test('guests see the referee name from thursday', function () {
@@ -78,7 +79,8 @@ test('guests see the referee name from thursday', function () {
 
     $this->get(route('home'))
         ->assertOk()
-        ->assertSee('Mario Rossi');
+        ->assertSee('Mario Rossi')
+        ->assertDontSee('Designazioni visibili dal giovedì');
 });
 
 test('authenticated users always see the referee name', function () {
@@ -89,7 +91,8 @@ test('authenticated users always see the referee name', function () {
     $this->actingAs($user)
         ->get(route('home'))
         ->assertOk()
-        ->assertSee('Mario Rossi');
+        ->assertSee('Mario Rossi')
+        ->assertDontSee('Designazioni visibili dal giovedì');
 });
 
 test('public dashboard category filter follows the configured order', function () {

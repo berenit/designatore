@@ -5,6 +5,9 @@
     <h1 class="text-2xl font-bold text-gray-900">Partite della Settimana</h1>
     <p class="text-gray-500 mt-1 text-sm">
         Designazioni arbitrali dal {{ $weekStart->format('d/m/Y') }} al {{ $weekEnd->format('d/m/Y') }}
+        @if (! $showRefereeNames)
+            – <span class="text-red-600 font-semibold uppercase">Designazioni visibili dal giovedì</span>
+        @endif
     </p>
 </div>
 
@@ -76,14 +79,13 @@
                         </svg>
                         {{ $match->venue_label }}
                     </div>
-                    @foreach ($designations as $designation)
+                    {{-- Prima del giovedì le righe arbitro non si mostrano: l'avviso è nell'intestazione --}}
+                    @foreach ($showRefereeNames ? $designations : [] as $designation)
                         <div class="flex items-center gap-2 pt-1">
                             <svg class="w-4 h-4 text-indigo-400 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"/>
                             </svg>
-                            @if (! $showRefereeNames)
-                                <span class="text-gray-400 italic">Designazione visibile da giovedì</span>
-                            @elseif ($designation->status === 'confirmed')
+                            @if ($designation->status === 'confirmed')
                                 <span class="text-indigo-700 font-medium">{{ $designation->referee->name }}</span>
                             @else
                                 <span class="text-gray-400 italic">In attesa di conferma</span>
