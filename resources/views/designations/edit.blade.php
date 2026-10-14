@@ -42,6 +42,7 @@
                             @class([
                                 'text-gray-400' => $unavailableRefereeIds->contains($referee->id),
                                 'text-red-600 font-medium' => ! $unavailableRefereeIds->contains($referee->id) && $conflictingRefereeIds->contains($referee->id),
+                                'text-orange-600' => $referee->isDerogato() && ! $unavailableRefereeIds->contains($referee->id) && ! $conflictingRefereeIds->contains($referee->id),
                             ])
                             @disabled($unavailableRefereeIds->contains($referee->id))
                             {{ old('referee_id', $designation->referee_id) == $referee->id ? 'selected' : '' }}>

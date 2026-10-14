@@ -61,7 +61,7 @@
                                         name="arbitri[]" x-model="arbitri[index]">
                                     <option value="">— nessuno —</option>
                                     @foreach ($referees as $referee)
-                                        <option value="{{ $referee->id }}" :class="conflictClass({{ $referee->id }})" :disabled="isUnavailable({{ $referee->id }})" x-text="refereeLabel({{ $referee->id }}, '{{ addslashes($referee->name) }} — {{ addslashes($referee->license_level) }}')"></option>
+                                        <option value="{{ $referee->id }}" :class="conflictClass({{ $referee->id }}, {{ $referee->isDerogato() ? 'true' : 'false' }})" :disabled="isUnavailable({{ $referee->id }})" x-text="refereeLabel({{ $referee->id }}, '{{ addslashes($referee->name) }} — {{ addslashes($referee->license_level) }}')"></option>
                                     @endforeach
                                 </select>
                                 <button type="button" @click="removeArbitro(index)"
@@ -88,7 +88,7 @@
                                 name="referees[Arbitro]" x-model="referees['Arbitro']">
                             <option value="">— nessuno —</option>
                             @foreach ($referees as $referee)
-                                <option value="{{ $referee->id }}" :class="conflictClass({{ $referee->id }})" :disabled="isUnavailable({{ $referee->id }})" x-text="refereeLabel({{ $referee->id }}, '{{ addslashes($referee->name) }} — {{ addslashes($referee->license_level) }}')"></option>
+                                <option value="{{ $referee->id }}" :class="conflictClass({{ $referee->id }}, {{ $referee->isDerogato() ? 'true' : 'false' }})" :disabled="isUnavailable({{ $referee->id }})" x-text="refereeLabel({{ $referee->id }}, '{{ addslashes($referee->name) }} — {{ addslashes($referee->license_level) }}')"></option>
                             @endforeach
                         </select>
                     </div>
@@ -100,7 +100,7 @@
                                 :name="`referees[${role}]`" x-model="referees[role]">
                             <option value="">— nessuno —</option>
                             @foreach ($referees as $referee)
-                                <option value="{{ $referee->id }}" :class="conflictClass({{ $referee->id }})" :disabled="isUnavailable({{ $referee->id }})" x-text="refereeLabel({{ $referee->id }}, '{{ addslashes($referee->name) }} — {{ addslashes($referee->license_level) }}')"></option>
+                                <option value="{{ $referee->id }}" :class="conflictClass({{ $referee->id }}, {{ $referee->isDerogato() ? 'true' : 'false' }})" :disabled="isUnavailable({{ $referee->id }})" x-text="refereeLabel({{ $referee->id }}, '{{ addslashes($referee->name) }} — {{ addslashes($referee->license_level) }}')"></option>
                             @endforeach
                         </select>
                     </div>
@@ -204,10 +204,12 @@ function designationForm(matchRoles, matchIsMulti, matchAssignments, matchDates,
             return bookings.some((b) => b.date === date && String(b.match_id) !== String(this.matchId));
         },
 
-        conflictClass(refereeId) {
+        // Priorità: indisponibile (grigio) > già impegnato (rosso) > Derogato (arancione)
+        conflictClass(refereeId, isDerogato = false) {
             if (this.isUnavailable(refereeId)) return 'text-gray-400';
+            if (this.hasConflict(refereeId)) return 'text-red-600 font-medium';
 
-            return this.hasConflict(refereeId) ? 'text-red-600 font-medium' : '';
+            return isDerogato ? 'text-orange-600' : '';
         },
 
         // Vero se l'arbitro è indisponibile nella data della gara selezionata (periodo registrato)

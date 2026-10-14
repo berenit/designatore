@@ -44,6 +44,12 @@ class Referee extends Model
         return self::AVAILABILITY_LABELS[$this->availability_status] ?? $this->availability_status;
     }
 
+    /** Vero se l'arbitro è di categoria Derogato (evidenziato nelle scelte arbitro). */
+    public function isDerogato(): bool
+    {
+        return $this->license_level === 'Derogato';
+    }
+
     // A referee can have many designations
     public function designations()
     {
