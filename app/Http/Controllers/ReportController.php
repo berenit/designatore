@@ -188,8 +188,8 @@ class ReportController extends Controller
             return implode("\n", $lines);
         }
 
-        $lines[] = '| Data | Incontro | Comitato | Campo | Arbitri & ruoli |';
-        $lines[] = '|------|----------|----------|-------|------------------|';
+        $lines[] = '| Data | Incontro | Categoria | Comitato | Campo | Arbitri & ruoli |';
+        $lines[] = '|------|----------|-----------|----------|-------|------------------|';
 
         foreach ($this->groupByMatch($designations) as $group) {
             $match = $group->first()->match;
@@ -200,11 +200,12 @@ class ReportController extends Controller
             }
             $venue = $match->venue_label;
             $refs = $group->map(function ($d) {
-                $line = "**{$d->role}**: {$d->referee->name_with_license}";
+                $line = trim("**{$d->role}**: **{$d->referee->name}** {$d->referee->license_label}");
 
                 return $d->role === self::OBSERVER_ROLE ? "🔎 {$line}" : $line;
             })->implode('<br>');
-            $lines[] = "| {$date} | {$match->label} | {$match->committee} | {$venue} | {$refs} |";
+            $category = $match->category_label ? "**{$match->category_label}**" : '—';
+            $lines[] = "| {$date} | {$match->label} | {$category} | {$match->committee} | {$venue} | {$refs} |";
         }
 
         $lines[] = '';

@@ -44,12 +44,10 @@ class Referee extends Model
         return self::AVAILABILITY_LABELS[$this->availability_status] ?? $this->availability_status;
     }
 
-    /** Nome con numero di tessera per i report, es. "Mario Rossi (Tess. 111111)"; solo il nome se manca la tessera. */
-    public function getNameWithLicenseAttribute(): string
+    /** Numero di tessera da affiancare al nome nei report, es. "(Tess. 111111)"; vuoto se manca la tessera. */
+    public function getLicenseLabelAttribute(): string
     {
-        return filled($this->license_number)
-            ? "{$this->name} (Tess. {$this->license_number})"
-            : $this->name;
+        return filled($this->license_number) ? "(Tess. {$this->license_number})" : '';
     }
 
     /** Vero se l'arbitro è di categoria Derogato (evidenziato nelle scelte arbitro). */

@@ -90,10 +90,10 @@ test('only the markdown and pdf reports show the referee license number next to 
 
     $markdown = $this->actingAs($designatore)->get(route('reports.markdown'));
     $markdown->assertOk();
-    expect($markdown->getContent())->toContain('**Arbitro**: Mario Rossi (Tess. 111111) |')->not->toContain('In attesa)');
+    expect($markdown->getContent())->toContain('**Arbitro**: **Mario Rossi** (Tess. 111111) |')->not->toContain('In attesa)');
 
-    // Il PDF usa la stessa etichetta, resa dal modello
-    expect($designation->referee->fresh()->name_with_license)->toBe('Mario Rossi (Tess. 111111)');
+    // Il PDF usa la stessa etichetta della tessera, resa dal modello
+    expect($designation->referee->fresh()->license_label)->toBe('(Tess. 111111)');
 
     $this->actingAs($designatore)
         ->get(route('reports.text'))
@@ -114,5 +114,16 @@ test('the markdown report shows only the referee name when the license number is
 
     $markdown = $this->actingAs($designatore)->get(route('reports.markdown'));
     $markdown->assertOk();
-    expect($markdown->getContent())->toContain('**Arbitro**: Mario Rossi |')->not->toContain('Tess.');
+    expect($markdown->getContent())->toContain('**Arbitro**: **Mario Rossi** |')->not->toContain('Tess.');
+});
+
+test('the markdown report shows the match category in bold in its own column', function () {
+    $designatore = User::factory()->create();
+    createDesignation($designatore);
+
+    $markdown = $this->actingAs($designatore)->get(route('reports.markdown'));
+    $markdown->assertOk();
+    expect($markdown->getContent())
+        ->toContain('| Data | Incontro | Categoria | Comitato | Campo | Arbitri & ruoli |')
+        ->toContain('| **Serie A** | Abruzzo |');
 });

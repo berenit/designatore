@@ -81,7 +81,7 @@
         .col-match  { width: 46%; }
         .col-refs   { width: 42%; }
 
-        .role-name { font-size: 10px; color: #374151; vertical-align: middle; }
+        .role-name { font-size: 10px; color: #374151; vertical-align: baseline; }
         .role-observer { font-weight: bold; color: #92400e; }
 
         .ref-line { margin-bottom: 6px; }
@@ -94,7 +94,7 @@
         .match-name { font-size: 11px; font-weight: bold; color: #111827; }
         .match-meta { font-size: 9px; color: #6b7280; margin-top: 3px; }
 
-        .ref-name  { font-size: 11px; color: #374151; vertical-align: middle; }
+        .ref-name  { font-size: 11px; color: #374151; vertical-align: baseline; }
         .ref-level { font-size: 9px; color: #9ca3af; margin-top: 2px; }
 
         /* ── Riepilogo ────────────────────────────────────────────────── */
@@ -189,14 +189,14 @@
                         <td class="col-match">
                             <div class="match-name">{{ $match->label }}</div>
                             <div class="match-meta">{{ $match->venue_label }} &nbsp;·&nbsp; Comitato {{ $match->committee }} &nbsp;·&nbsp; {{ $match->competition_type }}@if($match->category_label)
-                                    &nbsp;·&nbsp; {{ $match->category_label }}
+                                    &nbsp;·&nbsp; <strong>{{ $match->category_label }}</strong>
                                 @endif</div>
                         </td>
                         <td class="col-refs">
                             @foreach ($group as $d)
                                 @php $isObserver = $d->role === 'Osservatore'; @endphp
                                 <div class="ref-line">
-                                    <span class="ref-name">{{ $d->referee->name_with_license }}</span>
+                                    <span class="ref-name"><strong>{{ $d->referee->name }}</strong>@if ($d->referee->license_label) {{ $d->referee->license_label }}@endif</span>
                                     <span class="role-name @if($isObserver) role-observer @endif">— {{ $d->role }}</span>
                                 </div>
                             @endforeach
