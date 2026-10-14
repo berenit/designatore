@@ -93,6 +93,7 @@
 
         .match-name { font-size: 11px; font-weight: bold; color: #111827; }
         .match-meta { font-size: 9px; color: #6b7280; margin-top: 3px; }
+        .match-category { font-size: 10px; font-weight: bold; color: #111827; }
 
         .ref-name  { font-size: 11px; color: #374151; vertical-align: baseline; }
         .ref-level { font-size: 9px; color: #9ca3af; margin-top: 2px; }
@@ -189,7 +190,7 @@
                         <td class="col-match">
                             <div class="match-name">{{ $match->label }}</div>
                             <div class="match-meta">{{ $match->venue_label }} &nbsp;·&nbsp; Comitato {{ $match->committee }} &nbsp;·&nbsp; {{ $match->competition_type }}@if($match->category_label)
-                                    &nbsp;·&nbsp; <strong>{{ $match->category_label }}</strong>
+                                    &nbsp;·&nbsp; <span class="match-category">{{ $match->category_label }}</span>
                                 @endif</div>
                         </td>
                         <td class="col-refs">
