@@ -127,3 +127,12 @@ test('the markdown report shows the match category in bold in its own column', f
         ->toContain('| Data | Incontro | Categoria | Comitato | Campo | Arbitri & ruoli |')
         ->toContain('| **Serie A** | Abruzzo |');
 });
+
+test('the markdown report has no summary section', function () {
+    $designatore = User::factory()->create();
+    createDesignation($designatore);
+
+    $markdown = $this->actingAs($designatore)->get(route('reports.markdown'));
+    $markdown->assertOk();
+    expect($markdown->getContent())->not->toContain('Riepilogo');
+});

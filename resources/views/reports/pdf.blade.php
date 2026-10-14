@@ -98,38 +98,6 @@
         .ref-name  { font-size: 11px; color: #374151; vertical-align: baseline; }
         .ref-level { font-size: 9px; color: #9ca3af; margin-top: 2px; }
 
-        /* ── Riepilogo ────────────────────────────────────────────────── */
-        .summary {
-            margin-top: 24px;
-            padding: 14px 18px;
-            background-color: #f9fafb;
-            border: 1px solid #e5e7eb;
-            page-break-inside: avoid;
-        }
-        .summary-title {
-            font-size: 9px;
-            font-weight: bold;
-            color: #6b7280;
-            text-transform: uppercase;
-            letter-spacing: 0.06em;
-            margin-bottom: 12px;
-        }
-        .summary-grid { display: table; width: 100%; }
-        .summary-cell {
-            display: table-cell;
-            text-align: center;
-            padding: 4px 8px;
-            border-right: 1px solid #e5e7eb;
-        }
-        .summary-cell:last-child { border-right: none; }
-        .summary-num {
-            font-size: 22px;
-            font-weight: bold;
-            color: #4f46e5;
-            line-height: 1;
-        }
-        .summary-label { font-size: 8.5px; color: #6b7280; margin-top: 4px; }
-
         /* ── Piè di pagina (non fixed — in fondo al contenuto) ─────────── */
         .footer {
             margin-top: 28px;
@@ -206,19 +174,6 @@
                 @endforeach
             </tbody>
         </table>
-
-        <div class="summary">
-            <div class="summary-title">Riepilogo</div>
-            <div class="summary-grid">
-                @foreach (['pending' => 'In attesa', 'confirmed' => 'Accettate', 'completed' => 'Completate', 'cancelled' => 'Annullate'] as $key => $label)
-                    @php $count = $designations->where('status', $key)->count(); @endphp
-                    <div class="summary-cell">
-                        <div class="summary-num">{{ $count }}</div>
-                        <div class="summary-label">{{ $label }}</div>
-                    </div>
-                @endforeach
-            </div>
-        </div>
 
     @endif
 

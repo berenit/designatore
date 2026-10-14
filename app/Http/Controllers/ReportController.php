@@ -208,19 +208,6 @@ class ReportController extends Controller
             $lines[] = "| {$date} | {$match->label} | {$category} | {$match->committee} | {$venue} | {$refs} |";
         }
 
-        $lines[] = '';
-        $lines[] = '---';
-        $lines[] = '';
-        $lines[] = '## Riepilogo';
-        $lines[] = '';
-
-        foreach (['pending' => 'In attesa', 'confirmed' => 'Accettate', 'completed' => 'Completate', 'cancelled' => 'Annullate'] as $key => $label) {
-            $count = $designations->where('status', $key)->count();
-            if ($count > 0) {
-                $lines[] = "- **{$label}**: {$count}";
-            }
-        }
-
         return implode("\n", $lines);
     }
 
