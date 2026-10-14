@@ -97,19 +97,6 @@
         .ref-name  { font-size: 11px; color: #374151; vertical-align: middle; }
         .ref-level { font-size: 9px; color: #9ca3af; margin-top: 2px; }
 
-        .badge {
-            display: inline-block;
-            vertical-align: middle;
-            padding: 3px 9px;
-            border-radius: 9999px;
-            font-size: 8.5px;
-            font-weight: bold;
-        }
-        .badge-pending   { background-color: #fef3c7; color: #92400e; }
-        .badge-confirmed { background-color: #d1fae5; color: #065f46; }
-        .badge-completed { background-color: #dbeafe; color: #1e40af; }
-        .badge-cancelled { background-color: #fee2e2; color: #991b1b; }
-
         /* ── Riepilogo ────────────────────────────────────────────────── */
         .summary {
             margin-top: 24px;
@@ -209,9 +196,8 @@
                             @foreach ($group as $d)
                                 @php $isObserver = $d->role === 'Osservatore'; @endphp
                                 <div class="ref-line">
-                                    <span class="ref-name">{{ $d->referee->name }}</span>
+                                    <span class="ref-name">{{ $d->referee->name_with_license }}</span>
                                     <span class="role-name @if($isObserver) role-observer @endif">— {{ $d->role }}</span>
-                                    <span class="badge badge-{{ $d->status }}">{{ $d->status_label }}</span>
                                 </div>
                             @endforeach
                         </td>

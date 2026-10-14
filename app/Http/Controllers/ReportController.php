@@ -200,7 +200,7 @@ class ReportController extends Controller
             }
             $venue = $match->venue_label;
             $refs = $group->map(function ($d) {
-                $line = "**{$d->role}**: {$d->referee->name} ({$this->statusLabel($d->status)})";
+                $line = "**{$d->role}**: {$d->referee->name_with_license}";
 
                 return $d->role === self::OBSERVER_ROLE ? "🔎 {$line}" : $line;
             })->implode('<br>');
@@ -283,12 +283,6 @@ class ReportController extends Controller
         }
 
         return implode("\n", $lines);
-    }
-
-    /** Etichetta italiana dello stato di una designazione (per Markdown/testo). */
-    private function statusLabel(string $status): string
-    {
-        return Designation::STATUS_LABELS[$status] ?? ucfirst($status);
     }
 
     /**

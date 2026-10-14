@@ -82,3 +82,37 @@ test('reports include all committees and categories when no filter is selected',
         ->assertSee('🏆 Under 18', false)
         ->assertSee('🏆 Serie A', false);
 });
+
+test('only the markdown and pdf reports show the referee license number next to the name', function () {
+    $designatore = User::factory()->create();
+    $designation = createDesignation($designatore);
+    $designation->referee->update(['license_number' => '111111']);
+
+    $markdown = $this->actingAs($designatore)->get(route('reports.markdown'));
+    $markdown->assertOk();
+    expect($markdown->getContent())->toContain('**Arbitro**: Mario Rossi (Tess. 111111) |')->not->toContain('In attesa)');
+
+    // Il PDF usa la stessa etichetta, resa dal modello
+    expect($designation->referee->fresh()->name_with_license)->toBe('Mario Rossi (Tess. 111111)');
+
+    $this->actingAs($designatore)
+        ->get(route('reports.text'))
+        ->assertOk()
+        ->assertSee('Mario Rossi — Arbitro', false)
+        ->assertDontSee('Tess.', false);
+
+    $this->actingAs($designatore)
+        ->get(route('reports.index', ['date_from' => now()->toDateString(), 'date_to' => now()->addMonth()->toDateString()]))
+        ->assertOk()
+        ->assertSee('Mario Rossi')
+        ->assertDontSee('Tess.');
+});
+
+test('the markdown report shows only the referee name when the license number is missing', function () {
+    $designatore = User::factory()->create();
+    createDesignation($designatore);
+
+    $markdown = $this->actingAs($designatore)->get(route('reports.markdown'));
+    $markdown->assertOk();
+    expect($markdown->getContent())->toContain('**Arbitro**: Mario Rossi |')->not->toContain('Tess.');
+});
