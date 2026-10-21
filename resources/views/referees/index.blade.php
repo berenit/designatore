@@ -51,6 +51,7 @@
                         <th class="px-6 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Tessera</th>
                         <th class="px-6 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Email</th>
                         <th class="px-6 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Telefono</th>
+                        <th class="px-6 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Città</th>
                         <th class="px-6 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">
                             <a href="{{ route('referees.index', ['sort' => 'license_level', 'dir' => $nextDir('license_level')]) }}"
                                class="inline-flex items-center gap-1 hover:text-gray-800 transition {{ $sort === 'license_level' ? 'text-indigo-600' : '' }}">
@@ -69,10 +70,14 @@
                         <tr class="hover:bg-gray-50 transition">
                             <td class="px-6 py-4">
                                 <span class="text-sm font-semibold text-gray-900">{{ $referee->name }}</span>
+                                @if ($referee->is_evaluator)
+                                    <span class="ml-1 inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-amber-100 text-amber-800">Valutatore</span>
+                                @endif
                             </td>
                             <td class="px-6 py-4 text-sm text-gray-600 tabular-nums">{{ $referee->license_number ?? '—' }}</td>
                             <td class="px-6 py-4 text-sm text-gray-600">{{ $referee->email }}</td>
                             <td class="px-6 py-4 text-sm text-gray-500">{{ $referee->phone ?? '—' }}</td>
+                            <td class="px-6 py-4 text-sm text-gray-500">{{ $referee->city ?? '—' }}</td>
                             <td class="px-6 py-4">
                                 <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold
                                     @if ($referee->license_level === 'Nazionale serie A Elite') bg-blue-100 text-blue-800

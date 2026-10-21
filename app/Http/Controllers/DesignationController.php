@@ -164,6 +164,28 @@ class DesignationController extends Controller
     }
 
     /**
+     * Assegnazioni [ruolo, referee_id] non ammesse: Fuori Ruolo su un ruolo diverso da Valutatore,
+     * o Valutatore assegnato a chi non è abilitato. Ritorna i messaggi di errore.
+     */
+    private function ineligibleAssignments(array $assignments): array
+    {
+        $referees = Referee::whereIn('id', array_column($assignments, 1))->get()->keyBy('id');
+        $errors = [];
+
+        foreach ($assignments as [$role, $refereeId]) {
+            $referee = $referees->get($refereeId);
+
+            if ($referee && ! $referee->canBeDesignatedAs($role)) {
+                $errors[] = $role === Designation::EVALUATOR_ROLE
+                    ? "{$referee->name} non è abilitato come Valutatore."
+                    : "{$referee->name} è Fuori Ruolo: può essere designato solo come Valutatore.";
+            }
+        }
+
+        return $errors;
+    }
+
+    /**
      * Arbitri tra quelli indicati indisponibili alla data indicata. Ritorna una mappa [referee_id => nome arbitro].
      */
     private function unavailableReferees(array $refereeIds, string $date): array
@@ -232,6 +254,23 @@ class DesignationController extends Controller
         if ($match->competition_type === 'Concentramento' && ! $otherAssignments->has('Direttore di concentramento')) {
             return Redirect::back()->withInput()->withErrors([
                 'referees' => 'Nei Concentramenti è obbligatorio assegnare un Direttore di concentramento.',
+            ]);
+        }
+
+        // Fuori Ruolo e abilitazione a Valutatore: si controllano solo le nuove assegnazioni, così quelle
+        // già salvate restano valide anche se nel frattempo l'arbitro ha cambiato categoria o abilitazione.
+        $existingPairs = $match->designations->map(fn ($d) => $d->role.'|'.$d->referee_id);
+        $ineligible = $this->ineligibleAssignments(
+            $arbitriIds->map(fn ($id) => [RugbyMatch::DEFAULT_ROLE, $id])
+                ->merge($otherAssignments->map(fn ($id, $role) => [$role, $id])->values())
+                ->reject(fn ($pair) => $existingPairs->contains($pair[0].'|'.$pair[1]))
+                ->values()
+                ->all()
+        );
+
+        if ($ineligible) {
+            return Redirect::back()->withInput()->withErrors([
+                'referees' => implode(' ', $ineligible),
             ]);
         }
 
@@ -490,6 +529,17 @@ class DesignationController extends Controller
 
         if ($errors) {
             return Redirect::back()->withInput()->withErrors($errors);
+        }
+
+        // Come in store(): il controllo Fuori Ruolo/Valutatore vale solo se arbitro o ruolo cambiano.
+        $assignmentChanged = $designation->referee_id !== (int) $validated['referee_id']
+            || $designation->role !== $validated['role'];
+        $ineligible = $assignmentChanged
+            ? $this->ineligibleAssignments([[$validated['role'], (int) $validated['referee_id']]])
+            : [];
+
+        if ($ineligible) {
+            return Redirect::back()->withInput()->withErrors(['referee_id' => implode(' ', $ineligible)]);
         }
 
         $targetMatch = RugbyMatch::findOrFail($validated['match_id']);

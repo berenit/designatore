@@ -10,3 +10,6 @@ Artisan::command('inspire', function () {
 
 // Ogni 5 minuti: i solleciti (default ogni 8 ore) partono così al massimo con 5 minuti di ritardo
 Schedule::command('designations:send-reminders')->everyFiveMinutes();
+
+// Ogni notte: elimina i record scaduti dei modelli Prunable (indisponibilità arbitri già concluse)
+Schedule::command('model:prune')->daily();

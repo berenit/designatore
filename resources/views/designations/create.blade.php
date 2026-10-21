@@ -61,7 +61,7 @@
                                         name="arbitri[]" x-model="arbitri[index]">
                                     <option value="">— nessuno —</option>
                                     @foreach ($referees as $referee)
-                                        <option value="{{ $referee->id }}" :class="conflictClass({{ $referee->id }}, {{ $referee->isDerogato() ? 'true' : 'false' }})" :disabled="isUnavailable({{ $referee->id }})" x-text="refereeLabel({{ $referee->id }}, '{{ addslashes($referee->name) }} — {{ addslashes($referee->license_level) }}')"></option>
+                                        <option value="{{ $referee->id }}" x-show="eligibleFor('Arbitro', {{ $referee->is_evaluator ? 'true' : 'false' }}, {{ $referee->isFuoriRuolo() ? 'true' : 'false' }}) || arbitri[index] == {{ $referee->id }}" :class="conflictClass({{ $referee->id }}, {{ $referee->isDerogato() ? 'true' : 'false' }})" :disabled="isUnavailable({{ $referee->id }})" x-text="refereeLabel({{ $referee->id }}, '{{ addslashes($referee->name) }} — {{ addslashes($referee->license_level) }}')"></option>
                                     @endforeach
                                 </select>
                                 <button type="button" @click="removeArbitro(index)"
@@ -88,7 +88,7 @@
                                 name="referees[Arbitro]" x-model="referees['Arbitro']">
                             <option value="">— nessuno —</option>
                             @foreach ($referees as $referee)
-                                <option value="{{ $referee->id }}" :class="conflictClass({{ $referee->id }}, {{ $referee->isDerogato() ? 'true' : 'false' }})" :disabled="isUnavailable({{ $referee->id }})" x-text="refereeLabel({{ $referee->id }}, '{{ addslashes($referee->name) }} — {{ addslashes($referee->license_level) }}')"></option>
+                                <option value="{{ $referee->id }}" x-show="eligibleFor('Arbitro', {{ $referee->is_evaluator ? 'true' : 'false' }}, {{ $referee->isFuoriRuolo() ? 'true' : 'false' }}) || referees['Arbitro'] == {{ $referee->id }}" :class="conflictClass({{ $referee->id }}, {{ $referee->isDerogato() ? 'true' : 'false' }})" :disabled="isUnavailable({{ $referee->id }})" x-text="refereeLabel({{ $referee->id }}, '{{ addslashes($referee->name) }} — {{ addslashes($referee->license_level) }}')"></option>
                             @endforeach
                         </select>
                     </div>
@@ -100,7 +100,7 @@
                                 :name="`referees[${role}]`" x-model="referees[role]">
                             <option value="">— nessuno —</option>
                             @foreach ($referees as $referee)
-                                <option value="{{ $referee->id }}" :class="conflictClass({{ $referee->id }}, {{ $referee->isDerogato() ? 'true' : 'false' }})" :disabled="isUnavailable({{ $referee->id }})" x-text="refereeLabel({{ $referee->id }}, '{{ addslashes($referee->name) }} — {{ addslashes($referee->license_level) }}')"></option>
+                                <option value="{{ $referee->id }}" x-show="eligibleFor(role, {{ $referee->is_evaluator ? 'true' : 'false' }}, {{ $referee->isFuoriRuolo() ? 'true' : 'false' }}) || referees[role] == {{ $referee->id }}" :class="conflictClass({{ $referee->id }}, {{ $referee->isDerogato() ? 'true' : 'false' }})" :disabled="isUnavailable({{ $referee->id }})" x-text="refereeLabel({{ $referee->id }}, '{{ addslashes($referee->name) }} — {{ addslashes($referee->license_level) }}')"></option>
                             @endforeach
                         </select>
                     </div>
@@ -210,6 +210,11 @@ function designationForm(matchRoles, matchIsMulti, matchAssignments, matchDates,
             if (this.hasConflict(refereeId)) return 'text-red-600 font-medium';
 
             return isDerogato ? 'text-orange-600' : '';
+        },
+
+        // Valutatore: solo gli abilitati (anche se Fuori Ruolo); altri ruoli: tutti tranne i Fuori Ruolo
+        eligibleFor(role, isEvaluator, isFuoriRuolo) {
+            return role === 'Valutatore' ? isEvaluator : ! isFuoriRuolo;
         },
 
         // Vero se l'arbitro è indisponibile nella data della gara selezionata (periodo registrato)

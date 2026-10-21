@@ -51,6 +51,14 @@
                 <dd class="text-sm text-gray-900 col-span-2">{{ $referee->phone ?? '—' }}</dd>
             </div>
             <div class="px-6 py-4 grid grid-cols-3 gap-4">
+                <dt class="text-sm font-medium text-gray-500">Città di domicilio</dt>
+                <dd class="text-sm text-gray-900 col-span-2">{{ $referee->city ?? '—' }}</dd>
+            </div>
+            <div class="px-6 py-4 grid grid-cols-3 gap-4">
+                <dt class="text-sm font-medium text-gray-500">Valutatore</dt>
+                <dd class="text-sm text-gray-900 col-span-2">{{ $referee->is_evaluator ? 'Sì' : 'No' }}</dd>
+            </div>
+            <div class="px-6 py-4 grid grid-cols-3 gap-4">
                 <dt class="text-sm font-medium text-gray-500">Designazioni</dt>
                 <dd class="text-sm text-gray-900 col-span-2">{{ $referee->designations->count() }}</dd>
             </div>

@@ -34,7 +34,7 @@ L'accesso alle funzioni gestionali è riservato a utenti con ruolo **designatore
 ### Designazioni
 - Vista settimanale (lunedì–domenica) con navigazione prev/next
 - Mostra **tutte** le partite e gli eventi della settimana, compresi quelli senza arbitro assegnato
-- **Più arbitri per incontro**, ciascuno con un **ruolo**: Arbitro, Assistente 1, Assistente 2, Osservatore, 4° uomo, 5° uomo, Tutor
+- **Più arbitri per incontro**, ciascuno con un **ruolo**: Arbitro, Assistente 1, Assistente 2, Valutatore, 4° uomo, 5° uomo, Tutor
 - Nelle partite singole ogni ruolo è assegnabile una sola volta; nei Concentramenti e Tornei lo stesso ruolo (es. più "Arbitro") può ripetersi
 - Gli incontri senza designazione sono evidenziati con un pulsante "Designa" diretto
 - Azioni per designazione esistente: Dettaglio, Modifica, Elimina

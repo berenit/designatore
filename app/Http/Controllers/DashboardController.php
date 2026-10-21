@@ -124,6 +124,7 @@ class DashboardController extends Controller
         $weekDays = collect(range(0, 6))->map(fn ($i) => $weekStart->copy()->addDays($i));
 
         $referees = Referee::where('availability_status', 'available')
+            ->where('license_level', '!=', Referee::FUORI_RUOLO)
             ->with(['unavailabilities' => fn ($q) => $q
                 ->whereDate('start_date', '<=', $weekDays->last()->toDateString())
                 ->whereDate('end_date', '>=', $weekStart->toDateString())])

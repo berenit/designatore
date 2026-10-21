@@ -14,6 +14,7 @@
     <h1 class="text-2xl font-bold text-gray-900 mb-6">Modifica Designazione</h1>
 
     <form action="{{ route('designations.update', $designation) }}" method="POST"
+          x-data="{ role: @js(old('role', $designation->role)), refereeId: @js((string) old('referee_id', $designation->referee_id)) }"
           class="bg-white rounded-xl border border-gray-200 shadow-sm p-6 space-y-5">
         @csrf @method('PUT')
 
@@ -34,11 +35,13 @@
 
         <div>
             <label for="referee_id" class="block text-sm font-medium text-gray-700 mb-1">Arbitro</label>
-            <select id="referee_id" name="referee_id" required
+            <select id="referee_id" name="referee_id" required x-model="refereeId"
                     class="w-full rounded-lg border-gray-300 shadow-sm text-sm focus:border-indigo-500 focus:ring-indigo-500 @error('referee_id') border-red-400 @enderror">
                 <option value="">Seleziona un arbitro...</option>
                 @foreach($referees as $referee)
                     <option value="{{ $referee->id }}"
+                            {{-- Valutatore: solo gli abilitati (anche se Fuori Ruolo); altri ruoli: tutti tranne i Fuori Ruolo --}}
+                            x-show="(role === 'Valutatore' ? {{ $referee->is_evaluator ? 'true' : 'false' }} : {{ $referee->isFuoriRuolo() ? 'false' : 'true' }}) || refereeId === '{{ $referee->id }}'"
                             @class([
                                 'text-gray-400' => $unavailableRefereeIds->contains($referee->id),
                                 'text-red-600 font-medium' => ! $unavailableRefereeIds->contains($referee->id) && $conflictingRefereeIds->contains($referee->id),
@@ -57,7 +60,7 @@
 
         <div>
             <label for="role" class="block text-sm font-medium text-gray-700 mb-1">Ruolo</label>
-            <select id="role" name="role" required
+            <select id="role" name="role" required x-model="role"
                     class="w-full rounded-lg border-gray-300 shadow-sm text-sm focus:border-indigo-500 focus:ring-indigo-500 @error('role') border-red-400 @enderror">
                 @foreach($roles as $role)
                     <option value="{{ $role }}" {{ old('role', $designation->role) === $role ? 'selected' : '' }}>{{ $role }}</option>

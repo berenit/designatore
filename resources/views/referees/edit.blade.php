@@ -45,6 +45,13 @@
                    class="w-full rounded-lg border-gray-300 shadow-sm text-sm focus:border-indigo-500 focus:ring-indigo-500">
         </div>
 
+        <div>
+            <label for="city" class="block text-sm font-medium text-gray-700 mb-1">Città di domicilio <span class="text-gray-400">(opzionale)</span></label>
+            <input id="city" type="text" name="city" value="{{ old('city', $referee->city) }}" maxlength="100"
+                   class="w-full rounded-lg border-gray-300 shadow-sm text-sm focus:border-indigo-500 focus:ring-indigo-500 @error('city') border-red-400 @enderror">
+            @error('city')<p class="mt-1 text-xs text-red-600">{{ $message }}</p>@enderror
+        </div>
+
         <div class="grid grid-cols-2 gap-4">
             <div>
                 <label for="license_level" class="block text-sm font-medium text-gray-700 mb-1">Categoria</label>
@@ -70,6 +77,12 @@
                 @error('availability_status')<p class="mt-1 text-xs text-red-600">{{ $message }}</p>@enderror
             </div>
         </div>
+
+        <label class="flex items-center gap-2 text-sm text-gray-700">
+            <input type="checkbox" name="is_evaluator" value="1" {{ old('is_evaluator', $referee->is_evaluator) ? 'checked' : '' }}
+                   class="rounded border-gray-300 text-indigo-600 focus:ring-indigo-500">
+            Valutatore <span class="text-gray-400">(può essere designato come Valutatore)</span>
+        </label>
 
         <div class="flex items-center justify-between pt-2">
             <button type="submit"

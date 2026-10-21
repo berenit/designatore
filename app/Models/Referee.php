@@ -11,7 +11,9 @@ use Illuminate\Database\Eloquent\Model;
     'email',
     'license_number',
     'phone',
+    'city',
     'license_level',
+    'is_evaluator',
     'availability_status',
 ])]
 class Referee extends Model
@@ -27,6 +29,14 @@ class Referee extends Model
         'Nazionale serie A Elite',
         'Assistente serie A',
         'Assistente serie A Elite',
+        self::FUORI_RUOLO,
+    ];
+
+    /** Categoria degli arbitri non designabili, se non come Valutatori (se abilitati). */
+    public const FUORI_RUOLO = 'Fuori Ruolo';
+
+    protected $casts = [
+        'is_evaluator' => 'boolean',
     ];
 
     /**
@@ -54,6 +64,18 @@ class Referee extends Model
     public function isDerogato(): bool
     {
         return $this->license_level === 'Derogato';
+    }
+
+    /** Vero se l'arbitro è di categoria Fuori Ruolo (designabile solo come Valutatore). */
+    public function isFuoriRuolo(): bool
+    {
+        return $this->license_level === self::FUORI_RUOLO;
+    }
+
+    /** Valutatore: solo gli abilitati (anche se Fuori Ruolo); altri ruoli: tutti tranne i Fuori Ruolo. */
+    public function canBeDesignatedAs(string $role): bool
+    {
+        return $role === Designation::EVALUATOR_ROLE ? $this->is_evaluator : ! $this->isFuoriRuolo();
     }
 
     // A referee can have many designations

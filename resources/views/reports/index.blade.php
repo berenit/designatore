@@ -176,11 +176,11 @@
                         </p>
                         <div class="space-y-1">
                             @foreach ($group as $d)
-                                @php $isObserver = $d->role === 'Osservatore'; @endphp
+                                @php $isEvaluator = $d->role === 'Valutatore'; @endphp
                                 <div class="flex items-center justify-between gap-3">
-                                    <span class="text-xs {{ $isObserver ? 'text-amber-700 font-semibold' : 'text-gray-700' }}">
-                                        @if ($isObserver) 🔎 @endif
-                                        {{ $d->referee->name }} <span class="{{ $isObserver ? 'text-amber-500' : 'text-gray-400' }}">— {{ $d->role }}</span>
+                                    <span class="text-xs {{ $isEvaluator ? 'text-amber-700 font-semibold' : 'text-gray-700' }}">
+                                        @if ($isEvaluator) 🔎 @endif
+                                        {{ $d->referee->name }} <span class="{{ $isEvaluator ? 'text-amber-500' : 'text-gray-400' }}">— {{ $d->role }}</span>
                                     </span>
                                     <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-semibold flex-shrink-0
                                         @if ($d->status === 'pending')   bg-yellow-100 text-yellow-800

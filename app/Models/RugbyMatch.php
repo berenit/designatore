@@ -53,7 +53,7 @@ class RugbyMatch extends Model
         'fourth' => ['label' => '4° uomo', 'roles' => ['4° uomo']],
         'fifth' => ['label' => '5° uomo', 'roles' => ['5° uomo']],
         'director' => ['label' => 'Direttore di concentramento', 'roles' => ['Direttore di concentramento']],
-        'observer' => ['label' => 'Osservatore', 'roles' => ['Osservatore']],
+        'evaluator' => ['label' => 'Valutatore', 'roles' => ['Valutatore']],
         'tutor' => ['label' => 'Tutor', 'roles' => ['Tutor']],
     ];
 

@@ -82,7 +82,7 @@
         .col-refs   { width: 42%; }
 
         .role-name { font-size: 10px; color: #374151; vertical-align: baseline; }
-        .role-observer { font-weight: bold; color: #92400e; }
+        .role-evaluator { font-weight: bold; color: #92400e; }
 
         .ref-line { margin-bottom: 6px; }
         .ref-line:last-child { margin-bottom: 0; }
@@ -163,10 +163,10 @@
                         </td>
                         <td class="col-refs">
                             @foreach ($group as $d)
-                                @php $isObserver = $d->role === 'Osservatore'; @endphp
+                                @php $isEvaluator = $d->role === 'Valutatore'; @endphp
                                 <div class="ref-line">
                                     <span class="ref-name"><strong>{{ $d->referee->name }}</strong>@if ($d->referee->license_label) {{ $d->referee->license_label }}@endif</span>
-                                    <span class="role-name @if($isObserver) role-observer @endif">— {{ $d->role }}</span>
+                                    <span class="role-name @if($isEvaluator) role-evaluator @endif">— {{ $d->role }}</span>
                                 </div>
                             @endforeach
                         </td>

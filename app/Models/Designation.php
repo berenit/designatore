@@ -31,8 +31,11 @@ class Designation extends Model
 
     /** Ruoli assegnabili a una designazione, nell'ordine canonico di visualizzazione/gestione. */
     public const ROLES = [
-        'Arbitro', 'Assistente 1', 'Assistente 2', '4° uomo', '5° uomo', 'Direttore di concentramento', 'Osservatore', 'Tutor',
+        'Arbitro', 'Assistente 1', 'Assistente 2', '4° uomo', '5° uomo', 'Direttore di concentramento', 'Valutatore', 'Tutor',
     ];
+
+    /** Ruolo riservato agli arbitri abilitati come Valutatori (vedi Referee::canBeDesignatedAs()). */
+    public const EVALUATOR_ROLE = 'Valutatore';
 
     /** Etichette italiane per lo stato di una designazione (usate in tutta l'app). */
     public const STATUS_LABELS = [

@@ -12,8 +12,8 @@ use Illuminate\Support\Facades\Http;
 
 class ReportController extends Controller
 {
-    /** Ruolo da mettere in evidenza nei report (vedi RugbyMatch::EXTRA_ROLE_OPTIONS['observer']). */
-    private const OBSERVER_ROLE = 'Osservatore';
+    /** Ruolo da mettere in evidenza nei report (vedi RugbyMatch::EXTRA_ROLE_OPTIONS['evaluator']). */
+    private const EVALUATOR_ROLE = 'Valutatore';
 
     private function getDesignations(Request $request)
     {
@@ -202,7 +202,7 @@ class ReportController extends Controller
             $refs = $group->map(function ($d) {
                 $line = trim("**{$d->role}**: **{$d->referee->name}** {$d->referee->license_label}");
 
-                return $d->role === self::OBSERVER_ROLE ? "🔎 {$line}" : $line;
+                return $d->role === self::EVALUATOR_ROLE ? "🔎 {$line}" : $line;
             })->implode('<br>');
             $category = $match->category_label ? "**{$match->category_label}**" : '—';
             $lines[] = "| {$date} | {$match->label} | {$category} | {$match->committee} | {$venue} | {$refs} |";
@@ -249,7 +249,7 @@ class ReportController extends Controller
             foreach ($group as $d) {
                 $emoji = $statusEmoji[$d->status] ?? '•';
                 $line = "{$d->referee->name} — {$d->role}";
-                if ($d->role === self::OBSERVER_ROLE) {
+                if ($d->role === self::EVALUATOR_ROLE) {
                     $line = "🔎 *{$line}*";
                 }
                 $lines[] = "   {$emoji} {$line}";

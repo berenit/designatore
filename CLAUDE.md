@@ -40,7 +40,10 @@ DomPDF ignores `@page` margin shorthand and `setOption('margin-*')`. Margins are
 A `RugbyMatch` with `competition_type` of `concentramento` or `torneo` involves 3+ teams (identified by a descriptive `name` instead of home/away) rather than the usual two-team home/away shape. Forms, conflict checks, and role-uniqueness rules (see below) all branch on this distinction — check `competition_type` before assuming a match has `home_team`/`away_team`.
 
 ### Designation role uniqueness
-For ordinary two-team matches each role (Arbitro, Assistente 1, Assistente 2, Osservatore, 4° uomo, 5° uomo, Tutor) may be assigned only once per match. For Concentramenti/Tornei the same role may repeat across multiple referees. Validation in `DesignationController` must respect this distinction.
+For ordinary two-team matches each role (Arbitro, Assistente 1, Assistente 2, Valutatore, 4° uomo, 5° uomo, Tutor) may be assigned only once per match. For Concentramenti/Tornei the same role may repeat across multiple referees. Validation in `DesignationController` must respect this distinction.
+
+### Referee eligibility per role
+`Referee::canBeDesignatedAs()`: the `Valutatore` role only accepts referees with `is_evaluator`; every other role excludes the `Fuori Ruolo` category (a Fuori Ruolo evaluator can only be a Valutatore). Enforced server-side in `DesignationController` (only for new/changed assignments, so existing ones stay editable) and mirrored client-side with `x-show` in the designation create/edit forms.
 
 ### Mail-triggered side effects
 Beyond the initial designation email, referee-facing mail is fired from several places and must stay wired up together: `SendDesignationRemindersCommand`, `DesignationDeclinedMail` (to the assigning designatore on decline), `DesignationRemovedMail` (designation deleted), and `MatchCancelledMail`/`MatchUpdatedMail` (match cancelled/deleted, sent to every referee with an active designation on it). In Docker this reminder cron requires the `scheduler` compose service; locally it needs a running `schedule:work`/cron.

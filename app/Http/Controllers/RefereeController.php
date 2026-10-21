@@ -68,9 +68,12 @@ class RefereeController extends Controller
             'email' => 'required|email|max:255|unique:referees',
             'license_number' => ['required', 'regex:/^\d{1,10}$/', 'unique:referees'],
             'phone' => 'nullable|string|max:20',
+            'city' => 'nullable|string|max:100',
             'license_level' => ['required', Rule::in(Referee::CATEGORIES)],
             'availability_status' => ['required', Rule::in(array_keys(Referee::AVAILABILITY_LABELS))],
         ], self::LICENSE_NUMBER_MESSAGES);
+
+        $validated['is_evaluator'] = $request->boolean('is_evaluator');
 
         Referee::create($validated);
 
@@ -91,7 +94,8 @@ class RefereeController extends Controller
      */
     public function edit(Referee $referee)
     {
-        $referee->load(['unavailabilities' => fn ($q) => $q->orderBy('start_date')]);
+        // I periodi conclusi non si mostrano (e vengono comunque eliminati ogni giorno da model:prune)
+        $referee->load(['unavailabilities' => fn ($q) => $q->whereDate('end_date', '>=', today())->orderBy('start_date')]);
 
         return view('referees.edit', compact('referee'));
     }
@@ -106,9 +110,12 @@ class RefereeController extends Controller
             'email' => ['required', 'email', 'max:255', Rule::unique('referees')->ignore($referee->id)],
             'license_number' => ['required', 'regex:/^\d{1,10}$/', Rule::unique('referees')->ignore($referee->id)],
             'phone' => 'nullable|string|max:20',
+            'city' => 'nullable|string|max:100',
             'license_level' => ['required', Rule::in(Referee::CATEGORIES)],
             'availability_status' => ['required', Rule::in(array_keys(Referee::AVAILABILITY_LABELS))],
         ], self::LICENSE_NUMBER_MESSAGES);
+
+        $validated['is_evaluator'] = $request->boolean('is_evaluator');
 
         $referee->update($validated);
 
