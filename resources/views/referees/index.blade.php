@@ -1,10 +1,32 @@
 @extends('layouts.app')
 
 @section('content')
+<div x-data="refereeColumns()">
 <div class="flex items-center justify-between mb-6">
     <div>
         <h1 class="text-2xl font-bold text-gray-900">Arbitri</h1>
         <p class="text-sm text-gray-500 mt-1">{{ $referees->count() }} {{ $referees->count() === 1 ? 'arbitro' : 'arbitri' }} registrati</p>
+    </div>
+    <div class="flex items-center gap-2">
+    {{-- Scelta delle colonne visibili (ricordata nel browser) --}}
+    <div class="relative" x-data="{ open: false }">
+        <button type="button" @click="open = !open"
+                class="inline-flex items-center gap-2 px-4 py-2 bg-white border border-gray-300 text-gray-700 text-sm font-medium rounded-lg hover:bg-gray-50 transition shadow-sm">
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 17V7m0 10a2 2 0 01-2 2H5a2 2 0 01-2-2V7a2 2 0 012-2h2a2 2 0 012 2m0 10a2 2 0 002 2h2a2 2 0 002-2M9 7a2 2 0 012-2h2a2 2 0 012 2m0 10V7m0 10a2 2 0 002 2h2a2 2 0 002-2V7a2 2 0 00-2-2h-2a2 2 0 00-2 2"/>
+            </svg>
+            Colonne
+        </button>
+        <div x-show="open" x-transition @click.outside="open = false" x-cloak
+             class="absolute right-0 mt-2 w-48 bg-white border border-gray-200 rounded-lg shadow-lg py-2 z-20">
+            <template x-for="(label, key) in labels" :key="key">
+                <label class="flex items-center gap-2 px-4 py-1.5 text-sm text-gray-700 hover:bg-gray-50 cursor-pointer">
+                    <input type="checkbox" :checked="visible[key]" @change="toggle(key)"
+                           class="rounded border-gray-300 text-indigo-600 focus:ring-indigo-500">
+                    <span x-text="label"></span>
+                </label>
+            </template>
+        </div>
     </div>
     <a href="{{ route('referees.create') }}"
        class="inline-flex items-center gap-2 px-4 py-2 bg-indigo-600 text-white text-sm font-medium rounded-lg hover:bg-indigo-700 transition shadow-sm">
@@ -13,6 +35,7 @@
         </svg>
         Nuovo Arbitro
     </a>
+    </div>
 </div>
 
 @if ($referees->isEmpty())
@@ -48,11 +71,11 @@
                                 </svg>
                             </a>
                         </th>
-                        <th class="px-6 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Tessera</th>
-                        <th class="px-6 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Email</th>
-                        <th class="px-6 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Telefono</th>
-                        <th class="px-6 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Città</th>
-                        <th class="px-6 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">
+                        <th x-show="visible.license_number" class="px-6 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Tessera</th>
+                        <th x-show="visible.email" class="px-6 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Email</th>
+                        <th x-show="visible.phone" x-cloak class="px-6 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Telefono</th>
+                        <th x-show="visible.city" x-cloak class="px-6 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Città</th>
+                        <th x-show="visible.license_level" class="px-6 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">
                             <a href="{{ route('referees.index', ['sort' => 'license_level', 'dir' => $nextDir('license_level')]) }}"
                                class="inline-flex items-center gap-1 hover:text-gray-800 transition {{ $sort === 'license_level' ? 'text-indigo-600' : '' }}">
                                 Categoria
@@ -61,7 +84,7 @@
                                 </svg>
                             </a>
                         </th>
-                        <th class="px-6 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Disponibilità</th>
+                        <th x-show="visible.availability_status" x-cloak class="px-6 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Disponibilità</th>
                         <th class="px-6 py-3 text-right text-xs font-semibold text-gray-500 uppercase tracking-wider">Azioni</th>
                     </tr>
                 </thead>
@@ -74,11 +97,11 @@
                                     <span class="ml-1 inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-amber-100 text-amber-800">Valutatore</span>
                                 @endif
                             </td>
-                            <td class="px-6 py-4 text-sm text-gray-600 tabular-nums">{{ $referee->license_number ?? '—' }}</td>
-                            <td class="px-6 py-4 text-sm text-gray-600">{{ $referee->email }}</td>
-                            <td class="px-6 py-4 text-sm text-gray-500">{{ $referee->phone ?? '—' }}</td>
-                            <td class="px-6 py-4 text-sm text-gray-500">{{ $referee->city ?? '—' }}</td>
-                            <td class="px-6 py-4">
+                            <td x-show="visible.license_number" class="px-6 py-4 text-sm text-gray-600 tabular-nums">{{ $referee->license_number ?? '—' }}</td>
+                            <td x-show="visible.email" class="px-6 py-4 text-sm text-gray-600">{{ $referee->email }}</td>
+                            <td x-show="visible.phone" x-cloak class="px-6 py-4 text-sm text-gray-500">{{ $referee->phone ?? '—' }}</td>
+                            <td x-show="visible.city" x-cloak class="px-6 py-4 text-sm text-gray-500">{{ $referee->city ?? '—' }}</td>
+                            <td x-show="visible.license_level" class="px-6 py-4">
                                 <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold
                                     @if ($referee->license_level === 'Nazionale serie A Elite') bg-blue-100 text-blue-800
                                     @elseif ($referee->license_level === 'Nazionale serie A') bg-purple-100 text-purple-800
@@ -90,7 +113,7 @@
                                     {{ $referee->license_level }}
                                 </span>
                             </td>
-                            <td class="px-6 py-4">
+                            <td x-show="visible.availability_status" x-cloak class="px-6 py-4">
                                 <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold
                                     @if ($referee->availability_status === 'available') bg-green-100 text-green-800
                                     @elseif ($referee->availability_status === 'limited') bg-yellow-100 text-yellow-800
@@ -125,4 +148,45 @@
         </div>
     </div>
 @endif
+</div>
+
+<script>
+// Colonne facoltative dell'elenco arbitri: Nome e Azioni sono sempre visibili.
+// La scelta è salvata nel browser (localStorage); Telefono, Città e Disponibilità sono nascoste di default.
+function refereeColumns() {
+    const STORAGE_KEY = 'referees.columns';
+    const defaults = {
+        license_number: true,
+        email: true,
+        phone: false,
+        city: false,
+        license_level: true,
+        availability_status: false,
+    };
+
+    let saved = {};
+    try {
+        saved = JSON.parse(localStorage.getItem(STORAGE_KEY)) || {};
+    } catch (e) {}
+
+    return {
+        labels: {
+            license_number: 'Tessera',
+            email: 'Email',
+            phone: 'Telefono',
+            city: 'Città',
+            license_level: 'Categoria',
+            availability_status: 'Disponibilità',
+        },
+        visible: Object.fromEntries(Object.keys(defaults).map((key) => [key, typeof saved[key] === 'boolean' ? saved[key] : defaults[key]])),
+
+        toggle(key) {
+            this.visible[key] = ! this.visible[key];
+            try {
+                localStorage.setItem(STORAGE_KEY, JSON.stringify(this.visible));
+            } catch (e) {}
+        },
+    };
+}
+</script>
 @endsection
