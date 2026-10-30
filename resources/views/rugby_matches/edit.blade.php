@@ -180,6 +180,10 @@
                 @error('date_time')<p class="mt-1 text-xs text-red-600">{{ $message }}</p>@enderror
             </div>
 
+            <p class="col-span-2 -mt-2 text-xs text-amber-700" x-show="droppedTeams" x-cloak>
+                Squadre già impegnate in quella data, rimosse dalla selezione: <span x-text="droppedTeams"></span>
+            </p>
+
             <div>
                 <label for="venue_id" class="block text-sm font-medium text-gray-700 mb-1">Campo</label>
                 <select id="venue_id" name="venue_id" required
@@ -263,6 +267,7 @@ function matchForm(teams, bookedDates, multiTeamTypes, old) {
         directorChecked: (old.extraRoles || []).includes('director'),
         extraTeamNames: (old.extraTeamNames && old.extraTeamNames.length) ? old.extraTeamNames : [''],
         requiredReferees: old.requiredReferees || '',
+        droppedTeams: '',
 
         init() {
             // Nei Concentramenti il Direttore di concentramento è sempre obbligatorio
@@ -270,14 +275,9 @@ function matchForm(teams, bookedDates, multiTeamTypes, old) {
                 if (value === 'Concentramento') this.directorChecked = true;
             });
 
-            // Azzera le squadre selezionate solo se cambia il GIORNO (non l'orario):
-            // la disponibilità è calcolata per data, non per orario esatto, quindi un
-            // cambio dell'ora da solo non deve invalidare la selezione già fatta.
-            this.$watch('selectedDate', (value, oldValue) => {
-                if (oldValue !== undefined && value !== oldValue) {
-                    this.resetTeams();
-                }
-            });
+            // Al cambio del GIORNO toglie solo le squadre già impegnate nella nuova data:
+            // quelle ancora libere restano selezionate (es. gara spostata ad altro giorno).
+            this.$watch('selectedDate', () => this.dropUnavailableTeams());
         },
 
         get isMulti() {
@@ -303,6 +303,24 @@ function matchForm(teams, bookedDates, multiTeamTypes, old) {
             this.homeId = '';
             this.awayId = '';
             this.teamIds = [];
+            this.droppedTeams = '';
+        },
+
+        // Deseleziona le squadre non più disponibili nella data scelta e ne tiene traccia per l'avviso
+        dropUnavailableTeams() {
+            const available = this.filteredTeams.map(t => String(t.id));
+            const isAvailable = (id) => available.includes(String(id));
+            const dropped = [this.homeId, this.awayId, ...this.teamIds]
+                .filter(id => id && !isAvailable(id));
+
+            if (this.homeId && !isAvailable(this.homeId)) this.homeId = '';
+            if (this.awayId && !isAvailable(this.awayId)) this.awayId = '';
+            this.teamIds = this.teamIds.filter(isAvailable);
+
+            this.droppedTeams = this.teams
+                .filter(t => dropped.includes(String(t.id)))
+                .map(t => t.name)
+                .join(', ');
         },
 
         addExtraTeam() {
