@@ -96,6 +96,8 @@
     <div class="bg-white rounded-xl border border-gray-200 shadow-sm p-6 space-y-3">
         <h2 class="text-sm font-semibold text-gray-700 mb-4">Scarica report</h2>
 
+        <p id="no-matches-warning" class="hidden text-xs text-red-600">Seleziona almeno una gara nell'anteprima.</p>
+
         <button onclick="download('pdf')"
                 class="w-full flex items-center gap-3 px-4 py-3 bg-red-50 border border-red-200 rounded-lg hover:bg-red-100 transition group">
             <span class="text-2xl">📄</span>
@@ -160,6 +162,13 @@
     <div class="bg-white rounded-xl border border-gray-200 shadow-sm overflow-hidden lg:sticky lg:top-6">
         <div class="px-5 py-4 border-b border-gray-100 flex items-center justify-between">
             <h2 class="font-semibold text-gray-900 text-sm">Anteprima ({{ $designations->count() }} risultati)</h2>
+            @if ($matchGroups->isNotEmpty())
+                <span class="text-xs space-x-2">
+                    <span id="matches-count" class="text-gray-500"></span>
+                    <button type="button" onclick="toggleMatches(true)" class="text-indigo-600 hover:text-indigo-800">Tutte</button>
+                    <button type="button" onclick="toggleMatches(false)" class="text-gray-500 hover:text-gray-700">Nessuna</button>
+                </span>
+            @endif
         </div>
         @if ($matchGroups->isEmpty())
             <div class="px-5 py-8 text-center text-gray-400 text-sm">Nessuna designazione corrispondente ai filtri.</div>
@@ -167,8 +176,14 @@
             <ul class="divide-y divide-gray-100">
                 @foreach ($matchGroups as $group)
                     @php $match = $group->first()->match; @endphp
-                    <li class="px-5 py-3">
-                        <p class="text-sm font-medium text-gray-900">{{ $match->label }}</p>
+                    <li class="px-5 py-3 flex gap-3">
+                        {{-- Gare da includere nel report (tutte di default) --}}
+                        <input type="checkbox" name="matches[]" value="{{ $match->id }}" checked
+                               id="match-{{ $match->id }}" onchange="updateMatchesCount()"
+                               title="Includi questa gara nel report"
+                               class="mt-0.5 rounded border-gray-300 text-indigo-600 focus:ring-indigo-500">
+                    <div class="flex-1 min-w-0">
+                        <label for="match-{{ $match->id }}" class="block text-sm font-medium text-gray-900 cursor-pointer">{{ $match->label }}</label>
                         <p class="text-xs text-gray-400 mt-0.5 mb-2">
                             {{ \Carbon\Carbon::parse($match->date_time)->format('d/m/Y H:i') }}
                             · {{ $match->venue_label }}
@@ -192,6 +207,7 @@
                                 </div>
                             @endforeach
                         </div>
+                    </div>
                     </li>
                 @endforeach
             </ul>
@@ -223,12 +239,48 @@ function toggleAll(key, checked) {
     document.querySelectorAll(`#report-form [name="${key}[]"]`).forEach(b => b.checked = checked);
 }
 
+const matchBoxes = () => [...document.querySelectorAll('[name="matches[]"]')];
+
+function toggleMatches(checked) {
+    matchBoxes().forEach(b => b.checked = checked);
+    updateMatchesCount();
+}
+
+function updateMatchesCount() {
+    const boxes = matchBoxes();
+    const checked = boxes.filter(b => b.checked).length;
+    const count = document.getElementById('matches-count');
+    if (count) count.textContent = `${checked}/${boxes.length} gare`;
+    if (checked) document.getElementById('no-matches-warning').classList.add('hidden');
+}
+updateMatchesCount();
+
+// Parametri per gli export: i filtri più le gare spuntate nell'anteprima (se non sono tutte).
+// Restituisce null se non è spuntata nessuna gara, per non esportare tutto per errore.
+function exportParams() {
+    const boxes = matchBoxes();
+    const checked = boxes.filter(b => b.checked);
+    if (boxes.length && !checked.length) {
+        document.getElementById('no-matches-warning').classList.remove('hidden');
+        return null;
+    }
+    const p = new URLSearchParams(params());
+    if (checked.length < boxes.length) {
+        checked.forEach(b => p.append('matches[]', b.value));
+    }
+    return p.toString() ? '?' + p.toString() : '';
+}
+
 function download(format) {
-    window.location.href = '{{ route("reports." . "pdf") }}'.replace('pdf', format) + params();
+    const query = exportParams();
+    if (query === null) return;
+    window.location.href = '{{ route("reports." . "pdf") }}'.replace('pdf', format) + query;
 }
 
 async function copyText() {
-    const url = '{{ route("reports.text") }}' + params();
+    const query = exportParams();
+    if (query === null) return;
+    const url = '{{ route("reports.text") }}' + query;
     const res = await fetch(url);
     const text = await res.text();
 
@@ -246,6 +298,8 @@ async function copyText() {
 }
 
 async function sendTelegram() {
+    const query = exportParams();
+    if (query === null) return;
     const button = document.getElementById('telegram-button');
     const subtitle = document.getElementById('telegram-subtitle');
     const originalSubtitle = subtitle.textContent;
@@ -254,7 +308,7 @@ async function sendTelegram() {
     subtitle.textContent = 'Invio in corso...';
 
     try {
-        const res = await fetch('{{ route("reports.telegram") }}' + params(), {
+        const res = await fetch('{{ route("reports.telegram") }}' + query, {
             method: 'POST',
             headers: {
                 'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content,

@@ -19,9 +19,12 @@ class ReportController extends Controller
     {
         $committees = $this->selectedValues($request, 'committees');
         $categories = $this->selectedValues($request, 'categories');
+        $matches = $this->selectedValues($request, 'matches');
 
         return Designation::with(['match.homeTeam', 'match.awayTeam', 'match.teams', 'match.venue', 'referee'])
             ->join('matches', 'matches.id', '=', 'designations.match_id')
+            // Gare spuntate nell'anteprima: permette di generare il report anche per una sola gara
+            ->when($matches, fn ($q) => $q->whereIn('designations.match_id', $matches))
             ->when($request->status, fn ($q) => $q->where('designations.status', $request->status))
             ->when($committees, fn ($q) => $q->whereIn('matches.committee', $committees))
             // Categoria desunta dalle squadre: casa/ospite per le gare singole, pivot per Concentramenti/Tornei
@@ -109,7 +112,7 @@ class ReportController extends Controller
     public function markdown(Request $request)
     {
         $designations = $this->getDesignations($request);
-        $content = $this->buildMarkdown($designations, $request->date_from, $request->date_to);
+        $content = $this->buildMarkdown($designations, ...$this->headerDates($request));
 
         return response($content, 200, [
             'Content-Type' => 'text/markdown; charset=UTF-8',
@@ -120,7 +123,7 @@ class ReportController extends Controller
     public function text(Request $request)
     {
         $designations = $this->getDesignations($request);
-        $content = $this->buildText($designations, $request->date_from, $request->date_to);
+        $content = $this->buildText($designations, ...$this->headerDates($request));
 
         return response($content, 200, [
             'Content-Type' => 'text/plain; charset=UTF-8',
@@ -141,7 +144,7 @@ class ReportController extends Controller
         }
 
         $designations = $this->getDesignations($request);
-        $text = $this->buildText($designations, $request->date_from, $request->date_to);
+        $text = $this->buildText($designations, ...$this->headerDates($request));
 
         $endpoint = "https://api.telegram.org/bot{$botToken}/sendMessage";
 
@@ -274,6 +277,17 @@ class ReportController extends Controller
     }
 
     /**
+     * Date per l'intestazione: se sono state scelte singole gare il range dei filtri non è
+     * significativo, quindi formatDateRange() lo ricava dalle partite effettivamente incluse.
+     */
+    private function headerDates(Request $request): array
+    {
+        return $this->selectedValues($request, 'matches')
+            ? [null, null]
+            : [$request->date_from, $request->date_to];
+    }
+
+    /**
      * Intervallo di date da mostrare in intestazione: usa i filtri data_from/date_to se
      * presenti, altrimenti lo ricava dalle date delle partite effettivamente incluse.
      */
@@ -305,7 +319,7 @@ class ReportController extends Controller
         $max = $dates->max();
 
         return $min->isSameDay($max)
-            ? 'Dal '.$min->format('d/m/Y')
+            ? 'Del '.$min->format('d/m/Y')
             : 'Dal '.$min->format('d/m/Y').' al '.$max->format('d/m/Y');
     }
 }

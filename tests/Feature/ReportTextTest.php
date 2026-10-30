@@ -136,3 +136,35 @@ test('the markdown report has no summary section', function () {
     $markdown->assertOk();
     expect($markdown->getContent())->not->toContain('Riepilogo');
 });
+
+test('reports can be limited to the matches selected in the preview', function () {
+    $designatore = User::factory()->create();
+    $lazio = createDesignation($designatore);
+    $lazio->match->update(['committee' => 'Lazio']);
+    createDesignation($designatore)->match->update(['committee' => 'Abruzzo']);
+
+    $this->actingAs($designatore)
+        ->get(route('reports.text', ['matches' => [$lazio->match_id]]))
+        ->assertOk()
+        ->assertSee('Comitato Lazio')
+        ->assertDontSee('Comitato Abruzzo')
+        // Con singole gare selezionate l'intestazione usa la data della gara, non il range dei filtri
+        ->assertSee('Del '.$lazio->match->fresh()->date_time->format('d/m/Y'));
+
+    $markdown = $this->actingAs($designatore)->get(route('reports.markdown', ['matches' => [$lazio->match_id]]));
+    expect($markdown->getContent())->toContain('| Lazio |')->not->toContain('| Abruzzo |');
+
+    $this->actingAs($designatore)
+        ->get(route('reports.pdf', ['matches' => [$lazio->match_id]]))
+        ->assertOk();
+});
+
+test('report preview shows a checkbox for each match', function () {
+    $designatore = User::factory()->create();
+    $designation = createDesignation($designatore);
+
+    $this->actingAs($designatore)
+        ->get(route('reports.index', ['date_from' => now()->toDateString(), 'date_to' => now()->addMonth()->toDateString()]))
+        ->assertOk()
+        ->assertSee('name="matches[]" value="'.$designation->match_id.'"', false);
+});
