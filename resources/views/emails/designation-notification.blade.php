@@ -25,6 +25,8 @@ sei stato designato per il seguente incontro di rugby:
 @endif
 </x-mail::table>
 
+**Attenzione:** la data e l'orario qui riportati sono indicativi. Valgono ufficialmente sempre quelli comunicati dalla Federazione tramite il Comitato Regionale di competenza.
+
 Conferma la tua disponibilità entro 48 ore:
 
 <x-mail::button :url="$acceptUrl" color="success">
