@@ -38,7 +38,7 @@ class PendingMails
     public static function all(): array
     {
         return array_map(
-            fn ($entry) => ['to' => $entry['to'], 'subject' => $entry['subject']],
+            fn ($entry) => ['id' => self::id($entry), 'to' => $entry['to'], 'subject' => $entry['subject']],
             session(self::SESSION_KEY, [])
         );
     }
@@ -49,14 +49,34 @@ class PendingMails
     }
 
     /**
-     * Invia tutte le email in attesa e ritorna quante ne sono partite. Le email già inviate
-     * vengono tolte subito dalla coda: se un invio fallisce, restano in attesa solo le altre.
+     * Applica la scelta del designatore e ritorna quante email sono partite: invia le selezionate
+     * e scarta quelle che gli erano state proposte ma non ha selezionato. Le email comparse in coda
+     * dopo la scelta (es. da un'altra scheda) non sono state viste da lui, quindi restano in attesa.
+     * Le email già inviate vengono tolte subito: se un invio fallisce, restano solo le altre selezionate.
+     *
+     * @param  array<string>  $selectedIds
+     * @param  array<string>  $offeredIds
      */
-    public static function send(): int
+    public static function send(array $selectedIds, array $offeredIds): int
     {
+        $entries = session(self::SESSION_KEY, []);
+
+        foreach ($entries as $entry) {
+            $id = self::id($entry);
+
+            if (in_array($id, $offeredIds, true) && ! in_array($id, $selectedIds, true)) {
+                self::remove($entry);
+                self::logDiscarded($entry);
+            }
+        }
+
         $sent = 0;
 
-        while ($entry = session(self::SESSION_KEY, [])[0] ?? null) {
+        foreach ($entries as $entry) {
+            if (! in_array(self::id($entry), $selectedIds, true)) {
+                continue;
+            }
+
             $mail = unserialize(Crypt::decryptString($entry['payload']));
             Mail::to($entry['to'])->send($mail);
 
@@ -66,7 +86,7 @@ class PendingMails
                 Designation::markConfirmationRequested($designation->id, $designation->referee_id);
             }
 
-            session()->put(self::SESSION_KEY, array_slice(session(self::SESSION_KEY), 1));
+            self::remove($entry);
             $sent++;
 
             Log::info('Email inviata dopo conferma del designatore', [
@@ -74,8 +94,6 @@ class PendingMails
                 'subject' => $entry['subject'],
             ]);
         }
-
-        session()->forget(self::SESSION_KEY);
 
         return $sent;
     }
@@ -85,13 +103,30 @@ class PendingMails
     {
         $entries = session()->pull(self::SESSION_KEY, []);
 
-        foreach ($entries as $entry) {
-            Log::info('Invio email annullato dal designatore', [
-                'to' => $entry['to'],
-                'subject' => $entry['subject'],
-            ]);
-        }
+        array_walk($entries, fn ($entry) => self::logDiscarded($entry));
 
         return count($entries);
+    }
+
+    /** Identificativo stabile di un'email in coda: il payload cifrato è unico per ogni email. */
+    private static function id(array $entry): string
+    {
+        return hash('sha256', $entry['payload']);
+    }
+
+    private static function remove(array $entry): void
+    {
+        session()->put(self::SESSION_KEY, array_values(array_filter(
+            session(self::SESSION_KEY, []),
+            fn ($other) => $other['payload'] !== $entry['payload']
+        )));
+    }
+
+    private static function logDiscarded(array $entry): void
+    {
+        Log::info('Invio email annullato dal designatore', [
+            'to' => $entry['to'],
+            'subject' => $entry['subject'],
+        ]);
     }
 }

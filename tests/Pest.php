@@ -6,6 +6,7 @@ use App\Models\RugbyMatch;
 use App\Models\Team;
 use App\Models\User;
 use App\Models\Venue;
+use App\Support\PendingMails;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Str;
@@ -100,5 +101,13 @@ function sendPendingMails(TestCase $test): void
 {
     Mail::assertNothingSent();
 
-    $test->post(route('pending-mails.send'))->assertRedirect();
+    $test->post(route('pending-mails.send'), allPendingMailsSelected())->assertRedirect();
+}
+
+/** Dati del form del modale quando tutte le email proposte restano selezionate. */
+function allPendingMailsSelected(): array
+{
+    $ids = array_column(PendingMails::all(), 'id');
+
+    return ['offered' => $ids, 'selected' => $ids];
 }

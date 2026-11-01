@@ -182,18 +182,37 @@
     @auth
         @php $pendingMails = \App\Support\PendingMails::all(); @endphp
         @if ($pendingMails)
-            <div class="fixed inset-0 z-40 flex items-center justify-center bg-black/40 p-4" role="dialog" aria-modal="true" aria-labelledby="pending-mails-title">
+            <div class="fixed inset-0 z-40 flex items-center justify-center bg-black/40 p-4" role="dialog" aria-modal="true" aria-labelledby="pending-mails-title"
+                 x-data="{ selected: @js(array_column($pendingMails, 'id')) }">
                 <div class="bg-white rounded-xl shadow-xl max-w-lg w-full p-6">
                     <h2 id="pending-mails-title" class="text-lg font-semibold text-gray-900">
                         {{ count($pendingMails) === 1 ? 'Inviare questa email?' : 'Inviare queste '.count($pendingMails).' email?' }}
                     </h2>
-                    <p class="text-sm text-gray-500 mt-1">Le modifiche sono già state salvate. Scegli se avvisare gli arbitri via email.</p>
+                    <p class="text-sm text-gray-500 mt-1">
+                        Le modifiche sono già state salvate.
+                        {{ count($pendingMails) === 1 ? 'Scegli se avvisare l\'arbitro via email.' : 'Scegli quali arbitri avvisare via email: le email non selezionate non verranno inviate.' }}
+                    </p>
 
                     <ul class="mt-4 max-h-72 overflow-y-auto divide-y divide-gray-100 border border-gray-100 rounded-lg">
                         @foreach ($pendingMails as $mail)
-                            <li class="px-3 py-2">
-                                <div class="text-sm font-medium text-gray-900">{{ $mail['subject'] }}</div>
-                                <div class="text-xs text-gray-500">a {{ $mail['to'] }}</div>
+                            <li>
+                                <input type="hidden" name="offered[]" value="{{ $mail['id'] }}" form="pending-mails-send">
+                                @if (count($pendingMails) === 1)
+                                    <input type="hidden" name="selected[]" value="{{ $mail['id'] }}" form="pending-mails-send">
+                                    <div class="px-3 py-2">
+                                        <div class="text-sm font-medium text-gray-900">{{ $mail['subject'] }}</div>
+                                        <div class="text-xs text-gray-500">a {{ $mail['to'] }}</div>
+                                    </div>
+                                @else
+                                    <label class="flex items-start gap-3 px-3 py-2 cursor-pointer hover:bg-gray-50">
+                                        <input type="checkbox" name="selected[]" value="{{ $mail['id'] }}" form="pending-mails-send" x-model="selected"
+                                               class="mt-0.5 rounded border-gray-300 text-indigo-600 focus:ring-indigo-500">
+                                        <span class="min-w-0">
+                                            <span class="block text-sm font-medium text-gray-900">{{ $mail['subject'] }}</span>
+                                            <span class="block text-xs text-gray-500">a {{ $mail['to'] }}</span>
+                                        </span>
+                                    </label>
+                                @endif
                             </li>
                         @endforeach
                     </ul>
@@ -206,10 +225,12 @@
                                 Non inviare
                             </button>
                         </form>
-                        <form action="{{ route('pending-mails.send') }}" method="POST">
+                        <form id="pending-mails-send" action="{{ route('pending-mails.send') }}" method="POST">
                             @csrf
                             <button type="submit"
-                                    class="px-4 py-2 bg-indigo-600 text-white text-sm font-medium rounded-lg hover:bg-indigo-700 transition">
+                                    :disabled="selected.length === 0"
+                                    x-text="selected.length > 1 ? `Invia ${selected.length} email` : 'Invia email'"
+                                    class="px-4 py-2 bg-indigo-600 text-white text-sm font-medium rounded-lg hover:bg-indigo-700 transition disabled:opacity-50 disabled:cursor-not-allowed">
                                 Invia email
                             </button>
                         </form>

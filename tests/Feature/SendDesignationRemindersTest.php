@@ -115,7 +115,7 @@ test('the reminder cycle starts when the confirmation email is actually sent', f
     // Email ancora in attesa di conferma: nessun sollecito previsto
     expect($designation->fresh()->notified_at)->toBeNull();
 
-    $this->actingAs($designatore)->post(route('pending-mails.send'));
+    $this->actingAs($designatore)->post(route('pending-mails.send'), allPendingMailsSelected());
 
     expect($designation->fresh()->notified_at)->not->toBeNull()
         ->and($designation->fresh()->reminders_sent)->toBe(0);
