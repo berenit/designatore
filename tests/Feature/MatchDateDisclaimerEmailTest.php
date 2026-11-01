@@ -9,7 +9,7 @@ test('emails requesting confirmation warn that date and time are only indicative
 
     (new $mailable($designation))
         ->assertSeeInHtml('sono indicativi')
-        ->assertSeeInHtml('Valgono ufficialmente sempre quelli comunicati dalla Federazione tramite il Comitato Regionale di competenza.');
+        ->assertSeeInHtml('Valgono sempre quelli comunicati nella designazione ufficiale inviata dal Comitato Regionale di competenza.');
 })->with([
     'designation notification' => [DesignationNotificationMail::class],
     'match updated' => [MatchUpdatedMail::class],

@@ -21,7 +21,7 @@ i dettagli del seguente incontro per cui sei stato designato sono stati modifica
 @endif
 </x-mail::table>
 
-**Attenzione:** la data e l'orario qui riportati sono indicativi. Valgono ufficialmente sempre quelli comunicati dalla Federazione tramite il Comitato Regionale di competenza.
+**Attenzione:** la data e l'orario qui riportati sono indicativi. Valgono sempre quelli comunicati nella designazione ufficiale inviata dal Comitato Regionale di competenza.
 
 Ti chiediamo di confermare nuovamente la tua disponibilità con i nuovi dettagli:
 
