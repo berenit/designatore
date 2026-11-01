@@ -7,7 +7,6 @@ use Illuminate\Bus\Queueable;
 use Illuminate\Mail\Mailable;
 use Illuminate\Mail\Mailables\Content;
 use Illuminate\Mail\Mailables\Envelope;
-use Illuminate\Support\Facades\URL;
 
 class DesignationNotificationMail extends Mailable implements RequestsConfirmation
 {
@@ -22,14 +21,8 @@ class DesignationNotificationMail extends Mailable implements RequestsConfirmati
     /** $reminderLabel: prefisso dell'oggetto per i solleciti ("SOLLECITO 1", ..., "ULTIMO SOLLECITO"); null per il primo invio. */
     public function __construct(public Designation $designation, public ?string $reminderLabel = null)
     {
-        $this->acceptUrl = URL::signedRoute('designations.respond', [
-            'designation' => $designation->id,
-            'action' => 'confirm',
-        ]);
-        $this->declineUrl = URL::signedRoute('designations.respond', [
-            'designation' => $designation->id,
-            'action' => 'decline',
-        ]);
+        $this->acceptUrl = $designation->responseUrl('confirm');
+        $this->declineUrl = $designation->responseUrl('decline');
     }
 
     public function confirmationDesignation(): Designation

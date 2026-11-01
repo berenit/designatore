@@ -11,6 +11,7 @@ use App\Http\Controllers\ReportController;
 use App\Http\Controllers\RugbyMatchController;
 use App\Http\Controllers\TeamController;
 use App\Http\Controllers\VenueController;
+use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 
 // Public dashboard — visible to all
@@ -18,7 +19,13 @@ Route::get('/', [DashboardController::class, 'public'])->name('home');
 
 // Referee accept/decline via signed URL — no auth required
 Route::get('/designations/{designation}/respond/{action}', [DesignationResponseController::class, 'respond'])
-    ->name('designations.respond');
+    ->name('designations.respond')
+    ->missing(function (Request $request) {
+        // Designazione eliminata dopo l'invio dell'email: spiega all'arbitro perché il link non vale più
+        abort_unless($request->hasValidSignature(), 403, 'Link non valido o scaduto.');
+
+        return response()->view('designations.respond-invalid', [], 410);
+    });
 
 // Protected area — requires login
 Route::middleware('auth')->group(function () {

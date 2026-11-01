@@ -2,8 +2,12 @@
 
 namespace App\Models;
 
+use App\Mail\DesignationRemovedMail;
+use App\Support\PendingMails;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\URL;
 
 #[Fillable([
     'match_id',
@@ -82,6 +86,40 @@ class Designation extends Model
             ->where('referee_id', $refereeId)
             ->where('status', 'pending')
             ->update(['notified_at' => now(), 'reminders_sent' => 0, 'escalated_at' => null]);
+    }
+
+    /**
+     * Link firmato con cui l'arbitro risponde ('confirm' o 'decline'). Riporta l'arbitro destinatario:
+     * se la designazione passa a un altro arbitro, il link di quello precedente non vale più.
+     */
+    public function responseUrl(string $action): string
+    {
+        return URL::signedRoute('designations.respond', [
+            'designation' => $this->id,
+            'action' => $action,
+            'referee' => $this->referee_id,
+        ]);
+    }
+
+    /**
+     * Elimina la designazione: i link già inviati smettono di valere. Se l'arbitro non l'aveva
+     * già rifiutata, mette in attesa di conferma l'email che lo avvisa della rimozione.
+     */
+    public function removeAndNotifyReferee(): void
+    {
+        $this->load(['match.homeTeam', 'match.awayTeam', 'match.teams', 'match.venue', 'referee']);
+
+        if ($this->status !== 'cancelled') {
+            PendingMails::add($this->referee->email, new DesignationRemovedMail($this));
+
+            Log::info('Email di rimozione designazione in attesa di conferma per l\'arbitro', [
+                'designation_id' => $this->id,
+                'match_id' => $this->match_id,
+                'referee_email' => $this->referee->email,
+            ]);
+        }
+
+        $this->delete();
     }
 
     /** Etichetta italiana dello stato (per le viste). */

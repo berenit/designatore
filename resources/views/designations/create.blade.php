@@ -106,7 +106,7 @@
                     </div>
                 </template>
             </div>
-            <p class="mt-2 text-xs text-gray-400" x-text="isMulti ? 'Nei Concentramenti il Direttore di concentramento è obbligatorio.' : 'L\'Arbitro è sempre obbligatorio. Lascia \'nessuno\' per i ruoli che non vuoi designare ora.'"></p>
+            <p class="mt-2 text-xs text-gray-400" x-text="isMulti ? 'Nei Concentramenti il Direttore di concentramento è obbligatorio.' : 'L\'Arbitro è sempre obbligatorio. Lascia \'nessuno\' per i ruoli che non vuoi designare ora: se il ruolo era già assegnato, la designazione viene rimossa.'"></p>
             @error('referees')<p class="mt-1 text-xs text-red-600">{{ $message }}</p>@enderror
         </div>
 

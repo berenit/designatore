@@ -250,6 +250,14 @@ class DesignationController extends Controller
             ->filter(fn ($refId) => ! empty($refId))
             ->map(fn ($refId) => (int) $refId);
 
+        // Ruoli previsti lasciati esplicitamente su "nessuno": un'eventuale designazione esistente va rimossa.
+        // I ruoli non inviati dal form restano invariati.
+        $clearedRoles = collect($validated['referees'] ?? [])
+            ->except(RugbyMatch::DEFAULT_ROLE)
+            ->only($match->requiredRoles())
+            ->filter(fn ($refId) => empty($refId))
+            ->keys();
+
         // Nei Concentramenti (non nei Tornei) il Direttore di concentramento è sempre obbligatorio
         if ($match->competition_type === 'Concentramento' && ! $otherAssignments->has('Direttore di concentramento')) {
             return Redirect::back()->withInput()->withErrors([
@@ -302,11 +310,17 @@ class DesignationController extends Controller
 
         // Creazione atomica: le email vengono messe in attesa di conferma solo se la transazione va a buon fine
         try {
-            $designations = DB::transaction(function () use ($arbitriIds, $otherAssignments, $match, $validated) {
+            $designations = DB::transaction(function () use ($arbitriIds, $otherAssignments, $clearedRoles, $match, $validated) {
                 // Blocca la riga della gara per serializzare eventuali invii concorrenti dello
                 // stesso form (es. doppio click): senza questo lock, due transazioni potrebbero
                 // superare entrambe il controllo di conflitto qui sotto prima che l'altra committi.
                 RugbyMatch::whereKey($match->id)->lockForUpdate()->first();
+
+                // Prima del controllo qui sotto: chi lascia un ruolo può assumerne un altro nello stesso invio
+                $match->designations()
+                    ->whereIn('role', $clearedRoles->all())
+                    ->get()
+                    ->each->removeAndNotifyReferee();
 
                 // Nessun arbitro può ricoprire due ruoli/posizioni nella stessa gara
                 // (considera anche le designazioni esistenti sugli altri ruoli non toccati da questo invio)
@@ -609,20 +623,7 @@ class DesignationController extends Controller
      */
     public function destroy(Designation $designation)
     {
-        $designation->load(['match.homeTeam', 'match.awayTeam', 'match.teams', 'match.venue', 'referee']);
-
-        // Se l'arbitro ha già rifiutato, è già informato: evita di notificarlo di nuovo.
-        if ($designation->status !== 'cancelled') {
-            PendingMails::add($designation->referee->email, new DesignationRemovedMail($designation));
-
-            Log::info('Email di rimozione designazione in attesa di conferma per l\'arbitro', [
-                'designation_id' => $designation->id,
-                'match_id' => $designation->match_id,
-                'referee_email' => $designation->referee->email,
-            ]);
-        }
-
-        $designation->delete();
+        $designation->removeAndNotifyReferee();
 
         return Redirect::route('designations.index')
             ->with('success', 'Designazione eliminata.');

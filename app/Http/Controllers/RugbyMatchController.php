@@ -350,8 +350,11 @@ class RugbyMatchController extends Controller
 
         $wasCancelled = $rugbyMatch->status === 'cancelled';
         $originalTeamIds = $rugbyMatch->teams->pluck('id')->sort()->values()->all();
+        $previousRoles = $rugbyMatch->requiredRoles();
 
         $rugbyMatch->update($this->matchAttributes($validated));
+
+        $this->removeDesignationsOfDroppedRoles($rugbyMatch, $previousRoles);
 
         if ($rugbyMatch->isMultiTeam()) {
             $newTeamIds = collect($validated['team_ids'] ?? [])->map(fn ($id) => (int) $id)->sort()->values()->all();
@@ -385,6 +388,21 @@ class RugbyMatchController extends Controller
 
         return Redirect::route('rugby-matches.index')
             ->with('success', 'Partita eliminata.');
+    }
+
+    /**
+     * Un ruolo tolto dalla gara non prevede più nessuno: elimina le relative designazioni e avvisa chi
+     * le aveva. Quelle completate restano come storico; si toccano solo i ruoli previsti fino a questa modifica.
+     */
+    private function removeDesignationsOfDroppedRoles(RugbyMatch $rugbyMatch, array $previousRoles): void
+    {
+        $droppedRoles = array_diff($previousRoles, $rugbyMatch->requiredRoles());
+
+        $rugbyMatch->designations()
+            ->whereIn('role', $droppedRoles)
+            ->where('status', '!=', 'completed')
+            ->get()
+            ->each->removeAndNotifyReferee();
     }
 
     /** Prepara l'email (in attesa di conferma) per ogni arbitro con una designazione ancora attiva sulla gara annullata/eliminata. */

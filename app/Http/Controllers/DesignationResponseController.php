@@ -20,6 +20,12 @@ class DesignationResponseController extends Controller
             abort(400);
         }
 
+        // Link di un arbitro poi sostituito. Quelli senza "referee" sono stati inviati prima
+        // che il link riportasse il destinatario: restano validi per non invalidare le email già partite.
+        if ($request->has('referee') && (int) $request->query('referee') !== (int) $designation->referee_id) {
+            return response()->view('designations.respond-invalid', [], 410);
+        }
+
         if (in_array($designation->status, ['confirmed', 'cancelled', 'completed'])) {
             return view('designations.respond', [
                 'designation' => $designation,

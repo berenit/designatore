@@ -17,7 +17,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ### Key behaviours to preserve
 
-**Email notification flow:** `DesignationController::store()` fires `DesignationNotificationMail` immediately after saving. The mailable builds two `URL::signedRoute()` links (confirm/decline) and passes them to the `emails.designation-notification` Markdown template. `DesignationResponseController::respond()` validates the signature and updates `designation.status`.
+**Email notification flow:** `DesignationController::store()` fires `DesignationNotificationMail` immediately after saving. The mailable builds two `URL::signedRoute()` links (confirm/decline) and passes them to the `emails.designation-notification` Markdown template. `DesignationResponseController::respond()` validates the signature and updates `designation.status`. Links are built by `Designation::responseUrl()` and carry the recipient referee: a link stops working once the designation is deleted or reassigned (`designations.respond-invalid` page, HTTP 410). Removing a role from a match, or setting it to "nessuno" in the designation form, deletes its designation via `Designation::removeAndNotifyReferee()`.
 
 **Date filtering in reports:** `ReportController::getDesignations()` uses a `join('matches', ...)` + `whereDate()` (not `whereHas`) because SQLite string comparison of datetime vs date is unreliable with `where()`. Always use `whereDate()` for date-only comparisons against `date_time` columns.
 
