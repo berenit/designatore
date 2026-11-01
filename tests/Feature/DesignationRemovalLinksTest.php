@@ -72,6 +72,39 @@ test('removing a role from a match deletes its designation and warns the referee
     expect(Designation::find($evaluator->id))->toBeNull();
 });
 
+test('adding or removing a role does not ask the other referees to confirm again', function () {
+    $user = User::factory()->create();
+    [$arbitro] = matchWithEvaluator($user);
+    $arbitro->update(['status' => 'confirmed']);
+    // Il form invia la data senza secondi: così non risulta modificata
+    $arbitro->match->update(['date_time' => now()->addWeek()->startOfMinute()]);
+    $match = $arbitro->match->fresh();
+
+    $this->actingAs($user)->put(route('rugby-matches.update', $match), matchPayload($match));
+    $this->actingAs($user)->put(route('rugby-matches.update', $match), matchPayload($match, ['extra_roles' => ['tutor']]));
+
+    sendPendingMails($this);
+
+    expect($arbitro->fresh()->status)->toBe('confirmed');
+    Mail::assertNotSent(MatchUpdatedMail::class);
+});
+
+test('changing the match details together with a role still asks the other referees to confirm again', function () {
+    $user = User::factory()->create();
+    [$arbitro] = matchWithEvaluator($user);
+    $arbitro->update(['status' => 'confirmed']);
+    $match = $arbitro->match;
+
+    $this->actingAs($user)->put(route('rugby-matches.update', $match), matchPayload($match, [
+        'date_time' => $match->date_time->copy()->addDay()->format('Y-m-d\TH:i'),
+    ]));
+
+    sendPendingMails($this);
+
+    expect($arbitro->fresh()->status)->toBe('pending');
+    Mail::assertSent(MatchUpdatedMail::class, fn ($mail) => $mail->hasTo($arbitro->referee->email));
+});
+
 test('a role still required keeps its designation when the match is edited', function () {
     $user = User::factory()->create();
     [$arbitro, $evaluator] = matchWithEvaluator($user);

@@ -367,7 +367,7 @@ class RugbyMatchController extends Controller
 
         if (! $wasCancelled && $rugbyMatch->status === 'cancelled') {
             $this->notifyRefereesOfCancellation($rugbyMatch);
-        } elseif ($rugbyMatch->status !== 'cancelled' && ($rugbyMatch->wasChanged() || $teamsChanged)) {
+        } elseif ($rugbyMatch->status !== 'cancelled' && ($this->matchDetailsChanged($rugbyMatch) || $teamsChanged)) {
             // Qualcosa è cambiato davvero (data, campo, squadre, ...): le designazioni attive
             // vanno riconfermate dagli arbitri con i nuovi dettagli.
             $this->notifyRefereesOfUpdate($rugbyMatch);
@@ -388,6 +388,12 @@ class RugbyMatchController extends Controller
 
         return Redirect::route('rugby-matches.index')
             ->with('success', 'Partita eliminata.');
+    }
+
+    /** Vero se l'ultimo salvataggio ha cambiato i dettagli della gara: aggiungere o togliere un ruolo non riguarda gli altri arbitri. */
+    private function matchDetailsChanged(RugbyMatch $rugbyMatch): bool
+    {
+        return collect($rugbyMatch->getChanges())->except(['required_roles', 'updated_at'])->isNotEmpty();
     }
 
     /**
