@@ -322,14 +322,48 @@ describe('dashboard', function () {
             ->get(route('home'))
             ->assertOk()
             ->assertDontSee('Vera Valutatrice')
-            ->assertDontSee('Valutatore')
+            ->assertSee('Valutatore della prestazione designato')
             ->assertSee('Da designare');
 
         $this->actingAs($designatore->fresh())
             ->get(route('home'))
             ->assertOk()
             ->assertSee('Vera Valutatrice')
-            ->assertSee('Valutatore');
+            ->assertSee('Valutatore')
+            ->assertDontSee('Valutatore della prestazione designato');
+    });
+
+    test('referees see no evaluator notice when none is designated or the evaluator declined', function () {
+        $designatore = User::factory()->create();
+        $declined = createDesignation($designatore, ['status' => 'cancelled', 'role' => 'Valutatore']);
+        $declined->match->update(['date_time' => Carbon::parse('2026-10-11 15:00:00')]);
+        $arbitro = createDesignation($designatore);
+        $arbitro->match->update(['date_time' => Carbon::parse('2026-10-11 16:00:00')]);
+
+        $this->actingAs(activeRefereeUser())
+            ->get(route('home'))
+            ->assertOk()
+            ->assertDontSee('Valutatore della prestazione designato');
+    });
+
+    test('the text report leaves out the evaluator and still lists the other roles', function () {
+        $designatore = User::factory()->create();
+        $arbitro = createDesignation($designatore, ['status' => 'confirmed']);
+        $valutatore = Designation::create([
+            'match_id' => $arbitro->match_id,
+            'referee_id' => createReferee(['name' => 'Vera Valutatrice'])->id,
+            'role' => 'Valutatore',
+            'assignment_date' => now(),
+            'status' => 'confirmed',
+        ]);
+
+        $this->actingAs($designatore)
+            ->get(route('reports.text', ['matches' => [$valutatore->match_id]]))
+            ->assertOk()
+            ->assertSee('Mario Rossi')
+            ->assertSee('Accettate: 1')
+            ->assertDontSee('Vera Valutatrice')
+            ->assertDontSee('Valutatore');
     });
 
     test('the telegram message leaves out the evaluator', function () {

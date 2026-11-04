@@ -36,6 +36,12 @@ class DashboardController extends Controller
             'designations' => fn ($query) => $query->when($hideEvaluators, fn ($q) => $q->where('role', '!=', Designation::EVALUATOR_ROLE)),
             'designations.referee',
         ])
+            // Agli arbitri si segnala solo che il Valutatore c'è, senza dire chi è
+            ->when($request->user()?->isReferee(), fn ($query) => $query->withExists([
+                'designations as has_evaluator' => fn ($q) => $q
+                    ->where('role', Designation::EVALUATOR_ROLE)
+                    ->where('status', '!=', 'cancelled'),
+            ]))
             // Scorrendo le settimane passate servono anche le partite già concluse
             ->whereIn('status', $isAuthenticated ? ['scheduled', 'completed'] : ['scheduled'])
             ->whereDate('date_time', '>=', $weekStart->toDateString())

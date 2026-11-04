@@ -122,8 +122,7 @@ class ReportController extends Controller
 
     public function text(Request $request)
     {
-        $designations = $this->getDesignations($request);
-        $content = $this->buildText($designations, ...$this->headerDates($request));
+        $content = $this->shareableText($request);
 
         return response($content, 200, [
             'Content-Type' => 'text/plain; charset=UTF-8',
@@ -143,9 +142,7 @@ class ReportController extends Controller
             ], 422);
         }
 
-        // Il Valutatore è riservato alla gestione: non va inviato al gruppo
-        $designations = $this->getDesignations($request)->reject(fn ($d) => $d->role === self::EVALUATOR_ROLE);
-        $text = $this->buildText($designations, ...$this->headerDates($request));
+        $text = $this->shareableText($request);
 
         $endpoint = "https://api.telegram.org/bot{$botToken}/sendMessage";
 
@@ -175,6 +172,14 @@ class ReportController extends Controller
         return response()->json([
             'message' => 'Designazioni inviate al gruppo Telegram.',
         ]);
+    }
+
+    /** Testo da condividere su Telegram e WhatsApp: il Valutatore è riservato alla gestione e non vi compare. */
+    private function shareableText(Request $request): string
+    {
+        $designations = $this->getDesignations($request)->reject(fn ($d) => $d->role === self::EVALUATOR_ROLE);
+
+        return $this->buildText($designations, ...$this->headerDates($request));
     }
 
     private function buildMarkdown($designations, ?string $dateFrom = null, ?string $dateTo = null): string
@@ -252,11 +257,7 @@ class ReportController extends Controller
             $lines[] = "   📍 {$match->venue_label}";
             foreach ($group as $d) {
                 $emoji = $statusEmoji[$d->status] ?? '•';
-                $line = "{$d->referee->name} — {$d->role}";
-                if ($d->role === self::EVALUATOR_ROLE) {
-                    $line = "🔎 *{$line}*";
-                }
-                $lines[] = "   {$emoji} {$line}";
+                $lines[] = "   {$emoji} {$d->referee->name} — {$d->role}";
             }
         }
 
