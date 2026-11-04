@@ -333,6 +333,53 @@ describe('dashboard', function () {
             ->assertDontSee('Valutatore della prestazione designato');
     });
 
+    test('from the day after the match referees see the evaluator name instead of the notice', function () {
+        $designation = createDesignation(User::factory()->create(), ['status' => 'confirmed', 'role' => 'Valutatore']);
+        $designation->match->update(['date_time' => Carbon::parse('2026-10-11 15:00:00')]);
+        $designation->referee->update(['name' => 'Vera Valutatrice']);
+        $this->actingAs(activeRefereeUser());
+
+        // Il giorno della partita, anche a gara finita, resta la scritta
+        $this->travelTo(Carbon::parse('2026-10-11 23:59:00'));
+        $this->get(route('home'))
+            ->assertSee('Valutatore della prestazione designato')
+            ->assertDontSee('Vera Valutatrice');
+
+        $this->travelTo(Carbon::parse('2026-10-12 00:00:00'));
+        $this->get(route('home', ['week' => '2026-10-05']))
+            ->assertSee('Vera Valutatrice')
+            ->assertSee('Valutatore')
+            ->assertDontSee('Valutatore della prestazione designato');
+    });
+
+    test('after the match the evaluator stays hidden from guests', function () {
+        // Venerdì: i visitatori vedono i nomi della settimana, compresa la partita di giovedì
+        $designation = createDesignation(User::factory()->create(), ['status' => 'confirmed', 'role' => 'Valutatore']);
+        $designation->match->update(['date_time' => Carbon::parse('2026-10-08 15:00:00')]);
+        $designation->referee->update(['name' => 'Vera Valutatrice']);
+
+        $this->travelTo(Carbon::parse('2026-10-09 10:00:00'));
+
+        $this->get(route('home'))
+            ->assertOk()
+            ->assertDontSee('Vera Valutatrice')
+            ->assertDontSee('Valutatore');
+    });
+
+    test('after the match referees do not see an evaluator who declined', function () {
+        $designation = createDesignation(User::factory()->create(), ['status' => 'cancelled', 'role' => 'Valutatore']);
+        $designation->match->update(['date_time' => Carbon::parse('2026-10-08 15:00:00')]);
+        $designation->referee->update(['name' => 'Vera Valutatrice']);
+
+        $this->travelTo(Carbon::parse('2026-10-09 10:00:00'));
+
+        $this->actingAs(activeRefereeUser())
+            ->get(route('home'))
+            ->assertOk()
+            ->assertDontSee('Vera Valutatrice')
+            ->assertDontSee('Valutatore');
+    });
+
     test('referees see no evaluator notice when none is designated or the evaluator declined', function () {
         $designatore = User::factory()->create();
         $declined = createDesignation($designatore, ['status' => 'cancelled', 'role' => 'Valutatore']);

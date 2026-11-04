@@ -28,12 +28,9 @@ class DashboardController extends Controller
         $showRefereeNames = $isAuthenticated
             || now()->greaterThanOrEqualTo($weekStart->copy()->next(Carbon::THURSDAY));
 
-        // Il Valutatore è riservato alla gestione: filtrato dalla query, non compare neppure nel conteggio arbitri
-        $hideEvaluators = ! $isAuthenticated || $request->user()->isReferee();
-
         $upcomingMatches = RugbyMatch::with([
             'homeTeam', 'awayTeam', 'teams', 'venue',
-            'designations' => fn ($query) => $query->when($hideEvaluators, fn ($q) => $q->where('role', '!=', Designation::EVALUATOR_ROLE)),
+            'designations' => fn ($query) => $this->onlyVisibleEvaluators($query, $request),
             'designations.referee',
         ])
             // Agli arbitri si segnala solo che il Valutatore c'è, senza dire chi è
@@ -53,6 +50,26 @@ class DashboardController extends Controller
         $categories = Team::orderedCategories();
 
         return view('dashboard.public', compact('upcomingMatches', 'categories', 'category', 'weekStart', 'weekEnd', 'showRefereeNames', 'isCurrentWeek', 'isAuthenticated'));
+    }
+
+    /**
+     * Il Valutatore è riservato alla gestione: filtrato dalla query, non compare neppure nel conteggio arbitri.
+     * Gli arbitri lo vedono dal giorno dopo la partita, salvo che abbia rifiutato; i visitatori mai.
+     */
+    private function onlyVisibleEvaluators($query, Request $request)
+    {
+        $user = $request->user();
+
+        if ($user && ! $user->isReferee()) {
+            return $query;
+        }
+
+        return $query->where(function ($visible) use ($user) {
+            $visible->where('role', '!=', Designation::EVALUATOR_ROLE)
+                ->when($user, fn ($q) => $q->orWhere(fn ($revealed) => $revealed
+                    ->where('status', '!=', 'cancelled')
+                    ->whereHas('match', fn ($match) => $match->whereDate('date_time', '<', today()->toDateString()))));
+        });
     }
 
     /** Lunedì della settimana richiesta con ?week=AAAA-MM-GG; se assente o non valida, la settimana corrente. */

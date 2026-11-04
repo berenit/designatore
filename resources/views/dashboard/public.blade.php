@@ -113,7 +113,8 @@
                             </span>
                         </div>
                     @endforeach
-                    @if ($match->has_evaluator)
+                    {{-- Dal giorno dopo la partita, al posto della scritta, l'arbitro vede il nome del Valutatore --}}
+                    @if ($match->has_evaluator && $match->date_time->gte(today()))
                         <p class="pt-1 text-amber-700 font-medium">Valutatore della prestazione designato</p>
                     @endif
                 </div>
