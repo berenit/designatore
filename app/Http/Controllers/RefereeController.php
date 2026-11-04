@@ -13,6 +13,7 @@ class RefereeController extends Controller
         'license_number.required' => 'Il numero di tessera è obbligatorio.',
         'license_number.regex' => 'Il numero di tessera deve contenere da 1 a 10 cifre.',
         'license_number.unique' => 'Questo numero di tessera è già assegnato a un altro arbitro.',
+        'email.unique' => 'Questa email è già usata da un altro arbitro o account.',
     ];
 
     /**
@@ -105,9 +106,14 @@ class RefereeController extends Controller
      */
     public function update(Request $request, Referee $referee)
     {
+        // L'email è anche il nome utente: non può coincidere con quella di un altro account.
+        // Senza account, invece, un utente con la stessa email viene collegato alla scheda.
+        $account = $referee->user;
+        $accountEmailRule = $account ? [Rule::unique('users', 'email')->ignore($account->id)] : [];
+
         $validated = $request->validate([
             'name' => 'required|string|max:255',
-            'email' => ['required', 'email', 'max:255', Rule::unique('referees')->ignore($referee->id)],
+            'email' => ['required', 'email', 'max:255', Rule::unique('referees')->ignore($referee->id), ...$accountEmailRule],
             'license_number' => ['required', 'regex:/^\d{1,10}$/', Rule::unique('referees')->ignore($referee->id)],
             'phone' => 'nullable|string|max:20',
             'city' => 'nullable|string|max:100',

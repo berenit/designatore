@@ -143,7 +143,8 @@ class ReportController extends Controller
             ], 422);
         }
 
-        $designations = $this->getDesignations($request);
+        // Il Valutatore è riservato alla gestione: non va inviato al gruppo
+        $designations = $this->getDesignations($request)->reject(fn ($d) => $d->role === self::EVALUATOR_ROLE);
         $text = $this->buildText($designations, ...$this->headerDates($request));
 
         $endpoint = "https://api.telegram.org/bot{$botToken}/sendMessage";

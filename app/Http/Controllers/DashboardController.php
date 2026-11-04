@@ -16,17 +16,28 @@ class DashboardController extends Controller
     public function public(Request $request)
     {
         $category = $request->query('category');
+        $isAuthenticated = $request->user() !== null;
 
-        // Solo le partite della settimana corrente (lunedì–domenica)
-        $weekStart = now()->startOfWeek(Carbon::MONDAY)->startOfDay();
+        // Settimana (lunedì–domenica): chi ha fatto il login può scorrerle, i visitatori vedono solo la corrente
+        $currentWeekStart = now()->startOfWeek(Carbon::MONDAY)->startOfDay();
+        $weekStart = $isAuthenticated ? $this->requestedWeekStart($request) : $currentWeekStart->copy();
         $weekEnd = $weekStart->copy()->endOfWeek(Carbon::SUNDAY)->endOfDay();
+        $isCurrentWeek = $weekStart->equalTo($currentWeekStart);
 
         // Ai visitatori non autenticati il nome dell'arbitro è mostrato solo dal giovedì in poi
-        $showRefereeNames = $request->user() !== null
+        $showRefereeNames = $isAuthenticated
             || now()->greaterThanOrEqualTo($weekStart->copy()->next(Carbon::THURSDAY));
 
-        $upcomingMatches = RugbyMatch::with(['homeTeam', 'awayTeam', 'teams', 'venue', 'designations.referee'])
-            ->where('status', 'scheduled')
+        // Il Valutatore è riservato alla gestione: filtrato dalla query, non compare neppure nel conteggio arbitri
+        $hideEvaluators = ! $isAuthenticated || $request->user()->isReferee();
+
+        $upcomingMatches = RugbyMatch::with([
+            'homeTeam', 'awayTeam', 'teams', 'venue',
+            'designations' => fn ($query) => $query->when($hideEvaluators, fn ($q) => $q->where('role', '!=', Designation::EVALUATOR_ROLE)),
+            'designations.referee',
+        ])
+            // Scorrendo le settimane passate servono anche le partite già concluse
+            ->whereIn('status', $isAuthenticated ? ['scheduled', 'completed'] : ['scheduled'])
             ->whereDate('date_time', '>=', $weekStart->toDateString())
             ->whereDate('date_time', '<=', $weekEnd->toDateString())
             ->when($category, fn ($query, $category) => $query->inCategory($category))
@@ -35,11 +46,30 @@ class DashboardController extends Controller
 
         $categories = Team::orderedCategories();
 
-        return view('dashboard.public', compact('upcomingMatches', 'categories', 'category', 'weekStart', 'weekEnd', 'showRefereeNames'));
+        return view('dashboard.public', compact('upcomingMatches', 'categories', 'category', 'weekStart', 'weekEnd', 'showRefereeNames', 'isCurrentWeek', 'isAuthenticated'));
+    }
+
+    /** Lunedì della settimana richiesta con ?week=AAAA-MM-GG; se assente o non valida, la settimana corrente. */
+    private function requestedWeekStart(Request $request): Carbon
+    {
+        $week = $request->query('week');
+
+        $date = is_string($week) && preg_match('/^\d{4}-\d{2}-\d{2}$/', $week)
+            ? Carbon::createFromFormat('!Y-m-d', $week)
+            : null;
+
+        // createFromFormat accetta date come il 31 febbraio spostandole al mese dopo: vanno scartate
+        $isValid = $date && $date->format('Y-m-d') === $week;
+
+        return ($isValid ? $date : now())->startOfWeek(Carbon::MONDAY)->startOfDay();
     }
 
     public function private(Request $request)
     {
+        if ($request->user()->isReferee()) {
+            return redirect()->route('home');
+        }
+
         [$availableReferees, $partiallyAvailableReferees] = $this->weekRefereeAvailability();
         $unavailableReferees = $this->weekUnavailableReferees();
 

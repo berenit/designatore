@@ -28,6 +28,13 @@ class AuthenticatedSessionController extends Controller
 
         $request->session()->regenerate();
 
+        // Un arbitro non deve tornare a una pagina di gestione aperta prima del login
+        if ($request->user()->isReferee()) {
+            $request->session()->forget('url.intended');
+
+            return redirect()->route('home');
+        }
+
         return redirect()->intended(route('dashboard', absolute: false));
     }
 

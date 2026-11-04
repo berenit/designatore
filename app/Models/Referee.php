@@ -5,6 +5,7 @@ namespace App\Models;
 use Carbon\Carbon;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Support\Str;
 
 #[Fillable([
     'name',
@@ -38,6 +39,65 @@ class Referee extends Model
     protected $casts = [
         'is_evaluator' => 'boolean',
     ];
+
+    protected static function booted(): void
+    {
+        static::saved(fn (self $referee) => $referee->syncAccount());
+
+        // Un designatore che è anche arbitro conserva l'account: si perde solo il collegamento alla scheda.
+        static::deleting(fn (self $referee) => $referee->user()->where('role', User::ROLE_REFEREE)->delete());
+    }
+
+    /**
+     * Allinea l'account di accesso alla scheda: l'email della scheda è anche il nome utente.
+     * L'account si crea alla prima scheda con tessera, che fa da prima password.
+     */
+    public function syncAccount(): void
+    {
+        $user = $this->user()->first();
+
+        if (! $user) {
+            $existing = User::whereNull('referee_id')->whereRaw('LOWER(email) = ?', [Str::lower($this->email)])->first();
+
+            if ($existing) {
+                $existing->update(['referee_id' => $this->id]);
+            } elseif (filled($this->license_number)) {
+                User::create([
+                    'name' => $this->name,
+                    'email' => $this->email,
+                    'role' => User::ROLE_REFEREE,
+                    'referee_id' => $this->id,
+                    'password' => $this->license_number,
+                    'must_change_password' => true,
+                ]);
+            }
+
+            return;
+        }
+
+        $user->email = $this->email;
+
+        if ($user->isDirty('email')) {
+            $user->pending_email = null;
+        }
+
+        if ($user->isReferee()) {
+            $user->name = $this->name;
+        }
+
+        // Tessera corretta prima del primo accesso: la prima password resta il numero di tessera
+        if ($user->must_change_password && $this->wasChanged('license_number')) {
+            $user->password = $this->license_number;
+        }
+
+        $user->save();
+    }
+
+    // Account di accesso dell'arbitro
+    public function user()
+    {
+        return $this->hasOne(User::class);
+    }
 
     /**
      * Etichette italiane per lo stato di disponibilità.

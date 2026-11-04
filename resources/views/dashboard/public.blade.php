@@ -9,16 +9,31 @@
             – <span class="text-red-600 font-semibold uppercase">Designazioni visibili dal giovedì</span>
         @endif
     </p>
+
+    @if ($isAuthenticated)
+        @php
+            $weekParams = fn ($date) => array_filter(['week' => $date?->toDateString(), 'category' => $category]);
+            $weekLinkClass = 'px-3 py-1.5 bg-white border border-gray-300 text-gray-700 text-sm font-medium rounded-lg hover:bg-gray-50 transition';
+        @endphp
+        <nav class="mt-4 flex flex-wrap items-center gap-2" aria-label="Scorri le settimane">
+            <a href="{{ route('home', $weekParams($weekStart->copy()->subWeek())) }}" class="{{ $weekLinkClass }}">← Settimana precedente</a>
+            @unless ($isCurrentWeek)
+                <a href="{{ route('home', $weekParams(null)) }}" class="{{ $weekLinkClass }}">Settimana corrente</a>
+            @endunless
+            <a href="{{ route('home', $weekParams($weekStart->copy()->addWeek())) }}" class="{{ $weekLinkClass }}">Settimana successiva →</a>
+        </nav>
+    @endif
 </div>
 
 @if ($categories->isNotEmpty())
+    @php $selectedWeek = $isCurrentWeek ? [] : ['week' => $weekStart->toDateString()]; @endphp
     <div class="mb-6 flex flex-wrap gap-2">
-        <a href="{{ route('home') }}"
+        <a href="{{ route('home', $selectedWeek) }}"
            class="px-3 py-1 rounded-full text-sm font-medium border {{ $category ? 'bg-white text-gray-600 border-gray-200 hover:bg-gray-50' : 'bg-indigo-600 text-white border-indigo-600' }}">
             Tutte
         </a>
         @foreach ($categories as $cat)
-            <a href="{{ route('home', ['category' => $cat]) }}"
+            <a href="{{ route('home', [...$selectedWeek, 'category' => $cat]) }}"
                class="px-3 py-1 rounded-full text-sm font-medium border {{ $category === $cat ? 'bg-indigo-600 text-white border-indigo-600' : 'bg-white text-gray-600 border-gray-200 hover:bg-gray-50' }}">
                 {{ $cat }}
             </a>
@@ -29,10 +44,10 @@
 @if ($upcomingMatches->isEmpty())
     <div class="bg-white rounded-xl border border-gray-200 shadow-sm py-16 text-center">
         <div class="text-5xl mb-4">📅</div>
-        <h3 class="text-lg font-semibold text-gray-700">Nessuna partita in programma questa settimana</h3>
+        <h3 class="text-lg font-semibold text-gray-700">Nessuna partita in programma {{ $isCurrentWeek ? 'questa settimana' : 'in questa settimana' }}</h3>
         <p class="text-gray-400 text-sm mt-1">
             @if ($category)
-                Nessuna partita in programma questa settimana per la categoria «{{ $category }}».
+                Nessuna partita in programma per la categoria «{{ $category }}».
             @else
                 Le partite della settimana appariranno qui.
             @endif
@@ -85,12 +100,17 @@
                             <svg class="w-4 h-4 text-indigo-400 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"/>
                             </svg>
-                            @if ($designation->status === 'confirmed')
+                            @if ($designation->status === 'confirmed' || $isAuthenticated)
                                 <span class="text-indigo-700 font-medium">{{ $designation->referee->name }}</span>
                             @else
                                 <span class="text-gray-400 italic">In attesa di conferma</span>
                             @endif
-                            <span class="text-xs text-gray-400">· {{ $designation->role }}</span>
+                            <span class="text-xs text-gray-400">
+                                · {{ $designation->role }}
+                                @if ($isAuthenticated)
+                                    · {{ $designation->status_label }}
+                                @endif
+                            </span>
                         </div>
                     @endforeach
                 </div>
@@ -99,11 +119,13 @@
     </div>
 @endif
 
-<div class="mt-12 text-center">
-    <p class="text-sm text-gray-400">
-        Sei il designatore?
-        <a href="{{ route('login') }}" class="text-indigo-600 hover:text-indigo-800 font-medium">Accedi</a>
-        per gestire arbitri, squadre e designazioni.
-    </p>
-</div>
+@guest
+    <div class="mt-12 text-center">
+        <p class="text-sm text-gray-400">
+            Sei un arbitro o un designatore?
+            <a href="{{ route('login') }}" class="text-indigo-600 hover:text-indigo-800 font-medium">Accedi</a>
+            alla tua area riservata.
+        </p>
+    </div>
+@endguest
 @endsection

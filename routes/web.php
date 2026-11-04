@@ -3,6 +3,7 @@
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\DesignationController;
 use App\Http\Controllers\DesignationResponseController;
+use App\Http\Controllers\MyUnavailabilityController;
 use App\Http\Controllers\PendingMailController;
 use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\RefereeController;
@@ -27,34 +28,48 @@ Route::get('/designations/{designation}/respond/{action}', [DesignationResponseC
         return response()->view('designations.respond-invalid', [], 410);
     });
 
+// Conferma della nuova email via link firmato — il link può essere aperto anche senza login
+Route::get('/profile/email/confirm/{user}', [ProfileController::class, 'confirmEmail'])
+    ->middleware('signed')
+    ->name('profile.email.confirm');
+
 // Protected area — requires login
 Route::middleware('auth')->group(function () {
+    // Gli arbitri vengono rimandati alla Home
     Route::get('/dashboard', [DashboardController::class, 'private'])->name('dashboard');
-
-    Route::resource('referees', RefereeController::class);
-    Route::post('/referees/{referee}/unavailabilities', [RefereeUnavailabilityController::class, 'store'])
-        ->name('referees.unavailabilities.store');
-    Route::delete('/referees/{referee}/unavailabilities/{unavailability}', [RefereeUnavailabilityController::class, 'destroy'])
-        ->name('referees.unavailabilities.destroy');
-    Route::resource('teams', TeamController::class);
-    Route::resource('venues', VenueController::class);
-    Route::resource('rugby-matches', RugbyMatchController::class);
-    Route::resource('designations', DesignationController::class);
-
-    Route::post('/pending-mails/send', [PendingMailController::class, 'send'])->name('pending-mails.send');
-    Route::post('/pending-mails/discard', [PendingMailController::class, 'discard'])->name('pending-mails.discard');
-
-    Route::prefix('reports')->name('reports.')->group(function () {
-        Route::get('/', [ReportController::class, 'index'])->name('index');
-        Route::get('/pdf', [ReportController::class, 'pdf'])->name('pdf');
-        Route::get('/markdown', [ReportController::class, 'markdown'])->name('markdown');
-        Route::get('/text', [ReportController::class, 'text'])->name('text');
-        Route::post('/telegram', [ReportController::class, 'telegram'])->name('telegram');
-    });
 
     Route::get('/profile', [ProfileController::class, 'edit'])->name('profile.edit');
     Route::patch('/profile', [ProfileController::class, 'update'])->name('profile.update');
     Route::delete('/profile', [ProfileController::class, 'destroy'])->name('profile.destroy');
+
+    Route::post('/profile/unavailabilities', [MyUnavailabilityController::class, 'store'])
+        ->name('profile.unavailabilities.store');
+    Route::delete('/profile/unavailabilities/{unavailability}', [MyUnavailabilityController::class, 'destroy'])
+        ->name('profile.unavailabilities.destroy');
+
+    // Gestione — solo designatori e delegati
+    Route::middleware('staff')->group(function () {
+        Route::resource('referees', RefereeController::class);
+        Route::post('/referees/{referee}/unavailabilities', [RefereeUnavailabilityController::class, 'store'])
+            ->name('referees.unavailabilities.store');
+        Route::delete('/referees/{referee}/unavailabilities/{unavailability}', [RefereeUnavailabilityController::class, 'destroy'])
+            ->name('referees.unavailabilities.destroy');
+        Route::resource('teams', TeamController::class);
+        Route::resource('venues', VenueController::class);
+        Route::resource('rugby-matches', RugbyMatchController::class);
+        Route::resource('designations', DesignationController::class);
+
+        Route::post('/pending-mails/send', [PendingMailController::class, 'send'])->name('pending-mails.send');
+        Route::post('/pending-mails/discard', [PendingMailController::class, 'discard'])->name('pending-mails.discard');
+
+        Route::prefix('reports')->name('reports.')->group(function () {
+            Route::get('/', [ReportController::class, 'index'])->name('index');
+            Route::get('/pdf', [ReportController::class, 'pdf'])->name('pdf');
+            Route::get('/markdown', [ReportController::class, 'markdown'])->name('markdown');
+            Route::get('/text', [ReportController::class, 'text'])->name('text');
+            Route::post('/telegram', [ReportController::class, 'telegram'])->name('telegram');
+        });
+    });
 });
 
 require __DIR__.'/auth.php';

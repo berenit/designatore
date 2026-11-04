@@ -1,5 +1,7 @@
 <?php
 
+use App\Http\Middleware\EnsurePasswordChanged;
+use App\Http\Middleware\EnsureStaff;
 use Illuminate\Foundation\Application;
 use Illuminate\Foundation\Configuration\Exceptions;
 use Illuminate\Foundation\Configuration\Middleware;
@@ -20,6 +22,9 @@ return Application::configure(basePath: dirname(__DIR__))
         // mobile). "*" è sicuro qui perché non c'è modo di raggiungere
         // l'app se non passando dai proxy della rete Docker interna.
         $middleware->trustProxies(at: '*');
+
+        $middleware->web(append: [EnsurePasswordChanged::class]);
+        $middleware->alias(['staff' => EnsureStaff::class]);
     })
     ->withExceptions(function (Exceptions $exceptions): void {
         $exceptions->shouldRenderJsonWhen(

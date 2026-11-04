@@ -17,16 +17,37 @@
         @csrf
         @method('patch')
 
-        <div>
-            <x-input-label for="name" value="Nome" />
-            <x-text-input id="name" name="name" type="text" class="mt-1 block w-full" :value="old('name', $user->name)" required autofocus autocomplete="name" />
-            <x-input-error class="mt-2" :messages="$errors->get('name')" />
-        </div>
+        @if ($user->isReferee())
+            <div>
+                <p class="text-sm font-medium text-gray-700">Nome</p>
+                <p class="mt-1 text-sm text-gray-900">{{ $user->name }}</p>
+                @if ($referee->license_number)
+                    <p class="mt-1 text-xs text-gray-500">Tessera {{ $referee->license_number }} · {{ $referee->license_level }}</p>
+                @endif
+                <p class="mt-1 text-xs text-gray-500">Per correggere questi dati rivolgiti al designatore.</p>
+            </div>
+        @else
+            <div>
+                <x-input-label for="name" value="Nome" />
+                <x-text-input id="name" name="name" type="text" class="mt-1 block w-full" :value="old('name', $user->name)" required autofocus autocomplete="name" />
+                <x-input-error class="mt-2" :messages="$errors->get('name')" />
+            </div>
+        @endif
 
         <div>
             <x-input-label for="email" value="Email" />
             <x-text-input id="email" name="email" type="email" class="mt-1 block w-full" :value="old('email', $user->email)" required autocomplete="username" />
             <x-input-error class="mt-2" :messages="$errors->get('email')" />
+
+            @if ($referee)
+                <p class="mt-1 text-xs text-gray-500">È il tuo nome utente per accedere e l'indirizzo a cui ricevi le designazioni.</p>
+            @endif
+
+            @if ($user->pending_email)
+                <p class="mt-2 text-sm text-amber-700">
+                    In attesa di conferma: {{ $user->pending_email }}. Apri il link che ti abbiamo inviato a quell'indirizzo.
+                </p>
+            @endif
 
             @if ($user instanceof \Illuminate\Contracts\Auth\MustVerifyEmail && ! $user->hasVerifiedEmail())
                 <div>
@@ -46,6 +67,20 @@
                 </div>
             @endif
         </div>
+
+        @if ($referee)
+            <div>
+                <x-input-label for="phone" value="Telefono" />
+                <x-text-input id="phone" name="phone" type="tel" class="mt-1 block w-full" :value="old('phone', $referee->phone)" maxlength="20" autocomplete="tel" />
+                <x-input-error class="mt-2" :messages="$errors->get('phone')" />
+            </div>
+
+            <div>
+                <x-input-label for="city" value="Città di domicilio" />
+                <x-text-input id="city" name="city" type="text" class="mt-1 block w-full" :value="old('city', $referee->city)" maxlength="100" />
+                <x-input-error class="mt-2" :messages="$errors->get('city')" />
+            </div>
+        @endif
 
         <div class="flex items-center gap-4">
             <x-primary-button>Salva</x-primary-button>

@@ -6,7 +6,7 @@
         <div class="text-center mb-8">
             <span class="text-5xl">🏉</span>
             <h1 class="text-2xl font-bold text-gray-900 mt-3">Accedi a Designatore</h1>
-            <p class="text-gray-500 text-sm mt-1">Area riservata a designatori e delegati</p>
+            <p class="text-gray-500 text-sm mt-1">Area riservata ad arbitri, designatori e delegati</p>
         </div>
 
         <div class="bg-white rounded-xl border border-gray-200 shadow-sm p-8">
@@ -40,6 +40,7 @@
                         <input type="checkbox" name="remember" class="rounded border-gray-300 text-indigo-600 shadow-sm focus:ring-indigo-500">
                         Ricordami
                     </label>
+                    <a href="{{ route('password.request') }}" class="text-sm text-indigo-600 hover:text-indigo-800">Password dimenticata?</a>
                 </div>
 
                 <button type="submit"
