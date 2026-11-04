@@ -164,7 +164,7 @@ class DesignationController extends Controller
     }
 
     /**
-     * Assegnazioni [ruolo, referee_id] non ammesse: Fuori Ruolo su un ruolo diverso da Valutatore,
+     * Assegnazioni [ruolo, referee_id] non ammesse: Fuori Ruolo su un ruolo diverso da Tutor e Valutatore,
      * o Valutatore assegnato a chi non è abilitato. Ritorna i messaggi di errore.
      */
     private function ineligibleAssignments(array $assignments): array
@@ -178,7 +178,7 @@ class DesignationController extends Controller
             if ($referee && ! $referee->canBeDesignatedAs($role)) {
                 $errors[] = $role === Designation::EVALUATOR_ROLE
                     ? "{$referee->name} non è abilitato come Valutatore."
-                    : "{$referee->name} è Fuori Ruolo: può essere designato solo come Valutatore.";
+                    : "{$referee->name} è Fuori Ruolo: può essere designato solo come Tutor o Valutatore.";
             }
         }
 

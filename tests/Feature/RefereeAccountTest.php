@@ -598,18 +598,56 @@ describe('unavailabilities', function () {
                 'start_date' => today()->addDay()->toDateString(),
                 'end_date' => today()->addDays(3)->toDateString(),
             ])
-            ->assertRedirect(route('profile.edit'))
+            ->assertRedirect(route('profile.unavailabilities.index'))
             ->assertSessionHas('success');
 
         Mail::assertNothingSent();
 
         $period = $user->referee->unavailabilities()->sole();
 
-        $this->get(route('profile.edit'))->assertSee($period->start_date->format('d/m/Y'));
+        $this->get(route('profile.unavailabilities.index'))->assertSee($period->start_date->format('d/m/Y'));
 
-        $this->delete(route('profile.unavailabilities.destroy', $period->id))->assertRedirect(route('profile.edit'));
+        $this->delete(route('profile.unavailabilities.destroy', $period->id))->assertRedirect(route('profile.unavailabilities.index'));
 
         expect(RefereeUnavailability::find($period->id))->toBeNull();
+    });
+
+    test('the menu entry sits between profile and logout for referees and designatori with a sheet', function () {
+        $designatore = User::factory()->create(['email' => 'designatore@example.com', 'role' => 'designatore']);
+        createReferee(['email' => 'designatore@example.com', 'license_number' => '321']);
+
+        foreach ([activeRefereeUser(), $designatore->fresh()] as $user) {
+            $this->actingAs($user)
+                ->get(route('home'))
+                ->assertOk()
+                ->assertSeeInOrder(['Profilo e password', 'Indisponibilità', 'Esci']);
+
+            $this->get(route('profile.unavailabilities.index'))->assertOk();
+            $this->get(route('profile.edit'))->assertOk()->assertDontSee('Nei periodi indicati');
+        }
+    });
+
+    test('a designatore without referee sheet has neither the menu entry nor the page', function () {
+        $user = User::factory()->create();
+
+        $this->actingAs($user)->get(route('profile.edit'))->assertOk()->assertDontSee('Indisponibilità');
+        $this->get(route('profile.unavailabilities.index'))->assertForbidden();
+    });
+
+    test('a fuori ruolo referee manages unavailabilities for tutor and evaluator activity', function () {
+        $user = activeRefereeUser(['license_level' => Referee::FUORI_RUOLO, 'is_evaluator' => true]);
+
+        $this->actingAs($user)
+            ->get(route('profile.unavailabilities.index'))
+            ->assertOk()
+            ->assertSee('non potrai essere designato come Tutor o Valutatore');
+
+        $this->post(route('profile.unavailabilities.store'), [
+            'start_date' => today()->addDay()->toDateString(),
+            'end_date' => today()->addDay()->toDateString(),
+        ])->assertSessionHas('success');
+
+        expect($user->referee->unavailabilities()->count())->toBe(1);
     });
 
     test('a referee cannot remove the period of another referee', function () {

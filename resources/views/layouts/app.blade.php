@@ -110,9 +110,16 @@
                                  class="absolute right-0 mt-2 w-48 rounded-lg bg-white shadow-lg border border-gray-100 py-1 z-50">
                                 <a href="{{ route('profile.edit') }}"
                                    class="block px-4 py-2 text-sm transition
-                                          {{ $accountActive ? 'bg-indigo-50 text-indigo-700 font-medium' : 'text-gray-700 hover:bg-gray-50' }}">
+                                          {{ request()->routeIs('profile.edit') ? 'bg-indigo-50 text-indigo-700 font-medium' : 'text-gray-700 hover:bg-gray-50' }}">
                                     Profilo e password
                                 </a>
+                                @if (auth()->user()->referee_id)
+                                    <a href="{{ route('profile.unavailabilities.index') }}"
+                                       class="block px-4 py-2 text-sm transition
+                                              {{ request()->routeIs('profile.unavailabilities.*') ? 'bg-indigo-50 text-indigo-700 font-medium' : 'text-gray-700 hover:bg-gray-50' }}">
+                                        Indisponibilità
+                                    </a>
+                                @endif
                                 <div class="my-1 border-t border-gray-100"></div>
                                 <form method="POST" action="{{ route('logout') }}">
                                     @csrf

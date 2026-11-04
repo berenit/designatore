@@ -126,16 +126,20 @@ class Referee extends Model
         return $this->license_level === 'Derogato';
     }
 
-    /** Vero se l'arbitro è di categoria Fuori Ruolo (designabile solo come Valutatore). */
+    /** Vero se l'arbitro è di categoria Fuori Ruolo (nessuna attività in campo: designabile solo come Tutor o Valutatore). */
     public function isFuoriRuolo(): bool
     {
         return $this->license_level === self::FUORI_RUOLO;
     }
 
-    /** Valutatore: solo gli abilitati (anche se Fuori Ruolo); altri ruoli: tutti tranne i Fuori Ruolo. */
+    /** Valutatore: solo gli abilitati (anche se Fuori Ruolo); Tutor: tutti; altri ruoli: tutti tranne i Fuori Ruolo. */
     public function canBeDesignatedAs(string $role): bool
     {
-        return $role === Designation::EVALUATOR_ROLE ? $this->is_evaluator : ! $this->isFuoriRuolo();
+        return match ($role) {
+            Designation::EVALUATOR_ROLE => $this->is_evaluator,
+            Designation::TUTOR_ROLE => true,
+            default => ! $this->isFuoriRuolo(),
+        };
     }
 
     // A referee can have many designations

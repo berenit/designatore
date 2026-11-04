@@ -12,10 +12,21 @@ use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Facades\Redirect;
+use Illuminate\View\View;
 
-/** Periodi di indisponibilità gestiti dall'arbitro stesso dal proprio profilo. */
+/** Periodi di indisponibilità gestiti dall'arbitro stesso, dalla voce "Indisponibilità" del menù. */
 class MyUnavailabilityController extends Controller
 {
+    public function index(Request $request): View
+    {
+        $referee = $this->referee($request);
+
+        return view('profile.unavailabilities', [
+            'referee' => $referee,
+            'unavailabilities' => $referee->unavailabilities()->whereDate('end_date', '>=', today())->orderBy('start_date')->get(),
+        ]);
+    }
+
     public function store(Request $request): RedirectResponse
     {
         $referee = $this->referee($request);
@@ -36,12 +47,12 @@ class MyUnavailabilityController extends Controller
         $conflicts = $this->conflictingDesignations($referee, $period);
 
         if ($conflicts->isEmpty()) {
-            return Redirect::route('profile.edit')->with('success', 'Periodo di indisponibilità aggiunto.');
+            return Redirect::route('profile.unavailabilities.index')->with('success', 'Periodo di indisponibilità aggiunto.');
         }
 
         $this->notifyDesignators($referee, $period, $conflicts);
 
-        return Redirect::route('profile.edit')->with(
+        return Redirect::route('profile.unavailabilities.index')->with(
             'error',
             'Periodo aggiunto, ma hai già delle designazioni in quelle date: restano valide e il designatore è stato avvisato.'
         );
@@ -52,7 +63,7 @@ class MyUnavailabilityController extends Controller
         // Cercando tra i periodi dell'arbitro, quelli degli altri risultano inesistenti (404)
         $this->referee($request)->unavailabilities()->findOrFail($unavailability)->delete();
 
-        return Redirect::route('profile.edit')->with('success', 'Periodo di indisponibilità rimosso.');
+        return Redirect::route('profile.unavailabilities.index')->with('success', 'Periodo di indisponibilità rimosso.');
     }
 
     private function referee(Request $request): Referee

@@ -40,8 +40,8 @@
                 <option value="">Seleziona un arbitro...</option>
                 @foreach($referees as $referee)
                     <option value="{{ $referee->id }}"
-                            {{-- Valutatore: solo gli abilitati (anche se Fuori Ruolo); altri ruoli: tutti tranne i Fuori Ruolo --}}
-                            x-show="(role === 'Valutatore' ? {{ $referee->is_evaluator ? 'true' : 'false' }} : {{ $referee->isFuoriRuolo() ? 'false' : 'true' }}) || refereeId === '{{ $referee->id }}'"
+                            {{-- Valutatore: solo gli abilitati (anche se Fuori Ruolo); Tutor: tutti; altri ruoli: tutti tranne i Fuori Ruolo --}}
+                            x-show="(role === 'Valutatore' ? {{ $referee->is_evaluator ? 'true' : 'false' }} : (role === 'Tutor' || {{ $referee->isFuoriRuolo() ? 'false' : 'true' }})) || refereeId === '{{ $referee->id }}'"
                             @class([
                                 'text-gray-400' => $unavailableRefereeIds->contains($referee->id),
                                 'text-red-600 font-medium' => ! $unavailableRefereeIds->contains($referee->id) && $conflictingRefereeIds->contains($referee->id),

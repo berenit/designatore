@@ -50,18 +50,56 @@ test('un arbitro non valutatore non può essere designato come Valutatore', func
     expect(Designation::where('role', 'Valutatore')->exists())->toBeFalse();
 });
 
-test('un Fuori Ruolo non può essere designato in un ruolo diverso da Valutatore', function () {
+test('un Fuori Ruolo non può svolgere attività in campo', function (string $role) {
     $fuoriRuolo = refereeWith('Fuori Ruolo Valutatore', Referee::FUORI_RUOLO, true);
+    $this->match->update(['required_roles' => ['Arbitro', 'Assistente 1', 'Assistente 2', '4° uomo', '5° uomo']]);
+
+    $referees = $role === 'Arbitro'
+        ? ['Arbitro' => $fuoriRuolo->id]
+        : ['Arbitro' => $this->arbitro->id, $role => $fuoriRuolo->id];
+
+    $this->actingAs($this->designatore)
+        ->post(route('designations.store'), ['match_id' => $this->match->id, 'referees' => $referees])
+        ->assertSessionHasErrors('referees');
+
+    expect(Designation::where('referee_id', $fuoriRuolo->id)->exists())->toBeFalse();
+})->with(['Arbitro', 'Assistente 1', 'Assistente 2', '4° uomo', '5° uomo']);
+
+test('un Fuori Ruolo non può essere Direttore di concentramento', function () {
+    $fuoriRuolo = refereeWith('Fuori Direttore', Referee::FUORI_RUOLO, true);
+
+    expect($fuoriRuolo->canBeDesignatedAs('Direttore di concentramento'))->toBeFalse();
+});
+
+test('un Fuori Ruolo può essere designato come Tutor, anche se non è abilitato come Valutatore', function () {
+    $fuoriRuolo = refereeWith('Fuori Tutor', Referee::FUORI_RUOLO, false);
+    $this->match->update(['required_roles' => ['Arbitro', 'Tutor']]);
 
     $this->actingAs($this->designatore)
         ->post(route('designations.store'), [
             'match_id' => $this->match->id,
-            'referees' => ['Arbitro' => $fuoriRuolo->id],
+            'referees' => ['Arbitro' => $this->arbitro->id, 'Tutor' => $fuoriRuolo->id],
         ])
-        ->assertSessionHasErrors('referees');
+        ->assertSessionHasNoErrors();
 
-    expect($this->designation->fresh()->referee_id)->toBe($this->arbitro->id);
+    expect(Designation::where('role', 'Tutor')->value('referee_id'))->toBe($fuoriRuolo->id);
 });
+
+test('un Fuori Ruolo indisponibile non può essere designato come Tutor o Valutatore', function (string $role) {
+    $fuoriRuolo = refereeWith('Fuori Indisponibile', Referee::FUORI_RUOLO, true);
+    $this->match->update(['required_roles' => ['Arbitro', 'Tutor', 'Valutatore']]);
+    $date = $this->match->fresh()->date_time;
+    $fuoriRuolo->unavailabilities()->create(['start_date' => $date, 'end_date' => $date]);
+
+    $this->actingAs($this->designatore)
+        ->post(route('designations.store'), [
+            'match_id' => $this->match->id,
+            'referees' => ['Arbitro' => $this->arbitro->id, $role => $fuoriRuolo->id],
+        ])
+        ->assertSessionHasErrors();
+
+    expect(Designation::where('referee_id', $fuoriRuolo->id)->exists())->toBeFalse();
+})->with(['Tutor', 'Valutatore']);
 
 test('in modifica non si può passare a Valutatore un arbitro non valutatore', function () {
     $this->actingAs($this->designatore)
@@ -119,5 +157,5 @@ test('i form di designazione filtrano gli arbitri per ruolo', function () {
     expect($create)->toContain("eligibleFor(role, true, true) || referees[role] == {$fuoriRuolo->id}");
 
     $edit = $this->actingAs($this->designatore)->get(route('designations.edit', $this->designation))->assertOk()->getContent();
-    expect($edit)->toContain("(role === 'Valutatore' ? true : false) || refereeId === '{$fuoriRuolo->id}'");
+    expect($edit)->toContain("(role === 'Valutatore' ? true : (role === 'Tutor' || false)) || refereeId === '{$fuoriRuolo->id}'");
 });

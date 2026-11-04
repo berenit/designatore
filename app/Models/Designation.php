@@ -41,6 +41,9 @@ class Designation extends Model
     /** Ruolo riservato agli arbitri abilitati come Valutatori (vedi Referee::canBeDesignatedAs()). */
     public const EVALUATOR_ROLE = 'Valutatore';
 
+    /** Ruolo fuori dal campo, assegnabile anche ai Fuori Ruolo. */
+    public const TUTOR_ROLE = 'Tutor';
+
     /** Etichette italiane per lo stato di una designazione (usate in tutta l'app). */
     public const STATUS_LABELS = [
         'pending' => 'In attesa',

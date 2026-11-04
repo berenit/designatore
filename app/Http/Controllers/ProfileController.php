@@ -23,14 +23,9 @@ class ProfileController extends Controller
     {
         $user = $request->user();
 
-        $unavailabilities = $user->referee
-            ? $user->referee->unavailabilities()->whereDate('end_date', '>=', today())->orderBy('start_date')->get()
-            : collect();
-
         return view('profile.edit', [
             'user' => $user,
             'referee' => $user->referee,
-            'unavailabilities' => $unavailabilities,
         ]);
     }
 

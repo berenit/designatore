@@ -42,6 +42,8 @@ Route::middleware('auth')->group(function () {
     Route::patch('/profile', [ProfileController::class, 'update'])->name('profile.update');
     Route::delete('/profile', [ProfileController::class, 'destroy'])->name('profile.destroy');
 
+    Route::get('/profile/unavailabilities', [MyUnavailabilityController::class, 'index'])
+        ->name('profile.unavailabilities.index');
     Route::post('/profile/unavailabilities', [MyUnavailabilityController::class, 'store'])
         ->name('profile.unavailabilities.store');
     Route::delete('/profile/unavailabilities/{unavailability}', [MyUnavailabilityController::class, 'destroy'])

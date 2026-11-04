@@ -212,9 +212,11 @@ function designationForm(matchRoles, matchIsMulti, matchAssignments, matchDates,
             return isDerogato ? 'text-orange-600' : '';
         },
 
-        // Valutatore: solo gli abilitati (anche se Fuori Ruolo); altri ruoli: tutti tranne i Fuori Ruolo
+        // Valutatore: solo gli abilitati (anche se Fuori Ruolo); Tutor: tutti; altri ruoli: tutti tranne i Fuori Ruolo
         eligibleFor(role, isEvaluator, isFuoriRuolo) {
-            return role === 'Valutatore' ? isEvaluator : ! isFuoriRuolo;
+            if (role === 'Valutatore') return isEvaluator;
+
+            return role === 'Tutor' || ! isFuoriRuolo;
         },
 
         // Vero se l'arbitro è indisponibile nella data della gara selezionata (periodo registrato)
