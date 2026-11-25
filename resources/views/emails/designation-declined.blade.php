@@ -6,16 +6,16 @@ L'arbitro **{{ $designation->referee->name }}** ha rifiutato la designazione per
 <x-mail::table>
 | | |
 |:--|:--|
-| **Incontro** | {{ $designation->match->label }} |
+| **Incontro** | {{ \App\Support\MailTable::cell($designation->match->label) }} |
 | **Ruolo** | {{ $designation->role }} |
 | **Data e ora** | {{ \Carbon\Carbon::parse($designation->match->date_time)->format('d/m/Y \a\l\l\e H:i') }} |
-| **Campo** | {{ $designation->match->venue_label }} |
+| **Campo** | {{ \App\Support\MailTable::cell($designation->match->venue_label) }} |
 | **Competizione** | {{ $designation->match->competition_type }} |
 @if($designation->match->category_label)
-| **Categoria** | {{ $designation->match->category_label }} |
+| **Categoria** | {{ \App\Support\MailTable::cell($designation->match->category_label) }} |
 @endif
 @if($designation->notes)
-| **Note** | {{ $designation->notes }} |
+| **Note** | {{ \App\Support\MailTable::cell($designation->notes) }} |
 @endif
 </x-mail::table>
 

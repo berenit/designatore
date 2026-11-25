@@ -13,10 +13,10 @@ L'arbitro **{{ $designation->referee->name }}** non ha ancora accettato né rifi
 <x-mail::table>
 | | |
 |:--|:--|
-| **Incontro** | {{ $designation->match->label }} |
+| **Incontro** | {{ \App\Support\MailTable::cell($designation->match->label) }} |
 | **Ruolo** | {{ $designation->role }} |
 | **Data e ora** | {{ \Carbon\Carbon::parse($designation->match->date_time)->format('d/m/Y \a\l\l\e H:i') }} |
-| **Campo** | {{ $designation->match->venue_label }} |
+| **Campo** | {{ \App\Support\MailTable::cell($designation->match->venue_label) }} |
 | **Competizione** | {{ $designation->match->competition_type }} |
 | **Richiesta inviata il** | {{ $designation->notified_at->format('d/m/Y \a\l\l\e H:i') }} |
 </x-mail::table>

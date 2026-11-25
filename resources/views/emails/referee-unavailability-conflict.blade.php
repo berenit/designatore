@@ -7,7 +7,7 @@ L'arbitro **{{ $referee->name }}** si è dichiarato indisponibile dal {{ $period
 | Incontro | Ruolo | Data e ora |
 |:--|:--|:--|
 @foreach ($designations as $designation)
-| {{ $designation->match->label }} | {{ $designation->role }} | {{ \Carbon\Carbon::parse($designation->match->date_time)->format('d/m/Y H:i') }} |
+| {{ \App\Support\MailTable::cell($designation->match->label) }} | {{ $designation->role }} | {{ \Carbon\Carbon::parse($designation->match->date_time)->format('d/m/Y H:i') }} |
 @endforeach
 </x-mail::table>
 
